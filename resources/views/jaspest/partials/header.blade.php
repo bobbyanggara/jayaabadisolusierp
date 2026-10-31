@@ -1,0 +1,8 @@
+<header class="site-header" id="site-header">
+    <div class="header-inner container">
+      <a class="brand" href="/" aria-label="JASPEST beranda"><span class="brand-mark"><svg><use href="#i-shield"/></svg></span><span><span class="brand-name">JAS<span>PEST</span><span class="brand-dot">.</span></span><span class="brand-sub">JAYA ABADI SOLUSI</span></span></a>
+      <nav class="desktop-nav" aria-label="Navigasi utama"><a href="/#layanan">Layanan</a><a href="/#jenis-hama">Jenis hama</a><a href="/#metode-penanganan">Metode</a><a href="/#tentang">Tentang kami</a><a href="/#galeri">Galeri</a><a href="/blog/" aria-current="page">Blog</a></nav>
+      <div class="header-actions"><button class="portal-link" data-portal><svg><use href="#i-lock"/></svg>Portal klien</button><a class="button button-small button-blue" href="/#konsultasi">Konsultasi</a><button class="menu-toggle icon-button" id="menu-toggle" aria-expanded="false" aria-controls="mobile-nav" aria-label="Buka menu"><svg><use href="#i-menu"/></svg></button></div>
+    </div>
+    <nav class="mobile-nav" id="mobile-nav" aria-label="Navigasi ponsel" hidden><a href="/#layanan">Layanan</a><a href="/#jenis-hama">Jenis hama</a><a href="/#metode-penanganan">Metode</a><a href="/#tentang">Tentang kami</a><a href="/#galeri">Galeri</a><a href="/blog/">Blog</a><button data-portal>Portal klien</button><a href="/#konsultasi">Ajukan konsultasi</a></nav>
+  </header>

@@ -1,0 +1,5 @@
+Carlito (carlito-regular.woff, carlito-bold.woff) — subset of Carlito 1.103.
+Copyright (c) 2010-2013 tyPoland Lukasz Dziedzic with Reserved Font Name "Carlito".
+Based on Lato, copyright Lukasz Dziedzic. Licensed under the SIL Open Font License,
+Version 1.1: https://openfontlicense.org
+Subsetted to Latin glyphs for the JASPEST admin interface.

@@ -1,0 +1,265 @@
+/*
+ * JASPEST Admin Design System
+ * Intent: restrained operational software, not a decorative dashboard template.
+ * Loaded after the legacy layers to normalize tokens and component behavior.
+ */
+:root {
+  --jas-page:#f4f6f7;
+  --jas-surface:#fff;
+  --jas-surface-raised:#fff;
+  --jas-surface-subtle:#f8fafb;
+  --jas-ink:#182a35;
+  --jas-muted:#647681;
+  --jas-subtle:#87959d;
+  --jas-line:#dfe6e9;
+  --jas-line-strong:#cbd5da;
+  --jas-brand:#087eae;
+  --jas-brand-hover:#06688f;
+  --jas-brand-soft:#eaf4f8;
+  --jas-danger:#c43d45;
+  --jas-danger-soft:#fff1f1;
+  --jas-success:#187653;
+  --jas-success-soft:#edf7f1;
+  --jas-warning:#94630b;
+  --jas-warning-soft:#fff7e7;
+  --jas-focus:#168db7;
+  --jas-radius-sm:5px;
+  --jas-radius-md:7px;
+  --jas-radius-lg:9px;
+  --jas-shadow:0 1px 2px rgba(16,35,46,.035);
+  --jas-font:inherit;
+}
+html[data-theme="dark"] {
+  color-scheme:dark;
+  --jas-page:#101b23;
+  --jas-surface:#172630;
+  --jas-surface-raised:#1a2b36;
+  --jas-surface-subtle:#14232d;
+  --jas-ink:#e8eef1;
+  --jas-muted:#a5b4bc;
+  --jas-subtle:#82939d;
+  --jas-line:#2b3d48;
+  --jas-line-strong:#40535e;
+  --jas-brand:#4bb7dc;
+  --jas-brand-hover:#72c9e8;
+  --jas-brand-soft:#1d3947;
+  --jas-danger:#ff9298;
+  --jas-danger-soft:#3a252b;
+  --jas-success:#80d6b1;
+  --jas-success-soft:#1c382e;
+  --jas-warning:#edc36d;
+  --jas-warning-soft:#382f1d;
+  --jas-focus:#66c8e8;
+  --jas-shadow:0 1px 2px rgba(0,0,0,.16);
+}
+html { scroll-behavior:smooth; }
+body.jas-admin {
+  background:var(--jas-page)!important;
+  color:var(--jas-ink)!important;
+  font-size:13px;
+  line-height:1.55;
+  font-variant-numeric:tabular-nums lining-nums;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+}
+body.jas-admin *,body.jas-admin *::before,body.jas-admin *::after { box-sizing:border-box; }
+body.jas-admin :focus-visible { outline:2px solid var(--jas-focus);outline-offset:2px; }
+body.jas-admin button,body.jas-admin input,body.jas-admin select,body.jas-admin textarea { font:inherit; }
+body.jas-admin .sidebar {
+  width:248px;padding:0 13px 13px;background:var(--jas-surface);
+  color:var(--jas-muted);border-right:1px solid var(--jas-line);box-shadow:none;
+}
+body.jas-admin .admin-brand {
+  min-height:91px;display:flex;flex-direction:column;justify-content:center;
+  padding:12px 8px 11px;margin:0 0 9px;border-bottom:1px solid var(--jas-line);
+}
+body.jas-admin .admin-brand img { width:126px;height:auto;margin:0 auto; }
+body.jas-admin .admin-brand span { margin-top:5px;color:var(--jas-subtle);font-size:10px;font-weight:600;letter-spacing:.035em; }
+html[data-theme="dark"] body.jas-admin .admin-brand img { width:132px;padding:5px 8px;border-radius:5px;background:#fff; }
+body.jas-admin .nav-group-title {
+  padding:14px 10px 6px;color:var(--jas-subtle);font-size:9px;
+  font-weight:700;letter-spacing:.105em;text-transform:uppercase;
+}
+body.jas-admin .nav-group-spaced { padding-top:15px;margin-top:8px;border-top:1px solid var(--jas-line); }
+body.jas-admin .side-nav { gap:2px; }
+body.jas-admin .sidebar .nav-link {
+  position:relative;width:100%;height:39px;display:flex;align-items:center;gap:10px;
+  padding:0 10px;border:1px solid transparent;border-radius:var(--jas-radius-sm);
+  background:transparent;color:var(--jas-muted);font-size:12px;font-weight:550;
+  box-shadow:none;transition:background .14s ease,color .14s ease,border-color .14s ease;
+}
+body.jas-admin .sidebar .nav-link:hover { background:var(--jas-surface-subtle);color:var(--jas-ink); }
+body.jas-admin .sidebar .nav-link.active,
+body.jas-admin .sidebar .nav-link.active:hover {
+  background:var(--jas-brand-soft);color:var(--jas-brand);font-weight:700;
+  border-color:color-mix(in srgb,var(--jas-brand) 13%,transparent);box-shadow:none;
+}
+body.jas-admin .nav-link.active:before { left:-14px;top:8px;bottom:8px;width:3px;background:var(--jas-brand); }
+body.jas-admin .sidebar .nav-link .nav-icon,
+body.jas-admin .sidebar .nav-link:hover .nav-icon,
+body.jas-admin .sidebar .nav-link.active .nav-icon {
+  display:block!important;width:17px!important;height:17px!important;min-width:17px;
+  flex:0 0 17px;color:inherit!important;stroke:currentColor!important;fill:none!important;
+  stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;
+}
+body.jas-admin .nav-count { min-width:20px;padding:1px 6px;border-radius:4px;background:var(--jas-danger);font-size:10px; }
+body.jas-admin .sidebar-bottom { margin-top:auto;padding-top:10px;border-top:1px solid var(--jas-line); }
+body.jas-admin .back-site { padding:9px 10px;border-radius:5px;color:var(--jas-muted);font-size:11px;font-weight:600; }
+body.jas-admin .back-site:hover { background:var(--jas-surface-subtle);color:var(--jas-brand); }
+body.jas-admin .admin-profile { gap:9px;padding:12px 8px 9px;color:var(--jas-ink); }
+body.jas-admin .admin-profile .avatar {
+  width:32px;height:32px;flex:0 0 32px;border:1px solid var(--jas-line);
+  border-radius:6px;background:var(--jas-brand-soft);color:var(--jas-brand);font-size:10px;font-weight:700;
+}
+body.jas-admin .admin-profile strong { color:var(--jas-ink);font-size:11px;font-weight:700; }
+body.jas-admin .admin-profile small { color:var(--jas-subtle);font-size:10px; }
+body.jas-admin .logout-btn {
+  height:35px;margin-top:3px;border:1px solid var(--jas-line);border-radius:5px;
+  background:transparent;color:var(--jas-muted);font-size:11px;font-weight:600;
+}
+body.jas-admin .logout-btn:hover { border-color:var(--jas-danger);background:var(--jas-danger-soft);color:var(--jas-danger); }
+body.jas-admin .main-area { margin-left:248px;min-height:100vh;background:var(--jas-page); }
+body.jas-admin .topbar {
+  height:60px;padding:0 34px;background:var(--jas-surface);border-bottom:1px solid var(--jas-line);
+  box-shadow:none;
+}
+body.jas-admin .breadcrumb { color:var(--jas-muted);font-size:11px; }
+body.jas-admin .breadcrumb strong { color:var(--jas-ink);font-size:12px;font-weight:650; }
+body.jas-admin .theme-toggle {
+  width:34px;height:34px;border:1px solid var(--jas-line);border-radius:5px;
+  background:var(--jas-surface);color:var(--jas-muted);
+}
+body.jas-admin .theme-toggle:hover { border-color:var(--jas-line-strong);background:var(--jas-surface-subtle);color:var(--jas-brand); }
+body.jas-admin .page-wrap { max-width:1500px;padding:30px 34px 52px; }
+body.jas-admin .page-heading { align-items:flex-end;margin-bottom:22px; }
+body.jas-admin .page-heading h1 { margin:0;color:var(--jas-ink);font-size:23px;line-height:1.25;letter-spacing:-.035em;font-weight:700; }
+body.jas-admin .page-heading p { margin:7px 0 0;color:var(--jas-muted);font-size:12px;line-height:1.6; }
+body.jas-admin .heading-date { padding:8px 11px;border:1px solid var(--jas-line);border-radius:5px;background:var(--jas-surface); }
+body.jas-admin .heading-date small { color:var(--jas-subtle);font-size:10px; }
+body.jas-admin .heading-date strong { color:var(--jas-ink);font-size:11px;font-weight:650; }
+body.jas-admin .stats-grid { gap:12px;margin-bottom:15px; }
+body.jas-admin .stat-card {
+  min-height:112px;padding:15px 16px;border:1px solid var(--jas-line);
+  border-radius:var(--jas-radius-md);background:var(--jas-surface);box-shadow:var(--jas-shadow);
+  cursor:pointer;transition:border-color .14s ease,background .14s ease;
+}
+body.jas-admin .stat-card:hover { border-color:var(--jas-line-strong);background:var(--jas-surface-raised);transform:none; }
+body.jas-admin .stat-card .stat-label { color:var(--jas-muted);font-size:11px;font-weight:600; }
+body.jas-admin .stat-card > strong { display:block;margin-top:9px;color:var(--jas-ink);font-size:27px;line-height:1;font-weight:700;letter-spacing:-.035em; }
+body.jas-admin .stat-card > small { display:block;margin-top:9px;color:var(--jas-subtle);font-size:10px; }
+body.jas-admin .stat-card.is-urgent { border-top:2px solid var(--jas-danger); }
+body.jas-admin .dashboard-grid { grid-template-columns:minmax(0,1.45fr) minmax(290px,.9fr);gap:14px;margin-bottom:15px; }
+body.jas-admin .panel {
+  border:1px solid var(--jas-line);border-radius:var(--jas-radius-md);
+  background:var(--jas-surface);box-shadow:var(--jas-shadow);
+}
+body.jas-admin .panel-heading { padding:17px 18px 0;gap:12px; }
+body.jas-admin .panel-heading h2 { margin:0;color:var(--jas-ink);font-size:13px;line-height:1.4;letter-spacing:-.01em;font-weight:700; }
+body.jas-admin .panel-heading p { margin:4px 0 0;color:var(--jas-subtle);font-size:10px; }
+body.jas-admin .chart-area { height:166px;margin:17px 18px 14px;padding-top:0; }
+body.jas-admin .chart-column i { border-radius:2px 2px 0 0; }
+body.jas-admin .attention-row { padding:13px 17px;border-top:1px solid var(--jas-line); }
+body.jas-admin .attention-row:first-of-type { margin-top:14px; }
+body.jas-admin .attention-row strong { color:var(--jas-ink);font-size:11px;font-weight:650; }
+body.jas-admin .attention-row small { color:var(--jas-subtle);font-size:10px; }
+body.jas-admin .mini-arrow { color:var(--jas-brand);font-size:10px;font-weight:650; }
+body.jas-admin .table-panel { overflow:hidden; }
+body.jas-admin .table-heading { align-items:center;padding:16px 18px 14px; }
+body.jas-admin .table-scroll { overflow-x:auto; }
+body.jas-admin table { width:100%;border-collapse:separate;border-spacing:0; }
+body.jas-admin th {
+  padding:10px 13px;background:var(--jas-surface-subtle);color:var(--jas-subtle);
+  border-top:1px solid var(--jas-line);border-bottom:1px solid var(--jas-line);
+  font-size:9px;font-weight:700;letter-spacing:.065em;text-transform:uppercase;white-space:nowrap;
+}
+body.jas-admin td { padding:12px 13px;border-bottom:1px solid var(--jas-line);color:var(--jas-muted);font-size:11px;vertical-align:middle; }
+body.jas-admin tbody tr:last-child td { border-bottom:0; }
+body.jas-admin tbody tr:hover td { background:var(--jas-surface-subtle); }
+body.jas-admin .client-cell strong { color:var(--jas-ink);font-size:11px;font-weight:650; }
+body.jas-admin .client-cell small { color:var(--jas-subtle);font-size:10px; }
+body.jas-admin .client-initial { border:1px solid var(--jas-line);border-radius:5px;background:var(--jas-surface-subtle);color:var(--jas-muted); }
+body.jas-admin .status-pill { padding:4px 7px;border-radius:4px;font-size:9px;font-weight:650; }
+body.jas-admin .btn {
+  min-height:35px;padding:0 12px;border-radius:5px;font-size:11px;font-weight:650;
+  box-shadow:none;transition:background .14s ease,border-color .14s ease,color .14s ease;
+}
+body.jas-admin .btn-primary { background:var(--jas-brand);border-color:var(--jas-brand);color:#fff; }
+body.jas-admin .btn-primary:hover { background:var(--jas-brand-hover);border-color:var(--jas-brand-hover); }
+body.jas-admin .btn-secondary,body.jas-admin .btn-outline {
+  background:var(--jas-surface);border:1px solid var(--jas-line-strong);color:var(--jas-ink);
+}
+body.jas-admin .btn-secondary:hover,body.jas-admin .btn-outline:hover { background:var(--jas-surface-subtle);border-color:var(--jas-brand);color:var(--jas-brand); }
+body.jas-admin .btn-export { background:var(--jas-success-soft);border-color:color-mix(in srgb,var(--jas-success) 25%,var(--jas-line));color:var(--jas-success); }
+body.jas-admin .btn-whatsapp { background:#16865f;border-color:#16865f;color:#fff; }
+body.jas-admin .booking-summary { gap:10px;margin-bottom:14px; }
+body.jas-admin .summary-filter {
+  min-height:67px;padding:11px 13px;border:1px solid var(--jas-line);border-radius:6px;
+  background:var(--jas-surface);color:var(--jas-muted);
+}
+body.jas-admin .summary-filter strong { color:var(--jas-ink);font-size:18px; }
+body.jas-admin .booking-panel,body.jas-admin .content-panel { overflow:hidden; }
+body.jas-admin .booking-toolbar { gap:8px;padding:13px 15px;border-bottom:1px solid var(--jas-line);background:var(--jas-surface); }
+body.jas-admin .search-box input,body.jas-admin .booking-toolbar select,
+body.jas-admin .form-label input,body.jas-admin .form-label select,body.jas-admin .form-label textarea,
+body.jas-admin .note-form textarea,body.jas-admin .detail-status select {
+  min-height:36px;border:1px solid var(--jas-line-strong);border-radius:5px;
+  background:var(--jas-surface);color:var(--jas-ink);font-size:11px;
+}
+body.jas-admin input::placeholder,body.jas-admin textarea::placeholder { color:var(--jas-subtle); }
+body.jas-admin .search-box input:focus,body.jas-admin select:focus,body.jas-admin textarea:focus,body.jas-admin input:focus {
+  border-color:var(--jas-focus);outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--jas-focus) 12%,transparent);
+}
+body.jas-admin .content-intro { border:1px solid var(--jas-line);border-radius:6px;background:var(--jas-surface); }
+body.jas-admin .content-intro strong { color:var(--jas-ink);font-size:12px; }
+body.jas-admin .content-intro p { color:var(--jas-muted);font-size:11px; }
+body.jas-admin .content-row { border-bottom:1px solid var(--jas-line); }
+body.jas-admin .content-row:hover { background:var(--jas-surface-subtle); }
+body.jas-admin .content-row strong { color:var(--jas-ink);font-size:12px; }
+body.jas-admin .content-row small { color:var(--jas-muted);font-size:10px; }
+body.jas-admin .modal {
+  border:1px solid var(--jas-line);border-radius:8px;background:var(--jas-surface);
+  color:var(--jas-ink);box-shadow:0 18px 55px rgba(8,25,36,.2);
+}
+body.jas-admin .modal-head,body.jas-admin .modal-footer { border-color:var(--jas-line); }
+body.jas-admin .modal-head h2 { color:var(--jas-ink);font-size:17px;letter-spacing:-.02em; }
+body.jas-admin .modal-head p,body.jas-admin .modal-kicker { color:var(--jas-muted); }
+body.jas-admin .modal-body { color:var(--jas-ink); }
+body.jas-admin .form-label { color:var(--jas-ink);font-size:11px;font-weight:650; }
+body.jas-admin .detail-field { border:1px solid var(--jas-line);border-radius:5px;background:var(--jas-surface-subtle); }
+body.jas-admin .detail-field strong { color:var(--jas-ink); }
+body.jas-admin .toast { border:1px solid var(--jas-line);border-radius:6px;background:var(--jas-surface-raised);color:var(--jas-ink);box-shadow:0 8px 30px rgba(10,30,42,.12); }
+body.jas-admin .privacy-footnote { color:var(--jas-subtle);font-size:10px; }
+body.jas-admin .mobile-menu { border:1px solid var(--jas-line);border-radius:5px;background:var(--jas-surface);color:var(--jas-muted); }
+@media(max-width:1150px) {
+  body.jas-admin .sidebar { width:230px; }
+  body.jas-admin .main-area { margin-left:230px; }
+  body.jas-admin .page-wrap { padding:26px 24px 42px; }
+  body.jas-admin .topbar { padding-inline:24px; }
+  body.jas-admin .dashboard-grid { grid-template-columns:1fr; }
+}
+@media(max-width:850px) {
+  body.jas-admin .sidebar { width:248px;transform:translateX(-100%); }
+  body.jas-admin .sidebar.open { transform:translateX(0); }
+  body.jas-admin .main-area { margin-left:0; }
+  body.jas-admin .topbar { height:58px;padding-inline:16px; }
+  body.jas-admin .page-wrap { padding:23px 17px 36px; }
+  body.jas-admin .stats-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  body.jas-admin .dashboard-grid { grid-template-columns:1fr; }
+}
+@media(max-width:560px) {
+  body.jas-admin .page-wrap { padding:20px 13px 30px; }
+  body.jas-admin .page-heading { align-items:flex-start;flex-direction:column;gap:12px; }
+  body.jas-admin .page-heading h1 { font-size:21px; }
+  body.jas-admin .heading-date { align-self:flex-start; }
+  body.jas-admin .stats-grid { gap:8px; }
+  body.jas-admin .stat-card { min-height:105px;padding:12px; }
+  body.jas-admin .stat-card > strong { font-size:24px; }
+  body.jas-admin .booking-summary { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  body.jas-admin .booking-toolbar { align-items:stretch;flex-wrap:wrap; }
+  body.jas-admin .search-box { flex:1 1 100%; }
+  body.jas-admin .booking-toolbar select { flex:1 1 calc(50% - 5px);min-width:0; }
+  body.jas-admin .modal { width:calc(100% - 20px);max-height:calc(100svh - 20px); }
+}
+@media(prefers-reduced-motion:reduce) {
+  body.jas-admin *,body.jas-admin *::before,body.jas-admin *::after { animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important; }
+}

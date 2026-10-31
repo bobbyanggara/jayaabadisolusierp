@@ -1,0 +1,384 @@
+/* JASPEST admin — tema brand Jaya Abadi Solusi: biru muda (#00ABF0) dominan + aksen merah (#E6212A).
+   Mendukung mode terang & gelap lewat atribut <html data-theme="light|dark">. Dimuat setelah admin.css. */
+
+/* ========== Token warna ========== */
+:root{
+  --ad-blue:#0079b5;--ad-blue-dark:#006399;--ad-sky:#00abf0;--ad-red:#e6212a;
+  --ad-ink:#12263b;--ad-muted:#52667c;--ad-bg:#e9f6fd;--ad-tint:#d8eefb;--ad-line:#c9e0ef;
+  --ad-red-tint:#fdecec;--ad-red-text:#b4141c;--ad-link:#006399;
+  --surface:#ffffff;--surface-2:#f3faff;--th-bg:#eef7fd;--row-hover:#eaf6fd;
+  --sidebar-bg:#d9eefa;--sidebar-line:#bddcf0;
+  --nav-text:#1b3a56;--nav-hover-bg:#bfe3f7;--nav-hover-text:#00425f;--nav-active-bg:#ffffff;--nav-active-text:#00537d;
+  --field-line:#a9c8dc;--btn-text:#1b3a56;--td-text:#26405a;--td-line:#dcebf5;--placeholder:#6f8398;--grid:#d9eaf5;
+  --pill-new-bg:#fdecec;--pill-new:#b4141c;--pill-contacted-bg:#d8eefb;--pill-contacted:#00537d;
+  --pill-follow-bg:#fff3d6;--pill-follow:#7a5200;--pill-conv-bg:#e0f5ea;--pill-conv:#0d6847;--pill-lost-bg:#e7edf3;--pill-lost:#44566a;
+  --wa:#13805a;--wa-dark:#0e6847;--wa-line:#a6d9c4;--wa-text:#0d6847;--wa-hover-bg:#e6f7ef;
+  --focus:#00abf0;--shadow:0 1px 2px #0a3a5c14;--r:12px;
+}
+html[data-theme="dark"]{
+  color-scheme:dark;
+  --ad-blue:#4cc3f7;--ad-blue-dark:#7fd6fb;--ad-sky:#38bdf8;--ad-red:#ef4a52;
+  --ad-ink:#e8f2fa;--ad-muted:#9bb2c6;--ad-bg:#0b1824;--ad-tint:#143048;--ad-line:#1f3a52;
+  --ad-red-tint:#3a1a20;--ad-red-text:#ff8a90;--ad-link:#7fd6fb;
+  --surface:#10253a;--surface-2:#0d2033;--th-bg:#132c43;--row-hover:#15304a;
+  --sidebar-bg:#0e2234;--sidebar-line:#1d3850;
+  --nav-text:#c5dbeb;--nav-hover-bg:#1a3b56;--nav-hover-text:#e1f5ff;--nav-active-bg:#173a56;--nav-active-text:#8fdcff;
+  --field-line:#2c4d68;--btn-text:#d3e6f4;--td-text:#c3d7e6;--td-line:#1b354d;--placeholder:#7f97ac;--grid:#1b3550;
+  --pill-new-bg:#3d1b21;--pill-new:#ff9aa0;--pill-contacted-bg:#12405c;--pill-contacted:#8fdcff;
+  --pill-follow-bg:#3d3216;--pill-follow:#f4cf74;--pill-conv-bg:#12392c;--pill-conv:#7fe0b4;--pill-lost-bg:#25384a;--pill-lost:#b6c8d8;
+  --wa:#1a9a6f;--wa-dark:#14805b;--wa-line:#21634c;--wa-text:#7fe0b4;--wa-hover-bg:#12392c;
+  --focus:#5ccbfa;--shadow:0 1px 2px #00000040;
+}
+
+/* ========== Dasar ========== */
+html{scroll-behavior:smooth}
+body.jas-admin{font-size:15px;background:var(--ad-bg);color:var(--ad-ink);font-variant-numeric:tabular-nums;transition:background .2s,color .2s}
+body.jas-admin :focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+
+/* ========== Sidebar (biru muda) ========== */
+body.jas-admin .sidebar{width:252px;background:var(--sidebar-bg);color:var(--nav-text);border-right:1px solid var(--sidebar-line);padding:0 14px 14px}
+body.jas-admin .admin-brand{display:block;padding:16px 8px 14px;margin:0 0 6px;border-bottom:1px solid var(--sidebar-line);color:var(--ad-ink)}
+body.jas-admin .admin-brand img{display:block;width:150px;height:auto;margin:0 auto}
+html[data-theme="dark"] .admin-brand img{background:#f4fbff;border-radius:10px;padding:6px 10px;width:160px;box-sizing:border-box}
+body.jas-admin .admin-brand span{display:block;text-align:center;margin-top:6px;font-size:12px;color:var(--ad-muted)}
+body.jas-admin .nav-group-title{font-size:12px;font-weight:700;letter-spacing:.2px;text-transform:none;color:var(--ad-muted);padding:14px 10px 6px}
+body.jas-admin .nav-group-spaced{margin-top:6px;border-top:0;padding-top:14px}
+body.jas-admin .side-nav{gap:3px}
+body.jas-admin .sidebar .nav-link{height:42px;gap:12px;padding:0 12px;border-radius:10px;color:var(--nav-text);font-size:14px;font-weight:500;box-shadow:none;position:relative;background:transparent;border:0;text-align:left;cursor:pointer;transition:background .15s,color .15s}
+/* HOVER: teks TIDAK putih — tetap biru tua (terang) / biru muda (gelap) */
+body.jas-admin .sidebar .nav-link:hover,
+body.jas-admin .sidebar .nav-link:focus-visible{background:var(--nav-hover-bg);color:var(--nav-hover-text)}
+body.jas-admin .sidebar .nav-link:hover *,
+body.jas-admin .sidebar .nav-link:focus-visible *{color:inherit}
+body.jas-admin .sidebar .nav-link.active{background:var(--nav-active-bg);color:var(--nav-active-text);font-weight:700;box-shadow:0 1px 2px #0a3a5c1f}
+body.jas-admin .sidebar .nav-link.active:hover{background:var(--nav-active-bg);color:var(--nav-active-text)}
+body.jas-admin .nav-link.active:before{content:"";position:absolute;left:-14px;top:9px;bottom:9px;width:4px;border-radius:0 4px 4px 0;background:var(--ad-red)}
+body.jas-admin .nav-icon{opacity:1;color:inherit;width:20px;height:20px;flex:0 0 20px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;font-size:0}
+/* Ikon menu: paksa selalu tampil di semua kondisi (normal, hover, aktif) dengan warna sama seperti teks menu */
+body.jas-admin .sidebar .nav-link .nav-icon,
+body.jas-admin .sidebar .nav-link:hover .nav-icon,
+body.jas-admin .sidebar .nav-link:focus-visible .nav-icon,
+body.jas-admin .sidebar .nav-link.active .nav-icon{display:block!important;visibility:visible!important;opacity:1!important;width:20px!important;height:20px!important;min-width:20px;flex:0 0 20px;color:inherit!important;stroke:currentColor!important;fill:none!important;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+body.jas-admin .sidebar .nav-link .nav-icon *{stroke:currentColor!important;fill:none!important}
+body.jas-admin .sidebar .nav-link .nav-icon circle{fill:none!important}
+body.jas-admin .nav-count{margin-left:auto;min-width:24px;padding:2px 8px;border-radius:99px;background:var(--ad-red);color:#fff!important;font-size:12px;text-align:center}
+body.jas-admin .sidebar-bottom{margin-top:auto;padding-top:12px;border-top:1px solid var(--sidebar-line)}
+body.jas-admin .back-site{display:block;padding:10px 12px;border-radius:10px;color:var(--ad-link);font-weight:700;font-size:14px;text-decoration:none}
+body.jas-admin .back-site:hover{background:var(--nav-hover-bg);color:var(--nav-hover-text)}
+body.jas-admin .admin-profile{display:flex;align-items:center;gap:10px;padding:10px 12px;color:var(--ad-ink)}
+body.jas-admin .admin-profile .avatar{width:34px;height:34px;border-radius:50%;background:var(--ad-sky);color:#05263b;display:grid;place-items:center;font-size:12px;font-weight:700}
+body.jas-admin .admin-profile strong{display:block;font-size:14px;color:var(--ad-ink)}
+body.jas-admin .admin-profile small{font-size:12px;color:var(--ad-muted)}
+
+/* ========== Topbar ========== */
+body.jas-admin .main-area{margin-left:252px}
+body.jas-admin .topbar{height:64px;padding:0 32px;background:var(--surface);border-bottom:1px solid var(--ad-line);position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:12px}
+body.jas-admin .topbar-left{display:flex;align-items:center;gap:12px}
+body.jas-admin .breadcrumb strong{font-size:16px;color:var(--ad-ink)}
+.topbar-right{display:flex;align-items:center;gap:10px}
+.theme-toggle{display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 14px;border:1px solid var(--field-line);border-radius:999px;background:var(--surface-2);color:var(--btn-text);font:inherit;font-size:13px;font-weight:700;cursor:pointer;transition:background .15s,border-color .15s,color .15s}
+.theme-toggle:hover{background:var(--ad-tint);border-color:var(--ad-sky);color:var(--ad-link)}
+.theme-toggle svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.theme-toggle .ico-sun{display:none}
+html[data-theme="dark"] .theme-toggle .ico-sun{display:block}
+html[data-theme="dark"] .theme-toggle .ico-moon{display:none}
+body.jas-admin .realtime-status,body.jas-admin .preview-chip{font-size:12px;padding:6px 12px;font-weight:600;text-transform:none;letter-spacing:0}
+body.jas-admin .preview-chip{background:#fff7e6;border-color:#f3dfae;color:#7a5200}
+body.jas-admin .preview-chip.live-chip{background:var(--ad-tint);border-color:var(--ad-line);color:var(--nav-active-text)}
+body.jas-admin .preview-chip.live-chip i{background:var(--ad-sky);box-shadow:0 0 0 3px #00abf033}
+
+/* ========== Halaman ========== */
+body.jas-admin .page-wrap{max-width:1360px;padding:28px 32px 56px}
+body.jas-admin .page-heading{align-items:flex-end;margin-bottom:22px}
+body.jas-admin .page-heading h1{font-size:28px;letter-spacing:-.5px;margin:0 0 4px;color:var(--ad-ink)}
+body.jas-admin .page-heading p{font-size:15px;color:var(--ad-muted)}
+body.jas-admin .heading-date{display:block;border:0;background:none;padding:0;text-align:right}
+body.jas-admin .heading-date small{font-size:12px;color:var(--ad-muted)}
+body.jas-admin .heading-date strong{font-size:14px;color:var(--ad-ink);margin:0}
+body.jas-admin .demo-notice{border-radius:var(--r);font-size:14px;background:var(--ad-red-tint);border:1px solid #f1b8bb}
+body.jas-admin .demo-notice>span{background:var(--ad-red);color:#fff}
+body.jas-admin .demo-notice strong{color:var(--ad-red-text);font-size:14px}
+body.jas-admin .demo-notice small{color:var(--ad-muted);font-size:13px}
+
+/* ========== Kartu & panel ========== */
+body.jas-admin .panel,body.jas-admin .stat-card{border:1px solid var(--ad-line);border-radius:var(--r);background:var(--surface);color:var(--ad-ink);box-shadow:var(--shadow)}
+body.jas-admin .stats-grid{gap:14px;margin-bottom:16px}
+body.jas-admin .stat-card{padding:18px 20px;min-height:0;cursor:pointer;transition:border-color .15s,transform .15s,box-shadow .15s;border-top:4px solid var(--ad-sky)}
+body.jas-admin .stat-card:hover{border-color:var(--ad-sky);transform:translateY(-2px);box-shadow:0 6px 16px #0a3a5c1f}
+body.jas-admin .stat-label{display:block;font-size:14px;font-weight:600;color:var(--ad-muted)}
+body.jas-admin .stat-card>strong{display:block;font-size:38px;line-height:1.1;letter-spacing:-1px;margin:8px 0 4px;color:var(--ad-ink)}
+body.jas-admin .stat-card>small{font-size:13px;color:var(--ad-muted)}
+body.jas-admin .stat-card.is-urgent{background:var(--ad-red);border-color:var(--ad-red);border-top-color:#b9141c}
+body.jas-admin .stat-card.is-urgent .stat-label,body.jas-admin .stat-card.is-urgent>strong,body.jas-admin .stat-card.is-urgent>small{color:#fff}
+body.jas-admin .stat-card.is-urgent:hover{border-color:#b9141c;background:#d11d26}
+body.jas-admin .dashboard-grid{gap:14px;margin-bottom:16px}
+body.jas-admin .chart-panel,body.jas-admin .action-panel{padding:20px 22px}
+body.jas-admin .panel-heading h2{font-size:17px;letter-spacing:-.2px;color:var(--ad-ink)}
+body.jas-admin .panel-heading p{font-size:13px;color:var(--ad-muted)}
+body.jas-admin .chart-legend{color:var(--ad-muted)}
+body.jas-admin .chart-area{height:190px;margin-top:18px}
+body.jas-admin .chart-bars{background:repeating-linear-gradient(to bottom,transparent 0,transparent 46px,var(--grid) 47px,var(--grid) 48px)}
+body.jas-admin .chart-column i{background:var(--ad-sky);box-shadow:none;border-radius:6px 6px 0 0;width:min(34px,70%)}
+body.jas-admin .chart-column:last-child i{background:var(--ad-red)}
+body.jas-admin .chart-column small{font-size:12px;color:var(--ad-muted);transform:translateY(20px)}
+body.jas-admin .action-panel{display:block!important}
+body.jas-admin .attention-row{padding:13px 0;gap:12px;border-bottom:1px solid var(--td-line)}
+body.jas-admin .attention-row:last-child{border-bottom:0}
+body.jas-admin .attention-icon{width:10px;height:10px;border-radius:50%;flex:0 0 10px}
+body.jas-admin .attention-icon.red-bg{background:var(--ad-red)}
+body.jas-admin .attention-icon.amber-bg{background:#e5a53b}
+body.jas-admin .attention-icon.blue-bg{background:var(--ad-sky)}
+body.jas-admin .attention-row strong{font-size:15px;color:var(--ad-ink)}
+body.jas-admin .attention-row small{font-size:13px;color:var(--ad-muted)}
+body.jas-admin .mini-arrow{width:auto;height:34px;padding:0 14px;border:1px solid var(--field-line);border-radius:8px;background:var(--surface);color:var(--ad-link);font-size:13px;font-weight:700;cursor:pointer}
+body.jas-admin .mini-arrow:hover{background:var(--ad-tint);border-color:var(--ad-sky);color:var(--ad-link)}
+
+/* ========== Tombol ========== */
+body.jas-admin .btn{min-height:42px;padding:0 18px;border-radius:10px;font-size:14px;font-weight:700;box-shadow:none;cursor:pointer;transition:background .15s,border-color .15s,color .15s}
+body.jas-admin .btn-sm{min-height:36px;padding:0 14px;font-size:13px}
+body.jas-admin .btn-primary{background:var(--ad-blue);color:#fff;border:1px solid transparent}
+body.jas-admin .btn-primary:hover{background:var(--ad-blue-dark);color:#fff;transform:none}
+html[data-theme="dark"] body.jas-admin .btn-primary{background:#1597d4;color:#fff}
+html[data-theme="dark"] body.jas-admin .btn-primary:hover{background:#27a9e6;color:#fff}
+body.jas-admin .btn-outline{background:var(--surface);border:1px solid var(--field-line);color:var(--btn-text)}
+body.jas-admin .btn-outline:hover{border-color:var(--ad-sky);color:var(--ad-link);background:var(--ad-tint)}
+body.jas-admin .btn-whatsapp{background:var(--wa);color:#fff;border:1px solid transparent}
+body.jas-admin .btn-whatsapp:hover{background:var(--wa-dark);color:#fff}
+body.jas-admin .btn:disabled{opacity:.45;cursor:not-allowed}
+
+/* ========== Tabel ========== */
+body.jas-admin .table-panel{padding:20px 0 0}
+body.jas-admin .table-heading{padding:0 22px 14px}
+body.jas-admin table{font-size:14px;color:var(--td-text);background:transparent}
+body.jas-admin th{padding:12px 16px;font-size:13px;font-weight:700;letter-spacing:0;text-transform:none;color:var(--ad-muted);background:var(--th-bg);border-top:1px solid var(--ad-line);border-bottom:1px solid var(--ad-line)}
+body.jas-admin td{padding:14px 16px;font-size:14px;color:var(--td-text);border-bottom:1px solid var(--td-line);background:transparent}
+body.jas-admin tbody tr{transition:background .12s}
+body.jas-admin tbody tr:hover{background:var(--row-hover)}
+body.jas-admin .booking-table th,body.jas-admin .booking-table td{padding:13px 10px}
+body.jas-admin .booking-table .client-initial{display:none}
+body.jas-admin .booking-table td:nth-child(3){white-space:normal;min-width:110px}
+body.jas-admin .booking-table .table-action{padding:0 10px}
+body.jas-admin .client-initial,body.jas-admin .booking-table .client-initial{width:36px;height:36px;border-radius:50%;background:var(--ad-tint);color:var(--nav-active-text);font-size:13px;font-weight:700}
+body.jas-admin .client-cell{gap:12px}
+body.jas-admin .client-cell strong{font-size:14px;color:var(--ad-ink)}
+body.jas-admin .client-cell small{font-size:12px;color:var(--ad-muted)}
+body.jas-admin .booking-table .contact-number{font-size:14px}
+body.jas-admin .status-pill{padding:5px 11px;font-size:13px;font-weight:700}
+body.jas-admin .status-new{color:var(--pill-new);background:var(--pill-new-bg)}
+body.jas-admin .status-contacted{color:var(--pill-contacted);background:var(--pill-contacted-bg)}
+body.jas-admin .status-followup{color:var(--pill-follow);background:var(--pill-follow-bg)}
+body.jas-admin .status-converted{color:var(--pill-conv);background:var(--pill-conv-bg)}
+body.jas-admin .status-lost{color:var(--pill-lost);background:var(--pill-lost-bg)}
+body.jas-admin .table-actions{gap:8px}
+body.jas-admin .table-action{width:auto;height:36px;padding:0 14px;border:1px solid var(--field-line);border-radius:8px;background:var(--surface);color:var(--btn-text);font-size:13px;font-weight:700;display:inline-flex;align-items:center;cursor:pointer}
+body.jas-admin .table-action:hover{border-color:var(--ad-sky);background:var(--ad-tint);color:var(--ad-link)}
+body.jas-admin .table-action.wa{border-color:var(--wa-line);color:var(--wa-text)}
+body.jas-admin .table-action.wa:hover{background:var(--wa-hover-bg);border-color:var(--wa);color:var(--wa-text)}
+
+
+/* ========== Tabel muat penuh tanpa geser samping ========== */
+body.jas-admin .table-scroll{overflow-x:auto}
+body.jas-admin table,body.jas-admin .booking-table{width:100%;min-width:0!important;table-layout:auto}
+body.jas-admin th,body.jas-admin td{white-space:normal;overflow-wrap:normal;word-break:normal;hyphens:none;vertical-align:middle}
+body.jas-admin th{white-space:nowrap}
+body.jas-admin .booking-table td:nth-child(4),body.jas-admin .booking-table td:nth-child(5){white-space:nowrap}
+body.jas-admin .booking-table td:nth-child(5){white-space:normal}
+body.jas-admin th:last-child,body.jas-admin td:last-child{position:static;box-shadow:none}
+body.jas-admin .booking-table th,body.jas-admin .booking-table td,body.jas-admin .table-panel th,body.jas-admin .table-panel td{padding:12px 8px}
+body.jas-admin .booking-table th:first-child,body.jas-admin .booking-table td:first-child,body.jas-admin .table-panel th:first-child,body.jas-admin .table-panel td:first-child{padding-left:16px}
+body.jas-admin .booking-table th:last-child,body.jas-admin .booking-table td:last-child,body.jas-admin .table-panel th:last-child,body.jas-admin .table-panel td:last-child{padding-right:16px}
+body.jas-admin .booking-table .contact-number{white-space:nowrap}
+body.jas-admin .status-pill{white-space:nowrap;display:inline-flex;align-items:center}
+body.jas-admin .table-actions{display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end}
+body.jas-admin .table-action,body.jas-admin .booking-table .table-action{height:34px;padding:0 12px}
+@media(max-width:700px){
+  body.jas-admin .table-scroll{overflow-x:auto}
+  body.jas-admin table,body.jas-admin .booking-table{min-width:640px!important}
+}
+
+/* ========== Booking ========== */
+body.jas-admin .booking-summary{gap:12px;margin-bottom:16px}
+body.jas-admin .booking-summary>div{padding:14px 16px;border-radius:var(--r);background:var(--surface);border:1px solid var(--ad-line);color:var(--ad-muted)}
+body.jas-admin .booking-summary>div>span:nth-child(2){font-size:14px;color:var(--ad-muted)}
+body.jas-admin .booking-summary strong{font-size:22px;color:var(--ad-ink)}
+body.jas-admin .summary-dot{width:10px;height:10px}
+body.jas-admin .blue-dot{background:var(--ad-sky)}
+body.jas-admin .red-dot{background:var(--ad-red)}
+body.jas-admin .green-dot{background:var(--wa)}
+body.jas-admin .amber-dot{background:#e5a53b}
+body.jas-admin .booking-toolbar{padding:16px 20px;gap:12px;flex-wrap:wrap}
+body.jas-admin .search-box{height:44px;max-width:420px;border:1px solid var(--field-line);border-radius:10px;padding:0 14px;background:var(--surface)}
+body.jas-admin .search-box:focus-within{border-color:var(--ad-sky);box-shadow:0 0 0 3px #00abf033}
+body.jas-admin .search-box input{font-size:14px;color:var(--ad-ink);background:transparent}
+body.jas-admin .search-box input::placeholder{color:var(--placeholder)}
+body.jas-admin .booking-toolbar select{height:44px;padding:0 32px 0 12px;border:1px solid var(--field-line);border-radius:10px;font-size:14px;color:var(--btn-text);background:var(--surface)}
+body.jas-admin .table-footer{padding:14px 20px;font-size:13px;color:var(--ad-muted);gap:6px 24px;align-items:center}
+body.jas-admin .table-pagination>span{font-size:13px;color:var(--ad-muted)}
+body.jas-admin .empty-state{padding:56px 16px;color:var(--ad-muted)}
+body.jas-admin .empty-state span{display:none}
+body.jas-admin .empty-state strong{font-size:16px;color:var(--ad-ink)}
+body.jas-admin .empty-state small{font-size:14px}
+body.jas-admin .privacy-footnote{font-size:13px;color:var(--ad-muted)}
+body.jas-admin .muted-empty{color:var(--ad-muted)}
+
+/* ========== Konten ========== */
+body.jas-admin .content-intro{background:var(--ad-tint);border:1px solid var(--ad-line);border-radius:var(--r);padding:14px 18px;margin-bottom:16px}
+body.jas-admin .content-intro strong{font-size:15px;color:var(--nav-active-text)}
+body.jas-admin .content-intro p{font-size:14px;color:var(--td-text)}
+body.jas-admin .content-total{font-size:14px;color:var(--ad-muted)}
+body.jas-admin .content-list{padding:0 20px}
+body.jas-admin .content-row{padding:14px 0;gap:14px;border-bottom:1px solid var(--td-line)}
+body.jas-admin .content-row-icon{width:40px;height:40px;border-radius:10px;background:var(--ad-tint);color:var(--ad-link)}
+body.jas-admin .content-row-copy strong{font-size:15px;color:var(--ad-ink)}
+body.jas-admin .content-row-copy small{font-size:13px;color:var(--ad-muted)}
+body.jas-admin .content-row-image{width:56px;height:56px;border-radius:8px}
+body.jas-admin .content-row-actions button{width:auto;height:36px;padding:0 12px;border-radius:8px;border:1px solid var(--field-line);font-size:13px;font-weight:700;color:var(--btn-text);background:var(--surface);cursor:pointer}
+body.jas-admin .content-row-actions button:hover{color:var(--ad-link);border-color:var(--ad-sky);background:var(--ad-tint)}
+body.jas-admin .content-row-actions button.delete{color:var(--ad-red-text);border-color:#e9a9ad}
+body.jas-admin .content-row-actions button.delete:hover{background:var(--ad-red-tint);border-color:var(--ad-red);color:var(--ad-red-text)}
+
+/* ========== Modal & detail ========== */
+body.jas-admin .modal-backdrop{background:#0a1a2b99;backdrop-filter:none}
+body.jas-admin .modal{border-radius:14px;box-shadow:0 20px 60px #0a1a2b4d;background:var(--surface);color:var(--ad-ink);border:1px solid var(--ad-line)}
+body.jas-admin .modal-head{padding:22px 28px 16px;border-bottom:1px solid var(--td-line);background:var(--surface)}
+body.jas-admin .modal-kicker{display:none}
+body.jas-admin .modal-head h2{font-size:22px;letter-spacing:-.3px;color:var(--ad-ink);margin:0 0 4px}
+body.jas-admin .modal-head p{font-size:14px;color:var(--ad-muted)}
+body.jas-admin .modal-close{width:36px;height:36px;border-radius:8px;border:1px solid var(--field-line);color:var(--btn-text);background:var(--surface);cursor:pointer}
+body.jas-admin .modal-close:hover{background:var(--ad-red-tint);border-color:var(--ad-red);color:var(--ad-red-text)}
+body.jas-admin .modal-body{padding:22px 28px;background:var(--surface)}
+body.jas-admin .detail-grid{gap:12px}
+body.jas-admin .detail-field{padding:12px 14px;border:1px solid var(--ad-line);border-radius:10px;background:var(--surface-2)}
+body.jas-admin .detail-field small{font-size:12px;color:var(--ad-muted);margin-bottom:4px}
+body.jas-admin .detail-field strong{font-size:15px;color:var(--ad-ink);font-weight:600}
+body.jas-admin .detail-section{margin-top:24px}
+body.jas-admin .detail-section h3{font-size:15px;color:var(--ad-ink);margin-bottom:10px}
+body.jas-admin .detail-section>p{font-size:14px;color:var(--td-text)}
+body.jas-admin .photo-preview{gap:12px}
+body.jas-admin .photo-link{width:150px}
+body.jas-admin .photo-link img{width:150px;height:112px;border-color:var(--ad-line)}
+body.jas-admin .photo-link span{font-size:12px;color:var(--td-text)}
+body.jas-admin .photo-link span small{font-size:12px;color:var(--ad-link)}
+body.jas-admin .photo-placeholder{width:auto;height:auto;padding:14px 18px;font-size:14px;color:var(--ad-muted);background:var(--surface-2)}
+body.jas-admin .photo-link img.photo-load-failed{opacity:1;border-color:var(--ad-red);background:var(--ad-red-tint)}
+body.jas-admin .detail-note{padding:12px 14px;border-radius:10px;background:var(--ad-tint);border:1px solid var(--ad-line);color:var(--nav-active-text);font-size:13px}
+body.jas-admin .detail-status-editor select{border:1px solid var(--field-line);font-size:14px;height:42px;background:var(--surface);color:var(--btn-text);border-radius:10px}
+body.jas-admin .detail-status-hint{font-size:13px;color:var(--ad-muted)}
+body.jas-admin .detail-event{border-color:var(--td-line)}
+body.jas-admin .detail-event strong{font-size:14px;color:var(--ad-ink)}
+body.jas-admin .detail-event small{font-size:13px;color:var(--ad-muted)}
+body.jas-admin .modal-footer{padding:16px 28px 20px;flex-wrap:wrap;border-top:1px solid var(--td-line);background:var(--surface)}
+body.jas-admin .form-label{font-size:14px;color:var(--td-text)}
+body.jas-admin .form-label input,body.jas-admin .form-label textarea,body.jas-admin .form-label select{font-size:15px;padding:11px 12px;border:1px solid var(--field-line);border-radius:10px;background:var(--surface);color:var(--ad-ink)}
+body.jas-admin .form-label input::placeholder,body.jas-admin .form-label textarea::placeholder{color:var(--placeholder)}
+body.jas-admin .form-label input:focus,body.jas-admin .form-label textarea:focus,body.jas-admin .form-label select:focus{border-color:var(--ad-sky);box-shadow:0 0 0 3px #00abf033;outline:0}
+body.jas-admin .form-checkbox{font-size:14px;color:var(--td-text)}
+body.jas-admin .form-checkbox input{accent-color:var(--ad-blue)}
+body.jas-admin .whatsapp-preview-message{font-size:14px;background:var(--surface-2);color:var(--ad-ink);border:1px solid var(--ad-line);border-radius:10px}
+body.jas-admin .toast{background:#12263b;color:#fff;border-radius:10px;font-size:14px;padding:12px 18px}
+html[data-theme="dark"] body.jas-admin .toast{background:#e8f2fa;color:#0b1824}
+
+/* ========== Tombol keluar ========== */
+body.jas-admin .logout-form{margin:0}
+body.jas-admin .logout-btn{width:100%;height:40px;margin:2px 0 0;border:1px solid var(--field-line);border-radius:10px;background:var(--surface);color:var(--btn-text);font-size:14px;font-weight:700;cursor:pointer}
+body.jas-admin .logout-btn:hover{border-color:var(--ad-red);color:var(--ad-red-text);background:var(--ad-red-tint)}
+
+/* Foto klien tampil tepat di bawah status, sebelum data lainnya */
+.detail-modal .modal-body{display:flex;flex-direction:column}
+.detail-modal .detail-status{order:-3;margin-bottom:14px}
+.detail-modal .detail-section:has(#detailPhotos){order:-2;margin:0 0 20px}
+.detail-modal .detail-section:has(#detailPhotos) h3{margin-top:4px}
+
+/* ========== Responsif ========== */
+@media(max-width:1150px){body.jas-admin .sidebar{width:252px}body.jas-admin .main-area{margin-left:252px}body.jas-admin .page-wrap{padding:24px}body.jas-admin .topbar{padding:0 24px}body.jas-admin .dashboard-grid{grid-template-columns:1fr}body.jas-admin .stats-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:850px){
+  body.jas-admin .sidebar{transform:translateX(-100%);transition:transform .2s;z-index:40;box-shadow:none}
+  body.jas-admin .sidebar.open{transform:none;box-shadow:12px 0 40px #0a1a2b4d}
+  body.jas-admin .main-area{margin-left:0}
+  body.jas-admin .mobile-menu{display:grid;place-items:center;width:42px;height:42px;background:var(--ad-tint);color:var(--ad-link);border-radius:10px;border:0;font-size:18px;cursor:pointer}
+  body.jas-admin .topbar{padding:0 16px}
+  body.jas-admin .nav-link.active:before{left:-14px}
+  body.jas-admin .booking-summary{grid-template-columns:repeat(2,1fr)}
+  body.jas-admin .booking-toolbar select{flex:1 1 140px;min-width:0}
+  body.jas-admin .search-box{max-width:none;flex:1 1 100%}
+  body.jas-admin .topbar-right .preview-chip{display:none}
+}
+@media(max-width:560px){
+  body.jas-admin .page-wrap{padding:18px 14px 48px}
+  body.jas-admin .page-heading h1{font-size:24px}
+  body.jas-admin .heading-date{display:none}
+  body.jas-admin .stat-card>strong{font-size:32px}
+  body.jas-admin .realtime-status span{display:none}
+  body.jas-admin .detail-grid{grid-template-columns:1fr}
+  body.jas-admin .modal-body,body.jas-admin .modal-head,body.jas-admin .modal-footer{padding-inline:18px}
+  body.jas-admin .table-action{padding:0 10px}
+  body.jas-admin .photo-link,body.jas-admin .photo-link img{width:calc(50vw - 36px)}
+  .theme-toggle .theme-label{display:none}
+  .theme-toggle{padding:0 11px}
+}
+
+/* ========== Dialog konfirmasi (pengganti confirm bawaan browser) ========== */
+body.jas-admin .confirm-modal{width:min(92vw,440px);max-width:440px}
+body.jas-admin .confirm-modal .modal-head{padding:20px 24px 12px;border-bottom:0}
+body.jas-admin .confirm-modal .modal-head h2{font-size:19px;margin:0}
+body.jas-admin .confirm-modal .modal-body{padding:0 24px 8px}
+body.jas-admin .confirm-message{margin:0;font-size:15px;line-height:1.55;color:var(--td-text)}
+body.jas-admin .confirm-modal .modal-footer{padding:16px 24px 20px;border-top:0;justify-content:flex-end;gap:10px}
+body.jas-admin .btn-danger{background:var(--ad-red);color:#fff;border:1px solid transparent}
+body.jas-admin .btn-danger:hover{background:#c91b24;color:#fff}
+
+/* ========== Status pengajuan di footer detail, di samping tombol WhatsApp ========== */
+body.jas-admin .detail-modal .modal-footer{display:flex;align-items:center;flex-wrap:wrap;gap:10px}
+body.jas-admin .detail-modal .footer-close{margin-right:auto}
+body.jas-admin .status-inline{display:inline-flex;align-items:center;gap:8px;margin:0;font-size:14px;font-weight:600;color:var(--ad-muted)}
+body.jas-admin .status-inline select{height:42px;min-width:170px;padding:0 32px 0 12px;border:1px solid var(--field-line);border-radius:10px;background:var(--surface);color:var(--btn-text);font:inherit;font-size:14px;font-weight:600;cursor:pointer}
+body.jas-admin .status-inline select:hover{border-color:var(--ad-sky)}
+body.jas-admin .status-inline select:disabled{opacity:.6;cursor:wait}
+@media(max-width:560px){
+  body.jas-admin .detail-modal .footer-close{margin-right:0;flex:1 1 100%}
+  body.jas-admin .detail-modal .btn-whatsapp{flex:1 1 100%}
+  body.jas-admin .status-inline{flex:1 1 100%}
+  body.jas-admin .status-inline select{flex:1}
+}
+
+/* ========== Filter cepat (kartu ringkasan), badge menu, reset filter ========== */
+body.jas-admin .nav-count[hidden]{display:none!important}
+body.jas-admin .summary-filter{cursor:pointer;transition:border-color .15s,background .15s,box-shadow .15s}
+body.jas-admin .summary-filter:hover{border-color:var(--ad-sky);background:var(--surface-2)}
+body.jas-admin .summary-filter[aria-pressed="true"]{border-color:var(--ad-sky);background:var(--ad-tint);box-shadow:0 0 0 2px #00abf033}
+body.jas-admin .summary-filter[aria-pressed="true"] strong{color:var(--nav-active-text)}
+body.jas-admin #resetBookingFilters{margin-top:14px}
+
+/* ========== Lama menunggu, foto, catatan internal ========== */
+body.jas-admin .status-cell{display:flex;flex-direction:column;align-items:flex-start;gap:4px}
+body.jas-admin .wait-note{font-size:12px;font-weight:600;color:var(--ad-muted);white-space:nowrap}
+body.jas-admin .wait-note.is-late{color:var(--ad-red-text)}
+body.jas-admin .note-form{display:flex;gap:10px;align-items:flex-start}
+body.jas-admin .note-form textarea{flex:1;min-height:64px;resize:vertical;padding:10px 12px;border:1px solid var(--field-line);border-radius:10px;background:var(--surface);color:var(--ad-ink);font:inherit;font-size:14px}
+body.jas-admin .note-form textarea::placeholder{color:var(--placeholder)}
+body.jas-admin .note-form textarea:focus{border-color:var(--ad-sky);box-shadow:0 0 0 3px #00abf033;outline:0}
+body.jas-admin .detail-event.is-note{border-left:3px solid var(--ad-sky);padding:8px 12px;background:var(--surface-2);border-radius:8px}
+body.jas-admin .event-note{margin:4px 0;font-size:14px;line-height:1.5;color:var(--ad-ink);white-space:pre-wrap;overflow-wrap:anywhere}
+@media(max-width:560px){body.jas-admin .note-form{flex-direction:column}body.jas-admin .note-form .btn{width:100%}}
+
+/* Filter tanggal masuk (Data booking): baris tersendiri agar toolbar tidak sesak */
+body.jas-admin .booking-toolbar{row-gap:14px}
+body.jas-admin .date-filter{flex:1 1 100%;display:flex;align-items:center;flex-wrap:wrap;gap:12px;margin-top:2px;padding-top:16px;border-top:1px solid var(--ad-line)}
+body.jas-admin .date-filter-title{margin-right:6px;font-size:12px;font-weight:700;color:var(--ad-muted);white-space:nowrap}
+body.jas-admin .date-field{display:flex;align-items:center;gap:10px;height:44px;padding:0 14px;border:1px solid var(--field-line);border-radius:10px;background:var(--surface);transition:border-color .15s,box-shadow .15s}
+body.jas-admin .date-field:hover{border-color:var(--ad-sky)}
+body.jas-admin .date-field:focus-within{border-color:var(--ad-sky);box-shadow:0 0 0 3px #00abf033}
+body.jas-admin .date-field>span{font-size:12px;font-weight:650;color:var(--ad-muted);white-space:nowrap}
+body.jas-admin .date-field input{border:0;padding:0;background:transparent;color:var(--ad-ink);font:inherit;font-size:14px;min-width:0;outline:none}
+body.jas-admin .date-sep{color:var(--ad-muted);font-size:14px}
+body.jas-admin .date-clear{display:inline-flex;align-items:center;gap:6px;height:44px;padding:0 6px;border:0;background:transparent;color:var(--ad-blue);font-size:13px;font-weight:650;cursor:pointer}
+body.jas-admin .date-clear:hover{text-decoration:underline}
+body.jas-admin .date-clear .ui-icon{width:14px;height:14px}
+body.jas-admin .date-clear[hidden]{display:none}
+@media(max-width:700px){
+  body.jas-admin .date-filter-title{flex:1 1 100%;margin:0}
+  body.jas-admin .date-field{flex:1 1 0;min-width:0}
+  body.jas-admin .date-sep{display:none}
+  body.jas-admin .date-clear{flex:1 1 100%;justify-content:flex-start;height:auto;padding:0}
+}

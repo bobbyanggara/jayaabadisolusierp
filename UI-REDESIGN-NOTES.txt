@@ -1,0 +1,19 @@
+JASPEST UI REDESIGN — 31 OCTOBER 2026
+
+Updated:
+- resources/views/jaspest/admin/login.blade.php
+  - Reworked the login composition into a restrained editorial + form layout.
+  - Kept username/password authentication, CSRF, validation feedback, password visibility, remember/session behavior, and theme toggle.
+- resources/views/jaspest/admin/index.blade.php
+  - Loads the new final admin design-system layer after the existing stylesheets.
+  - Existing page markup, IDs, data hooks, and API configuration remain intact.
+- public/jaspest/admin/admin-design-system.css
+  - New final visual layer with unified light/dark tokens, navigation, dashboard, table, form, modal, and responsive component styling.
+
+Validation performed:
+- PHP syntax lint: all 70 PHP files passed.
+- CSS parser: new admin stylesheet and both embedded login styles parsed with zero syntax errors.
+- Static contract checks: username/password fields, CSRF, logout, API config, and key admin JS hooks remain present.
+
+Note:
+- Browser-level visual regression and live Laravel authentication/API testing require running the project in its target environment. No claim is made that those runtime checks were performed here.

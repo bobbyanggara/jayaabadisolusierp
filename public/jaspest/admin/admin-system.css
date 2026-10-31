@@ -1,0 +1,332 @@
+/* JASPEST Admin Design System — semantic controls, deliberate color, and type scale.
+   Loaded after the legacy admin styles. No framework or remote font dependency. */
+:root {
+  --jas-ui-font: JasSans, "Segoe UI", Arial, sans-serif;
+  --jas-ui-bg: #eef3f6;
+  --jas-ui-panel: #fbfdfe;
+  --jas-ui-panel-alt: #f4f8fa;
+  --jas-ui-line: #dce6eb;
+  --jas-ui-ink: #1d3040;
+  --jas-ui-muted: #687b89;
+  --jas-ui-blue: #087eae;
+  --jas-ui-blue-hover: #06658e;
+  --jas-ui-blue-soft: #e7f3f8;
+  --jas-ui-green: #15764f;
+  --jas-ui-green-hover: #105f40;
+  --jas-ui-green-soft: #e9f6ef;
+  --jas-ui-red: #ad343d;
+  --jas-ui-red-soft: #fff0f0;
+}
+html[data-theme="dark"] {
+  --jas-ui-bg: #0e1923;
+  --jas-ui-panel: #172633;
+  --jas-ui-panel-alt: #1b2d3a;
+  --jas-ui-line: #304351;
+  --jas-ui-ink: #e7edf3;
+  --jas-ui-muted: #a0afbd;
+  --jas-ui-blue: #50b6dc;
+  --jas-ui-blue-hover: #73c9e8;
+  --jas-ui-blue-soft: #183d50;
+  --jas-ui-green: #53c28e;
+  --jas-ui-green-hover: #76d6a8;
+  --jas-ui-green-soft: #173b31;
+  --jas-ui-red: #ff858b;
+  --jas-ui-red-soft: #40252b;
+}
+
+body.jas-admin,
+body.blog-admin {
+  font-family: var(--jas-ui-font);
+  font-kerning: normal;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+body.jas-admin { background: var(--jas-ui-bg); }
+body.jas-admin .main-area { background: var(--jas-ui-bg); }
+body.jas-admin .page-wrap { background: transparent; }
+body.jas-admin .page-heading { margin-bottom: 22px; }
+body.jas-admin .page-heading h1 {
+  font-size: clamp(23px, 2vw, 27px);
+  line-height: 1.25;
+  letter-spacing: -.035em;
+  font-weight: 700;
+}
+body.jas-admin .page-heading p,
+body.jas-admin .panel-heading p { letter-spacing: .005em; }
+body.jas-admin .panel,
+body.jas-admin .stat-card,
+body.jas-admin .booking-summary > div {
+  background: linear-gradient(155deg, var(--jas-ui-panel) 0%, var(--surface) 100%);
+  border-color: var(--jas-ui-line);
+}
+body.jas-admin .panel { box-shadow: 0 1px 2px rgba(20, 47, 64, .035), 0 8px 24px rgba(20, 47, 64, .025); }
+body.jas-admin .stat-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px;
+}
+body.jas-admin .stat-card:before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 3px;
+  background: #7d9ba9;
+  opacity: .65;
+}
+body.jas-admin .stats-grid .stat-card:nth-child(1):before { background: var(--ad-red); }
+body.jas-admin .stats-grid .stat-card:nth-child(2):before { background: #d39a3c; }
+body.jas-admin .stats-grid .stat-card:nth-child(3):before { background: #26936b; }
+body.jas-admin .stats-grid .stat-card:nth-child(4):before { background: var(--ad-sky); }
+body.jas-admin .stat-card.is-urgent {
+  background: linear-gradient(145deg, #fff8f7, #fffdfc);
+  color: var(--ad-ink);
+  border-color: #eedbd9;
+}
+body.jas-admin .stat-card.is-urgent > strong,
+body.jas-admin .stat-card.is-urgent > small { color: var(--ad-ink); }
+body.jas-admin .stat-card.is-urgent .stat-label { color: #a44a4e; }
+html[data-theme="dark"] body.jas-admin .stat-card.is-urgent {
+  background: linear-gradient(145deg, #33272d, #1e2934);
+  border-color: #594148;
+}
+html[data-theme="dark"] body.jas-admin .stat-card.is-urgent > strong,
+html[data-theme="dark"] body.jas-admin .stat-card.is-urgent > small { color: var(--ad-ink); }
+html[data-theme="dark"] body.jas-admin .stat-card.is-urgent .stat-label { color: #ff9da2; }
+body.jas-admin .booking-summary > div:nth-child(1) { background: linear-gradient(135deg, var(--jas-ui-blue-soft), var(--jas-ui-panel)); }
+body.jas-admin .booking-summary > div:nth-child(2) { background: linear-gradient(135deg, var(--jas-ui-red-soft), var(--jas-ui-panel)); }
+body.jas-admin .booking-summary > div:nth-child(3) { background: linear-gradient(135deg, var(--jas-ui-green-soft), var(--jas-ui-panel)); }
+body.jas-admin .booking-summary > div:nth-child(4) { background: linear-gradient(135deg, #fff7e9, var(--jas-ui-panel)); }
+html[data-theme="dark"] body.jas-admin .booking-summary > div:nth-child(4) { background: linear-gradient(135deg, #3b3326, var(--jas-ui-panel)); }
+body.jas-admin .content-intro { background: linear-gradient(110deg, var(--jas-ui-blue-soft), var(--jas-ui-panel) 72%); border-color: var(--jas-ui-line); }
+body.jas-admin .table-panel,
+body.jas-admin .booking-panel,
+body.jas-admin .content-panel { overflow: hidden; }
+body.jas-admin th { background: var(--jas-ui-panel-alt); }
+body.jas-admin .search-box,
+body.jas-admin .booking-toolbar select { background: var(--jas-ui-panel); }
+body.jas-admin .detail-field { background: var(--jas-ui-panel-alt); }
+
+/* Type system: one brand family, clear roles, measured line-height and stable numerals. */
+body.jas-admin { font-size: 14px; line-height: 1.55; letter-spacing: 0; }
+body.jas-admin h1, body.jas-admin h2, body.jas-admin h3,
+body.blog-admin h1, body.blog-admin h2 { font-family: var(--jas-ui-font); font-weight: 700; font-synthesis: none; }
+body.jas-admin .panel-heading h2 { font-size: 16px; line-height: 1.35; letter-spacing: -.02em; }
+body.jas-admin .stat-card > strong,
+body.jas-admin .booking-summary strong,
+body.jas-admin .nav-count { font-variant-numeric: tabular-nums lining-nums; }
+body.jas-admin input, body.jas-admin select, body.jas-admin textarea,
+body.blog-admin input, body.blog-admin select, body.blog-admin textarea { font-family: var(--jas-ui-font); font-size: 14px; }
+
+/* Base control anatomy */
+body.jas-admin .ui-icon,
+body.blog-admin .ui-icon {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vertical-align: middle;
+}
+body.jas-admin .btn,
+body.jas-admin .table-action,
+body.jas-admin .content-row-actions button,
+body.jas-admin .mini-arrow,
+body.jas-admin .logout-btn,
+body.jas-admin .back-site,
+body.blog-admin .button,
+body.blog-admin .admin-pagination a,
+body.blog-admin .admin-action-edit,
+body.blog-admin .admin-action-view,
+body.blog-admin .admin-back {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: var(--jas-ui-font);
+  font-weight: 600;
+  line-height: 1;
+  text-decoration: none;
+  -webkit-font-smoothing: antialiased;
+}
+body.jas-admin .btn {
+  min-height: 40px;
+  padding: 0 15px;
+  border-radius: 9px;
+  font-size: 13px;
+  letter-spacing: .005em;
+  box-shadow: none;
+}
+body.jas-admin .btn .ui-icon { width: 16px; height: 16px; }
+body.jas-admin .btn-sm { min-height: 35px; padding: 0 12px; font-size: 12px; }
+body.jas-admin .btn-primary {
+  color: #fff;
+  background: var(--jas-ui-blue);
+  border: 1px solid var(--jas-ui-blue);
+  box-shadow: 0 2px 5px rgba(8, 126, 174, .13);
+}
+body.jas-admin .btn-primary:hover { color: #fff; background: var(--jas-ui-blue-hover); border-color: var(--jas-ui-blue-hover); box-shadow: 0 3px 9px rgba(8, 126, 174, .16); }
+html[data-theme="dark"] body.jas-admin .btn-primary { color: #082333; background: var(--jas-ui-blue); border-color: var(--jas-ui-blue); }
+html[data-theme="dark"] body.jas-admin .btn-primary:hover { color: #082333; background: var(--jas-ui-blue-hover); }
+body.jas-admin .btn-outline,
+body.jas-admin .btn-secondary {
+  color: var(--ad-link);
+  background: var(--jas-ui-blue-soft);
+  border: 1px solid color-mix(in srgb, var(--ad-link) 18%, var(--jas-ui-line));
+}
+body.jas-admin .btn-outline:hover,
+body.jas-admin .btn-secondary:hover { color: var(--ad-link); background: color-mix(in srgb, var(--jas-ui-blue-soft) 68%, var(--surface)); border-color: var(--ad-sky); }
+body.jas-admin .btn-export {
+  color: #176b49;
+  background: #eaf5ee;
+  border: 1px solid #c9e3d3;
+}
+body.jas-admin .btn-export:hover { color: #105b3c; background: #deefe4; border-color: #a9d4ba; }
+html[data-theme="dark"] body.jas-admin .btn-export { color: #8cddb1; background: #1a3a30; border-color: #315b49; }
+html[data-theme="dark"] body.jas-admin .btn-export:hover { color: #b1f0ca; background: #21493b; }
+body.jas-admin .btn-whatsapp {
+  color: #fff;
+  background: #16865b;
+  border: 1px solid #16865b;
+  box-shadow: 0 2px 5px rgba(22, 134, 91, .14);
+}
+body.jas-admin .btn-whatsapp:hover { color: #fff; background: #116e4a; border-color: #116e4a; }
+body.jas-admin .btn-icon-only { min-width: 35px; width: 35px; padding: 0; }
+body.jas-admin .btn:active,
+body.jas-admin .table-action:active,
+body.jas-admin .content-row-actions button:active { transform: translateY(1px); }
+body.jas-admin .btn:focus-visible,
+body.jas-admin .table-action:focus-visible,
+body.jas-admin .content-row-actions button:focus-visible,
+body.blog-admin .button:focus-visible { outline: 3px solid color-mix(in srgb, var(--focus, #08a4d4) 35%, transparent); outline-offset: 2px; }
+body.jas-admin .btn:disabled { opacity: .42; box-shadow: none; }
+body.jas-admin .table-action {
+  width: auto;
+  min-height: 33px;
+  padding: 0 10px;
+  border: 1px solid var(--field-line);
+  border-radius: 8px;
+  background: var(--jas-ui-panel);
+  color: var(--btn-text);
+  font-size: 12px;
+  white-space: nowrap;
+}
+body.jas-admin .table-action .ui-icon { width: 14px; height: 14px; flex-basis: 14px; }
+body.jas-admin .table-action:hover { color: var(--ad-link); background: var(--jas-ui-blue-soft); border-color: var(--ad-sky); }
+body.jas-admin .table-action.wa { color: #15764f; background: #f0f8f3; border-color: #cfe6d8; }
+body.jas-admin .table-action.wa:hover { color: #105f40; background: #e4f3e9; border-color: #9dcfb0; }
+html[data-theme="dark"] body.jas-admin .table-action.wa { color: #8cddb1; background: #1a3a30; border-color: #315b49; }
+body.jas-admin .content-row-actions { gap: 6px; }
+body.jas-admin .content-row-actions button {
+  width: auto;
+  min-width: 35px;
+  height: 33px;
+  padding: 0 9px;
+  border: 1px solid var(--field-line);
+  border-radius: 8px;
+  background: var(--jas-ui-panel);
+  color: var(--ad-link);
+  font-size: 12px;
+}
+body.jas-admin .content-row-actions button .ui-icon { width: 14px; height: 14px; flex-basis: 14px; }
+body.jas-admin .content-row-actions button:hover { background: var(--jas-ui-blue-soft); border-color: var(--ad-sky); }
+body.jas-admin .content-row-actions button.delete { color: var(--jas-ui-red); background: var(--jas-ui-red-soft); border-color: color-mix(in srgb, var(--jas-ui-red) 24%, var(--field-line)); }
+body.jas-admin .content-row-actions button.delete:hover { filter: saturate(1.12); border-color: var(--jas-ui-red); }
+body.jas-admin .mini-arrow {
+  width: auto;
+  min-width: 67px;
+  height: 33px;
+  padding: 0 10px;
+  border: 1px solid var(--field-line);
+  border-radius: 8px;
+  background: var(--jas-ui-panel-alt);
+  color: var(--ad-link);
+  font-size: 12px;
+}
+body.jas-admin .mini-arrow .ui-icon { width: 14px; height: 14px; flex-basis: 14px; }
+body.jas-admin .mini-arrow:hover { background: var(--jas-ui-blue-soft); border-color: var(--ad-sky); }
+body.jas-admin .back-site,
+body.jas-admin .logout-btn {
+  min-height: 37px;
+  justify-content: flex-start;
+  gap: 9px;
+  padding: 0 10px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: var(--nav-text);
+  background: transparent;
+  font-size: 12px;
+}
+body.jas-admin .back-site:hover { color: var(--ad-link); background: var(--jas-ui-blue-soft); border-color: var(--jas-ui-line); }
+body.jas-admin .logout-btn { color: var(--jas-ui-red); background: var(--jas-ui-red-soft); border-color: color-mix(in srgb, var(--jas-ui-red) 22%, var(--jas-ui-line)); }
+body.jas-admin .logout-btn:hover { color: var(--jas-ui-red); border-color: var(--jas-ui-red); }
+
+/* Blog editor: same control language as the main admin. */
+body.blog-admin { background: var(--jas-ui-bg); color: var(--jas-ui-ink); }
+body.blog-admin .admin-header { background: var(--jas-ui-panel); border-color: var(--jas-ui-line); box-shadow: 0 2px 9px rgba(22, 48, 64, .025); }
+body.blog-admin .admin-header nav a { display: inline-flex; align-items: center; gap: 7px; color: var(--jas-ui-muted); font-weight: 600; }
+body.blog-admin .admin-header nav a:hover { color: var(--jas-ui-blue); text-decoration: none; }
+body.blog-admin .admin-card,
+body.blog-admin .admin-table-wrap { background: var(--jas-ui-panel); border-color: var(--jas-ui-line); box-shadow: 0 1px 2px rgba(20, 47, 64, .035), 0 8px 24px rgba(20, 47, 64, .025); }
+body.blog-admin .admin-card h2 { font-size: 17px; letter-spacing: -.02em; }
+body.blog-admin .admin-card label { font-size: 13px; color: var(--jas-ui-ink); }
+body.blog-admin .admin-card input,
+body.blog-admin .admin-card textarea,
+body.blog-admin .admin-card select { background: var(--surface, #fff); border-color: var(--jas-ui-line); border-radius: 8px; color: var(--jas-ui-ink); font-family: var(--jas-ui-font); font-size: 14px; }
+body.blog-admin .admin-card small { font-size: 12px; color: var(--jas-ui-muted); }
+body.blog-admin .admin-table th { background: var(--jas-ui-panel-alt); color: var(--jas-ui-muted); }
+body.blog-admin .admin-table td { border-color: var(--jas-ui-line); color: var(--jas-ui-ink); }
+body.blog-admin .admin-table td a { margin: 0 12px 4px 0; text-decoration: none; }
+body.blog-admin .admin-title h1 { font-size: clamp(25px, 3vw, 30px); letter-spacing: -.035em; }
+body.blog-admin .admin-title p { color: var(--jas-ui-muted); font-size: 14px; }
+body.blog-admin .button {
+  min-height: 40px;
+  padding: 0 15px;
+  gap: 8px;
+  border-radius: 9px;
+  font-size: 13px;
+  letter-spacing: .005em;
+}
+body.blog-admin .button-blue { color: #fff; background: var(--jas-ui-blue); border: 1px solid var(--jas-ui-blue); box-shadow: 0 2px 5px rgba(8, 126, 174, .13); }
+body.blog-admin .button-blue:hover { color: #fff; background: var(--jas-ui-blue-hover); }
+body.blog-admin .button-small { min-height: 36px; }
+body.blog-admin .admin-action-edit,
+body.blog-admin .admin-action-view,
+body.blog-admin .admin-page-prev,
+body.blog-admin .admin-page-next {
+  min-height: 33px;
+  padding: 0 10px;
+  border: 1px solid var(--jas-ui-line);
+  border-radius: 8px;
+  background: var(--jas-ui-panel-alt);
+  font-size: 12px;
+}
+body.blog-admin .admin-action-edit { color: var(--jas-ui-blue); }
+body.blog-admin .admin-action-view { color: var(--jas-ui-green); background: var(--jas-ui-green-soft); border-color: #cfe6d8; }
+body.blog-admin .admin-page-prev,
+body.blog-admin .admin-page-next { color: var(--jas-ui-blue); }
+body.blog-admin .admin-back { color: var(--jas-ui-blue); gap: 7px; font-size: 13px; text-decoration: none; }
+body.blog-admin .admin-back:hover { text-decoration: underline; text-underline-offset: 3px; }
+body.blog-admin .admin-pagination { align-items: center; color: var(--jas-ui-muted); }
+body.blog-admin .admin-status { background: var(--jas-ui-blue-soft); border-color: var(--jas-ui-line); color: var(--jas-ui-ink); }
+
+@media (max-width: 700px) {
+  body.jas-admin .btn { min-height: 39px; }
+  body.jas-admin .booking-table .table-actions { gap: 5px; }
+  body.jas-admin .booking-table .table-action { padding: 0 8px; }
+  body.blog-admin .admin-header { gap: 15px; }
+  body.blog-admin .admin-header nav { gap: 12px; flex-wrap: wrap; }
+}
+@media (max-width: 420px) {
+  body.jas-admin .btn { gap: 6px; padding-inline: 11px; }
+  body.jas-admin .btn .ui-icon { width: 15px; height: 15px; flex-basis: 15px; }
+  body.jas-admin .content-row-actions button { min-width: 32px; padding-inline: 7px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  body.jas-admin .btn,
+  body.jas-admin .table-action,
+  body.jas-admin .content-row-actions button { transition: none !important; }
+}

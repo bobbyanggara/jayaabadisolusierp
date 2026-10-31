@@ -1,0 +1,44 @@
+[
+  {
+    "title": "Apa yang perlu disiapkan sebelum konsultasi?",
+    "slug": "persiapan-konsultasi",
+    "category": "Panduan konsultasi",
+    "excerpt": "Informasi sederhana yang membantu tim memahami kebutuhan lokasi Anda.",
+    "body": "Sebelum mengajukan konsultasi, siapkan nama lengkap, nomor WhatsApp yang aktif, alamat lokasi, serta perkiraan luasan dalam meter persegi. Perkiraan awal membantu tim memahami gambaran kebutuhan Anda.\n\nPilih kebutuhan layanan dan tentukan apakah lokasi berupa rumah atau bisnis. Untuk bisnis, sertakan nama perusahaan. Ceritakan temuan yang Anda lihat melalui kolom keterangan.\n\nAnda dapat melampirkan foto temuan jika tersedia. Tidak perlu mendekati atau menyentuh hama untuk mendapatkan foto. Gunakan dokumentasi yang bisa Anda ambil dari posisi aman.\n\nSetelah pengajuan dikirim, tim JASPEST akan menghubungi nomor yang Anda cantumkan untuk membahas kebutuhan. Rincian survei, treatment, dan perawatan lanjutan dijelaskan langsung oleh tim.",
+    "cover_path": "jaspest/assets/hero-pest-control.webp",
+    "cover_alt": "Ilustrasi panduan konsultasi",
+    "author_name": "Tim JASPEST",
+    "meta_title": "Apa yang perlu disiapkan sebelum konsultasi? | Blog JASPEST",
+    "meta_description": "Informasi sederhana yang membantu tim memahami kebutuhan lokasi Anda.",
+    "status": "published",
+    "published_at": "2026-10-30 00:00:00"
+  },
+  {
+    "title": "Kebutuhan rumah dan bisnis, apa yang perlu diceritakan?",
+    "slug": "rumah-dan-bisnis",
+    "category": "Kenali kebutuhan",
+    "excerpt": "Bantu tim mengenali lingkungan dan kebutuhan penggunaan ruang Anda.",
+    "body": "Untuk kebutuhan rumah, ceritakan bagian bangunan yang mengalami gangguan dan kapan temuan mulai terlihat. Anda juga dapat menyebutkan informasi penggunaan ruang yang perlu diketahui tim.\n\nUntuk kebutuhan bisnis, sertakan nama perusahaan dan jelaskan fungsi area yang memerlukan penanganan. Informasi jam aktivitas atau kondisi khusus lokasi dapat ditulis pada kolom keterangan.\n\nPilih layanan yang paling mendekati kebutuhan Anda. Jika belum mengetahui jenis layanan atau hama, pilih opsi konsultasi dahulu. Tim JASPEST akan membantu membahasnya melalui WhatsApp atau kontak langsung.",
+    "cover_path": "jaspest/assets/residential-inspection.webp",
+    "cover_alt": "Ilustrasi kenali kebutuhan",
+    "author_name": "Tim JASPEST",
+    "meta_title": "Kebutuhan rumah dan bisnis, apa yang perlu diceritakan? | Blog JASPEST",
+    "meta_description": "Bantu tim mengenali lingkungan dan kebutuhan penggunaan ruang Anda.",
+    "status": "published",
+    "published_at": "2026-10-30 00:00:00"
+  },
+  {
+    "title": "Foto temuan yang membantu proses konsultasi",
+    "slug": "foto-temuan",
+    "category": "Tips dokumentasi",
+    "excerpt": "Sertakan gambaran lokasi dan temuan tanpa perlu mengambil risiko.",
+    "body": "Jika memungkinkan, ambil foto yang memperlihatkan temuan dan satu foto area di sekitarnya. Gambaran lokasi membantu tim memahami konteks keterangan Anda.\n\nGunakan pencahayaan yang cukup. Hindari menyentuh hama, memindahkan sarang, atau memasuki area berbahaya hanya untuk mengambil gambar. Foto bersifat opsional dan Anda tetap dapat mengajukan konsultasi tanpa foto.\n\nDokumentasi yang dilampirkan pada pengajuan digunakan untuk membantu pembahasan kebutuhan Anda. Foto pengajuan tidak secara otomatis menjadi galeri publik JASPEST.",
+    "cover_path": "jaspest/assets/commercial-inspection.webp",
+    "cover_alt": "Ilustrasi tips dokumentasi",
+    "author_name": "Tim JASPEST",
+    "meta_title": "Foto temuan yang membantu proses konsultasi | Blog JASPEST",
+    "meta_description": "Sertakan gambaran lokasi dan temuan tanpa perlu mengambil risiko.",
+    "status": "published",
+    "published_at": "2026-10-30 00:00:00"
+  }
+]
