@@ -1,0 +1,55 @@
+/* JASPEST — lapisan tampilan editorial (dimuat paling akhir; struktur HTML/JS tidak berubah) */
+:root{--paper:#f6f2ea;--paper-2:#efe9dc;--card:#fffdf8;--ink:#14213d;--rule:#14213d;--text:#4a5568;--light:#efe9dc;--line:#d8d0be;--radius:3px;--serif:Georgia,"Iowan Old Style","Palatino Linotype",Cambria,"Times New Roman",serif}
+html body{background:var(--paper);color:var(--ink)}
+html body ::selection{background:var(--red);color:#fff}
+
+/* Judul: serif editorial, bukan sans generik */
+html body h1,html body h2,html body .process-no,html body .directory-card h3,html body .service-card h3{font-family:var(--serif);letter-spacing:-.02em}
+html body .hero h1{font-weight:700;line-height:1.02;letter-spacing:-.03em}
+html body h2{font-weight:700;line-height:1.08}
+
+/* Header datar dengan garis tegas */
+html body .site-header,html body .site-header.scrolled{background:rgba(246,242,234,.94);box-shadow:none;border-bottom:1px solid var(--rule);backdrop-filter:blur(6px)}
+
+/* Hero */
+html body .hero-red-accent{display:none}
+html body .hero-image-frame{border-radius:2px;border:1px solid var(--rule);box-shadow:14px 14px 0 var(--ink)}
+html body .hero-image-frame img{border-radius:0}
+html body .hero-note{border-radius:2px;background:var(--card);border:1px solid var(--rule);box-shadow:none}
+html body .note-icon,html body .hero .hero-kicker-mark{border-radius:2px}
+html body .hero .hero-kicker-mark{transform:none;box-shadow:none;background:var(--ink)}
+html body .hero .hero-kicker{font-family:var(--serif);font-style:italic;font-size:19px;font-weight:400}
+html body .hero .hero-kicker strong{font-style:normal}
+
+/* Tombol: kotak, tegas, bergerak saat ditekan */
+html body .button{border-radius:2px;font-weight:700;letter-spacing:.01em;box-shadow:3px 3px 0 var(--ink);border:1px solid var(--ink);transition:transform .15s ease,box-shadow .15s ease}
+html body .button:hover{transform:translate(-2px,-2px);box-shadow:5px 5px 0 var(--ink)}
+html body .button:active{transform:translate(2px,2px);box-shadow:0 0 0 var(--ink)}
+html body .text-link{text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:5px;text-decoration-color:var(--red)}
+
+/* Judul bagian: garis atas tebal seperti majalah */
+html body .section-heading{border-top:3px solid var(--rule);padding-top:22px}
+html body .section-heading>p{color:var(--text)}
+
+/* Kartu: datar, tepi tegas, bayangan keras saat disentuh */
+html body .service-card,html body .directory-card,html body .gallery-card,html body .process-list li,html body .form-card,html body .faq-list>*{border-radius:2px;background:var(--card);border:1px solid var(--rule);box-shadow:none;transition:transform .15s ease,box-shadow .15s ease}
+html body .service-card:hover,html body .directory-card:hover,html body .gallery-card:hover,html body .process-list li:hover{transform:translate(-3px,-3px);box-shadow:5px 5px 0 var(--ink);border-color:var(--rule)}
+html body .service-icon{border-radius:2px;background:var(--paper-2);color:var(--ink)}
+html body .directory-card-visual,html body .directory-card-visual img,html body .gallery-image,html body .gallery-image img{border-radius:0}
+html body .directory-card-visual{border-bottom:1px solid var(--rule)}
+html body .directory-number,html body .service-number,html body .gallery-category{font-family:var(--serif);font-style:italic;border-radius:0}
+html body .directory-category,html body .service-label{color:var(--red);font-weight:700}
+
+/* Alur kerja */
+html body .process-section{background:var(--paper-2);border-block:1px solid var(--rule)}
+html body .process-no{font-style:italic;color:var(--red);font-weight:400;font-size:52px}
+html body .process-list li:not(:last-child)::after{background:none;border-top:2px dotted var(--ink);top:50px;width:22px}
+
+/* Strip penegasan & bagian lain */
+html body .assurance{background:transparent;border-block:1px solid var(--rule)}
+html body .about-visual img,html body .video-placeholder,html body .video-placeholder img{border-radius:2px}
+html body .about-visual img{border:1px solid var(--rule);box-shadow:-12px 12px 0 var(--paper-2)}
+html body input,html body select,html body textarea{border-radius:2px}
+html body .contact-section .form-card{box-shadow:8px 8px 0 rgba(0,0,0,.35)}
+html body .site-footer{border-top:3px solid var(--rule)}
+@media(max-width:700px){html body .hero-image-frame{box-shadow:8px 8px 0 var(--ink)}html body .section-heading{padding-top:16px}html body .process-no{font-size:42px}}

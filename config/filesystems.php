@@ -33,7 +33,11 @@ return [
         'local' => [
             'driver' => 'local',
             'root' => storage_path('app/private'),
-            'serve' => true,
+            // Harus false: bila true, Laravel mendaftarkan rute /storage/{path} untuk disk "local"
+            // (storage/app/private) yang menimpa rute /storage milik disk "public" sehingga
+            // foto upload jenis hama dll. 404 saat symlink public/storage belum ada.
+            // Foto booking privat tetap dilayani lewat controller admin, bukan rute ini.
+            'serve' => false,
             'throw' => false,
             'report' => false,
         ],

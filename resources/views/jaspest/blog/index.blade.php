@@ -1,10 +1,22 @@
-@extends('jaspest.blog.admin.layout')
+@php
+    $pageTitle = 'Blog JASPEST — Informasi pengendalian hama untuk rumah dan bisnis';
+    $pageDescription = 'Panduan sederhana untuk membantu Anda menyiapkan konsultasi pengendalian hama bersama JASPEST.';
+    $canonical = $posts->currentPage() > 1 ? $posts->url($posts->currentPage()) : route('jaspest.blog.index');
+@endphp
+@extends('jaspest.blog.layout')
 @section('content')
-    <div class="admin-title"><div><h1>Blog</h1><p>Tulis, perbarui, dan terbitkan informasi untuk pengunjung JASPEST.</p></div><a class="button button-blue button-small" href="{{ route('jaspest.blog.admin.create') }}"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Tulis blog</span></a></div>
-    <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Judul</th><th>Kategori</th><th>Status</th><th>Terakhir diubah</th><th>Tindakan</th></tr></thead><tbody>
-        @forelse($posts as $post)
-            <tr><td><strong>{{ $post->title }}</strong><small>/blog/{{ $post->slug }}</small></td><td>{{ $post->category }}</td><td><span class="admin-badge">{{ $post->status === 'draft' ? 'Draf' : ($post->published_at?->isFuture() ? 'Terjadwal' : 'Terbit') }}</span></td><td>{{ $post->updated_at->format('d/m/Y H:i') }}</td><td><a class="admin-action-edit" href="{{ route('jaspest.blog.admin.edit', $post) }}"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m14 5 5 5M4 20l4.2-.8L19 8.4a2.1 2.1 0 0 0-3-3L5.2 16.2 4 20Z"/></svg><span>Edit</span></a>@if($post->status === 'published' && $post->published_at?->isPast())<a class="admin-action-view" href="{{ route('jaspest.blog.show', $post->slug) }}" target="_blank" rel="noopener"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.4-6 9.5-6 9.5 6 9.5 6-3.4 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.5"/></svg><span>Lihat</span></a>@endif</td></tr>
-        @empty<tr><td colspan="5">Belum ada tulisan. Pilih “Tulis blog” untuk memulai.</td></tr>@endforelse
-    </tbody></table></div>
-    <nav class="admin-pagination" aria-label="Halaman blog">@if($posts->previousPageUrl())<a class="admin-page-prev" href="{{ $posts->previousPageUrl() }}"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg><span>Sebelumnya</span></a>@endif<span>Halaman {{ $posts->currentPage() }} dari {{ $posts->lastPage() }}</span>@if($posts->nextPageUrl())<a class="admin-page-next" href="{{ $posts->nextPageUrl() }}"><span>Berikutnya</span><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a>@endif</nav>
+    <nav class="breadcrumb" aria-label="Jejak halaman"><a href="{{ url('/') }}">Beranda</a><span aria-hidden="true">/</span><span aria-current="page">Blog</span></nav>
+    <div class="blog-heading">
+        <div class="eyebrow">BLOG JASPEST</div>
+        <h1>Informasi untuk rumah dan bisnis Anda.</h1>
+        <p>Beberapa panduan sederhana untuk membantu Anda menyiapkan konsultasi bersama tim kami.</p>
+    </div>
+    @include('jaspest.blog.cards', ['posts' => $posts])
+    @if($posts->hasPages())
+        <nav class="blog-pagination" aria-label="Halaman blog">
+            @if($posts->onFirstPage())<span aria-disabled="true">Sebelumnya</span>@else<a href="{{ $posts->previousPageUrl() }}" rel="prev">Sebelumnya</a>@endif
+            <span aria-current="page">{{ $posts->currentPage() }} / {{ $posts->lastPage() }}</span>
+            @if($posts->hasMorePages())<a href="{{ $posts->nextPageUrl() }}" rel="next">Berikutnya</a>@else<span aria-disabled="true">Berikutnya</span>@endif
+        </nav>
+    @endif
 @endsection

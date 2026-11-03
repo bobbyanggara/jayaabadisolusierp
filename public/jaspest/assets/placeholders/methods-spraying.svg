@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" width="800" height="500" role="img" aria-hidden="true">
+<defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#eef4ff"/><stop offset="1" stop-color="#fdf2f3"/></linearGradient></defs>
+<rect width="800" height="500" fill="url(#bg)"/>
+<circle cx="90" cy="90" r="120" fill="#ffffff" opacity=".55"/><circle cx="730" cy="430" r="150" fill="#ffffff" opacity=".5"/>
+
+<g fill="#104dc1" opacity=".55"><circle cx="190" cy="214" r="8"/><circle cx="150" cy="240" r="6"/><circle cx="210" cy="260" r="7"/><circle cx="160" cy="290" r="9"/><circle cx="120" cy="225" r="5"/><circle cx="130" cy="270" r="6"/><circle cx="200" cy="300" r="5"/></g>
+<rect x="360" y="260" width="170" height="170" rx="26" fill="#104dc1" stroke="#102548" stroke-width="6"/>
+<rect x="388" y="300" width="114" height="64" rx="10" fill="#fff" opacity=".9"/><path d="M406 332h78" stroke="#ed3548" stroke-width="9" stroke-linecap="round"/>
+<rect x="400" y="216" width="70" height="50" rx="10" fill="#102548"/>
+<path d="M380 200h120a22 22 0 0 1 22 22v8H380z" fill="#102548"/>
+<path d="M380 208h-58a14 14 0 0 0-14 14v6h72" fill="#102548"/><rect x="282" y="214" width="34" height="14" rx="6" fill="#ed3548"/>
+<path d="M520 230l30 56-34 10" fill="none" stroke="#102548" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+
+</svg>

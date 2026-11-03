@@ -45,6 +45,16 @@ class JaspestAdminAuthController extends Controller
 
         $request->session()->regenerate();
 
+        if (! (bool) ($request->user()?->is_active ?? true)) {
+            Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            throw ValidationException::withMessages([
+                'username' => 'Akun ini sedang dinonaktifkan. Hubungi administrator untuk mengaktifkannya kembali.',
+            ]);
+        }
+
         if (! Gate::allows('manage-jaspest')) {
             Auth::logout();
             $request->session()->invalidate();

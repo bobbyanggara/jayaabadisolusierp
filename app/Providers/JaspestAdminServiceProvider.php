@@ -4,9 +4,9 @@ namespace App\Providers;
 
 use App\Models\BlogPost;
 use App\Models\JaspestContentItem;
+use App\Support\JaspestMedia;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
@@ -19,10 +19,24 @@ class JaspestAdminServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        $isConfiguredAdministrator = static fn (Authenticatable $user): bool => in_array(
+            (string) $user->getAuthIdentifier(),
+            array_map('strval', config('jaspest_admin.editor_user_ids', [])),
+            true
+        );
+
+        if (! Gate::has('manage-jaspest-accounts')) {
+            // Only the initially configured administrator can create or manage login accounts.
+            Gate::define('manage-jaspest-accounts', $isConfiguredAdministrator);
+        }
+
         if (! Gate::has('manage-jaspest')) {
-            Gate::define('manage-jaspest', fn (Authenticatable $user): bool => in_array(
-                (string) $user->getAuthIdentifier(), config('jaspest_admin.editor_user_ids', []), true
-            ));
+            Gate::define('manage-jaspest', static fn (Authenticatable $user): bool =>
+                (bool) ($user->is_active ?? true)
+                && ($isConfiguredAdministrator($user) || in_array((string) ($user->role ?? ''), [
+                    'direksi', 'finance', 'logistik', 'marketing',
+                ], true))
+            );
         }
 
         $this->loadRoutesFrom(__DIR__.'/../../routes/jaspest-admin.php');
@@ -45,7 +59,7 @@ class JaspestAdminServiceProvider extends ServiceProvider
                 'label' => $item->category ?? 'Layanan JASPEST',
                 'description' => $item->description ?? '',
                 'detail' => $item->body ?? $item->description ?? '',
-                'image' => $item->image_path ? Storage::disk(config('jaspest_admin.content_disk'))->url($item->image_path) : null,
+                'image' => JaspestMedia::url($item->image_path),
             ])->values()->all();
 
             $content['gallery'] = ($items['gallery'] ?? collect())->map(fn (JaspestContentItem $item): array => [
@@ -53,7 +67,7 @@ class JaspestAdminServiceProvider extends ServiceProvider
                 'category' => $item->category ?? 'Rumah',
                 'title' => $item->title,
                 'subtitle' => $item->description ?? '',
-                'image' => $item->image_path ? Storage::disk(config('jaspest_admin.content_disk'))->url($item->image_path) : asset('jaspest/'.($item->data['default_image'] ?? 'assets/hero-pest-control.webp')),
+                'image' => JaspestMedia::url($item->image_path) ?? asset('jaspest/'.($item->data['default_image'] ?? 'assets/hero-pest-control.webp')),
             ])->values()->all();
 
             $content['faqs'] = ($items['faqs'] ?? collect())->map(fn (JaspestContentItem $item): array => [
@@ -70,7 +84,7 @@ class JaspestAdminServiceProvider extends ServiceProvider
                 'name' => $item->title,
                 'description' => $item->description ?? '',
                 'detail' => $item->body ?? '',
-                'image' => $item->image_path ? Storage::disk(config('jaspest_admin.content_disk'))->url($item->image_path) : null,
+                'image' => JaspestMedia::url($item->image_path),
             ])->values()->all();
 
             $content['methods'] = ($items['methods'] ?? collect())->map(fn (JaspestContentItem $item): array => [
@@ -79,7 +93,7 @@ class JaspestAdminServiceProvider extends ServiceProvider
                 'category' => $item->category ?? '',
                 'description' => $item->description ?? '',
                 'detail' => $item->body ?? '',
-                'image' => $item->image_path ? Storage::disk(config('jaspest_admin.content_disk'))->url($item->image_path) : null,
+                'image' => JaspestMedia::url($item->image_path),
             ])->values()->all();
 
             $pageItems = ($items['pages'] ?? collect())->keyBy(fn (JaspestContentItem $item) => $item->slug ?: (string) $item->id);

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class JaspestEnquiry extends Model
@@ -13,6 +14,7 @@ class JaspestEnquiry extends Model
         'reference', 'full_name', 'whatsapp', 'address', 'estimated_area', 'need',
         'property_type', 'company_name', 'description', 'consent', 'status',
         'wa_opened_at', 'contacted_at', 'followed_up_at', 'converted_at',
+        'order_price', 'order_area', 'scheduled_date', 'assigned_technician_id', 'assigned_technician_name',
     ];
 
     protected function casts(): array
@@ -24,6 +26,9 @@ class JaspestEnquiry extends Model
             'contacted_at' => 'datetime',
             'followed_up_at' => 'datetime',
             'converted_at' => 'datetime',
+            'order_price' => 'decimal:2',
+            'order_area' => 'decimal:2',
+            'scheduled_date' => 'date:Y-m-d',
         ];
     }
 
@@ -40,5 +45,10 @@ class JaspestEnquiry extends Model
     public function events(): HasMany
     {
         return $this->hasMany(JaspestEnquiryEvent::class, 'enquiry_id')->latest();
+    }
+
+    public function assignedTechnician(): BelongsTo
+    {
+        return $this->belongsTo(JaspestTechnician::class, 'assigned_technician_id');
     }
 }

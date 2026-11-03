@@ -51,10 +51,18 @@
     needs.add(new Option('Belum tahu / konsultasi dahulu', 'konsultasi'));
   }
 
+  const PLACEHOLDER_DIR = '/jaspest/assets/placeholders/';
+  const placeholderSet = (kind, id) => {
+    const group = kind === 'pest' ? 'pests' : 'methods';
+    const slug = String(id || '').toLowerCase().replace(/[^a-z0-9-]/g, '');
+    return [slug ? `${PLACEHOLDER_DIR}${group}-${slug}.svg` : '', `${PLACEHOLDER_DIR}${group}-default.svg`].filter(Boolean);
+  };
   function renderDirectoryCard(item, index, kind) {
-    const image = item.image && safeUrl(item.image)
-      ? `<img src="${escape(safeUrl(item.image))}" alt="${escape(item.name)}" loading="lazy">`
-      : `<span class="directory-icon">${icon(kind === 'pest' ? 'bug' : 'shield')}</span>`;
+    const fallbacks = placeholderSet(kind, item.id);
+    const uploaded = item.image && safeUrl(item.image) ? safeUrl(item.image) : '';
+    const chain = (uploaded ? fallbacks : fallbacks.slice(1));
+    const first = uploaded || fallbacks[0];
+    const image = `<img src="${escape(first)}" data-fallbacks="${escape(chain.join('|'))}" alt="${escape(item.name)}" loading="lazy" decoding="async">`;
     const action = kind === 'pest' ? 'data-pest' : 'data-method';
     return `<article class="directory-card"><div class="directory-card-visual">${image}<span class="directory-number">0${index + 1}</span></div><div class="directory-card-copy"><span class="directory-category">${escape(item.category || '')}</span><h3>${escape(item.name || 'Informasi')}</h3><p>${escape(item.description || '')}</p><button class="text-link" ${action}="${escape(item.id)}">Lihat informasi</button></div></article>`;
   }
@@ -66,6 +74,7 @@
   }
   function renderMethods() {
     const section = $('#metode-penanganan');
+    if (!section) return;
     const items = Array.isArray(content.methods) ? content.methods : [];
     section.hidden = items.length === 0;
     $('#methods-grid').innerHTML = items.map((item, index) => renderDirectoryCard(item, index, 'method')).join('');
@@ -117,7 +126,7 @@
     openDialog(`<div class="dialog-body"><div class="dialog-service-icon">${icon('lock')}</div><div class="eyebrow">PORTAL KLIEN JASPEST</div><h2 id="dialog-title">Laporan pekerjaan,<br>dalam satu tempat.</h2><p>Portal klien sedang dipersiapkan untuk membantu Anda mengakses informasi dan laporan pekerjaan JASPEST.</p><p>Untuk informasi kebutuhan atau pekerjaan Anda, silakan hubungi tim melalui formulir pengajuan.</p><div class="dialog-actions"><button class="button button-blue" data-enquire="">Hubungi tim JASPEST</button></div></div>`);
   }
   function openPrivacy() {
-    openDialog(`<div class="dialog-body"><div class="eyebrow">INFORMASI PENGGUNAAN DATA</div><h2 id="dialog-title">Privasi pengajuan Anda.</h2><p>Informasi yang Anda isi digunakan oleh tim JASPEST untuk memahami kebutuhan, menghubungi Anda melalui WhatsApp atau telepon, dan menindaklanjuti pengajuan terkait.</p><ul><li>Nama, kontak, alamat, luasan, kebutuhan, jenis lokasi, nama perusahaan, keterangan, dan foto opsional dipakai dalam proses konsultasi.</li><li>Foto temuan dan informasi pengajuan tidak otomatis dipublikasikan dalam galeri.</li><li>Pengajuan dapat diakses oleh petugas yang berwenang untuk menanganinya.</li><li>Anda dapat menyampaikan koreksi data atau meminta penghentian tindak lanjut kepada tim JASPEST saat dihubungi.</li></ul>${config.previewMode ? '<div class="dialog-info">'+icon('info')+'<span>Pada pratinjau ini, formulir hanya memvalidasi dan menampilkan ringkasan di perangkat Anda. Data tidak dikirim ke tim JASPEST atau layanan WhatsApp.</span></div>' : ''}<p>Video TikTok, jika diputar, dimuat dari layanan TikTok dan mengikuti ketentuan privasi layanan tersebut.</p></div>`);
+    openDialog(`<div class="dialog-body"><div class="eyebrow">INFORMASI PENGGUNAAN DATA</div><h2 id="dialog-title">Privasi pengajuan Anda.</h2><p>Informasi yang Anda isi digunakan oleh tim JASPEST untuk memahami kebutuhan, menghubungi Anda melalui WhatsApp atau telepon, dan menindaklanjuti pengajuan terkait.</p><ul><li>Nama, kontak, alamat, luasan, kebutuhan, jenis lokasi, nama perusahaan, keterangan, dan foto opsional dipakai dalam proses konsultasi.</li><li>Foto temuan dan informasi pengajuan tidak otomatis dipublikasikan dalam galeri.</li><li>Pengajuan dapat diakses oleh petugas yang berwenang untuk menanganinya.</li><li>Anda dapat menyampaikan koreksi data atau meminta penghentian tindak lanjut kepada tim JASPEST saat dihubungi.</li></ul>${config.previewMode ? '<div class="dialog-info">'+icon('info')+'<span>Pada pratinjau ini, formulir hanya memvalidasi dan menampilkan ringkasan di perangkat Anda. Data tidak dikirim ke tim JASPEST atau layanan WhatsApp.</span></div>' : ''}<h3>Cookie</h3><p>Situs ini memakai cookie esensial untuk sesi dan keamanan formulir. Video TikTok hanya dimuat dari layanan TikTok setelah Anda mengizinkannya, dan mengikuti ketentuan privasi TikTok. Pilihan Anda tersimpan selama 180 hari dan dapat diubah kapan saja.</p><button type="button" class="text-link blue-text" data-cookie-settings>Atur preferensi cookie</button></div>`);
   }
 
   function setupTikTok() {
@@ -131,13 +140,39 @@
       const host = $('#tiktok-host');
       host.style.display = 'block';host.style.textAlign='center';
       const sourceLabel = entry.sourceLabel || url.pathname.split('/')[1];
-      host.innerHTML = `<div class="video-placeholder" style="margin:auto"><img src="${escape(safeUrl(entry.cover || '/jaspest/assets/commercial-inspection.webp'))}" alt="Ilustrasi sampul pemutar TikTok" loading="lazy"><div class="video-shade"></div><div class="video-placeholder-copy"><span class="video-coming">${entry.isTest ? 'UJI PEMUTAR TIKTOK' : 'VIDEO JASPEST'}</span><strong>${escape(entry.title || 'Cerita dari lapangan.')}</strong><button class="button button-red" id="load-tiktok">Putar video ${icon('play')}</button></div></div><a class="video-source-link" href="${escape(url.href)}" target="_blank" rel="noopener noreferrer">${entry.isTest ? 'Video uji · ' : 'Sumber: '}${escape(sourceLabel)} · Buka di TikTok</a>`;
-      $('#load-tiktok').addEventListener('click',()=>{
-        const frame=document.createElement('iframe');frame.className='tiktok-frame';frame.src=`https://www.tiktok.com/player/v1/${match[1]}?autoplay=1&loop=0`;frame.title=entry.title || 'Video kegiatan JASPEST';frame.allow='autoplay; encrypted-media; fullscreen';frame.allowFullscreen=true;
-        $('.video-placeholder',host).replaceWith(frame);
+      host.innerHTML = `<div class="video-placeholder" style="margin:auto"><img src="${escape(safeUrl(entry.cover || '/jaspest/assets/commercial-inspection.webp'))}" alt="Ilustrasi sampul pemutar TikTok" loading="lazy"><div class="video-shade"></div><div class="video-placeholder-copy"><span class="video-coming">${entry.isTest ? 'UJI PEMUTAR TIKTOK' : 'VIDEO JASPEST'}</span><strong>${escape(entry.title || 'Cerita dari lapangan.')}</strong></div></div><a class="video-source-link" href="${escape(url.href)}" target="_blank" rel="noopener noreferrer">${entry.isTest ? 'Video uji · ' : 'Sumber: '}${escape(sourceLabel)} · Buka di TikTok</a>`;
+      const initialHtml=host.innerHTML;
+      const mediaAllowed=()=>!!(window.JaspestConsent&&window.JaspestConsent.allowed('media'));
+      const showConsentGate=()=>{
+        const holder=$('.video-placeholder',host);
+        if(!holder||holder.querySelector('.video-consent'))return;
+        const box=document.createElement('div');box.className='video-consent';
+        const note=document.createElement('p');note.textContent='Video dimuat dari TikTok dan dapat memasang cookie pihak ketiga.';
+        const allow=document.createElement('button');allow.type='button';allow.className='cc-btn';allow.textContent='Izinkan & putar video';
+        allow.addEventListener('click',()=>{if(window.JaspestConsent)window.JaspestConsent.set('media',true);});
+        box.append(note,allow);holder.append(box);
+      };
+      const mountPlayer=()=>{
+        if(!mediaAllowed())return;
+        const placeholder=$('.video-placeholder',host);
+        if(!placeholder||host.querySelector('.tiktok-frame'))return;
+        const frame=document.createElement('iframe');frame.className='tiktok-frame';
+        frame.src=`https://www.tiktok.com/player/v1/${match[1]}?autoplay=1&muted=1&loop=1`;
+        frame.title=entry.title || 'Video kegiatan JASPEST';frame.allow='autoplay; encrypted-media; fullscreen';frame.allowFullscreen=true;
+        placeholder.replaceWith(frame);
+      };
+      if('IntersectionObserver' in window){
+        const playerObserver=new IntersectionObserver((entries)=>{if(entries.some((e)=>e.isIntersecting)){playerObserver.disconnect();mountPlayer();}},{rootMargin:'200px 0px'});
+        playerObserver.observe(host);
+      } else mountPlayer();
+      if(!mediaAllowed())showConsentGate();
+      document.addEventListener('jaspest:consent',()=>{
+        if(mediaAllowed()){mountPlayer();}
+        else if(host.querySelector('.tiktok-frame')){host.innerHTML=initialHtml;showConsentGate();}
+        else showConsentGate();
       });
       $('.video-mini-note div>span').textContent=entry.isTest ? `Video uji dari ${sourceLabel}.` : 'Putar video kegiatan kami.';
-      if(entry.isTest){$('.video-mini-note strong').textContent='Uji integrasi TikTok';$('.video-copy>p').textContent='Pemutar berikut menggunakan video uji yang dipilih untuk pratinjau. Sumber video dicantumkan di bawah pemutar.';$('.video-copy h2').innerHTML='Video pilihan,<br>langsung di sini.';$('.video-copy .eyebrow').textContent='TIKTOK · VIDEO UJI';}
+      if(entry.isTest){$('.video-mini-note strong').textContent='Uji integrasi TikTok';$('.video-copy>p').textContent='Pemutar berikut menggunakan video uji yang dipilih untuk pratinjau. Sumber video dicantumkan di bawah pemutar.';$('.video-copy h2').innerHTML='Video pilihan,<br>langsung di sini.';}
     } catch { /* Kosongkan video yang tidak memiliki URL TikTok valid. */ }
   }
 
@@ -297,6 +332,14 @@
     const anchor=event.target.closest('a[href^="#"]');
     if(anchor){$('#mobile-nav').hidden=true;$('#menu-toggle').setAttribute('aria-expanded','false');$('#menu-toggle').setAttribute('aria-label','Buka menu');}
   });
+  document.addEventListener('error',(event)=>{
+    const img=event.target;
+    if(!(img instanceof HTMLImageElement)||!img.dataset.fallbacks)return;
+    const list=img.dataset.fallbacks.split('|').filter(Boolean);
+    const next=list.shift();
+    img.dataset.fallbacks=list.join('|');
+    if(next)img.src=next;
+  },true);
   $('#menu-toggle').addEventListener('click',()=>{const open=$('#mobile-nav').hidden;$('#mobile-nav').hidden=!open;$('#menu-toggle').setAttribute('aria-expanded',String(open));$('#menu-toggle').setAttribute('aria-label',open?'Tutup menu':'Buka menu');});
   window.addEventListener('scroll',()=>$('#site-header').classList.toggle('scrolled',scrollY>20),{passive:true});
   window.addEventListener('pagehide',()=>photoFiles.forEach(entry=>URL.revokeObjectURL(entry.url)));
