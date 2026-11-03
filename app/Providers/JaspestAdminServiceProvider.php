@@ -98,9 +98,13 @@ class JaspestAdminServiceProvider extends ServiceProvider
 
             $pageItems = ($items['pages'] ?? collect())->keyBy(fn (JaspestContentItem $item) => $item->slug ?: (string) $item->id);
             $settings = ($items['settings'] ?? collect())->keyBy(fn (JaspestContentItem $item) => $item->slug ?: (string) $item->id);
+            $companyName = trim((string) ($settings->get('nama-perusahaan')?->description ?? ''));
+            $companyName = preg_replace('/^(?:PT|CV)\.?\s*/iu', '', $companyName) ?: 'Jaya Abadi Solusi';
+            $companyName = trim($companyName) ?: 'Jaya Abadi Solusi';
+
             $content['brand'] = [
                 'name' => $settings->get('nama-website')?->description ?: 'JASPEST',
-                'company' => $settings->get('nama-perusahaan')?->description ?: 'Jaya Abadi Solusi',
+                'company' => 'CV '.$companyName,
                 'tagline' => $settings->get('tagline-website')?->description ?: 'Solusi pengendalian hama untuk rumah dan bisnis.',
             ];
             $config['whatsappNumber'] = $settings->get('nomor-whatsapp')?->description ?: ($config['whatsappNumber'] ?? null);

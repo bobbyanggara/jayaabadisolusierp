@@ -1,4 +1,4 @@
-/* JASPEST · Jaya Abadi Solusi — animasi halaman utama.
+/* JASPEST · CV Jaya Abadi Solusi — animasi halaman utama.
    Dirancang agar aman: bila terjadi masalah, semua konten langsung ditampilkan. */
 (function () {
   'use strict';

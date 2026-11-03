@@ -254,6 +254,7 @@
   });
   window.addEventListener('resize', () => { if (document.getElementById('toastStack')) positionToastHost(); });
   const iconPaths = {
+    plus: '<path d="M12 5v14M5 12h14"/>',
     eye: '<path d="M2.5 12s3.4-6 9.5-6 9.5 6 9.5 6-3.4 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.5"/>',
     whatsapp: '<path d="M20.2 11.7a8.2 8.2 0 0 1-12.1 7.2L4 20l1.1-4A8.2 8.2 0 1 1 20.2 11.7Z"/><path d="M9 8.2c.2-.5.5-.5.8-.5h.5c.2 0 .4.1.5.4l.7 1.6c.1.2.1.4-.1.6l-.5.6c-.2.2-.2.4 0 .6.5.9 1.2 1.5 2.1 1.9.2.1.4.1.6-.1l.7-.8c.2-.2.4-.2.6-.1l1.5.7c.3.1.4.3.4.5 0 .4-.2 1.1-.7 1.5-.5.4-1.1.6-1.7.5-1-.1-2.3-.7-3.5-1.8-1.3-1.2-2.1-2.7-2.3-3.7-.2-.7 0-1.4.4-1.9Z"/>',
     edit: '<path d="m14 5 5 5M4 20l4.2-.8L19 8.4a2.1 2.1 0 0 0-3-3L5.2 16.2 4 20Z"/>',
@@ -268,9 +269,9 @@
   const canManageAccounts = Boolean(config.canManageAccounts);
   const csrfToken = $('meta[name="csrf-token"]')?.content || '';
   const contentLabels = {
-    pages: 'Konten halaman', services: 'Layanan', pests: 'Jenis hama',
-    methods: 'Metode penanganan', articles: 'Blog & artikel', gallery: 'Galeri',
-    faqs: 'FAQ', settings: 'Pengaturan website'
+    pages: 'Konten Halaman', services: 'Layanan', pests: 'Jenis Hama',
+    methods: 'Metode Penanganan', articles: 'Blog & Artikel', gallery: 'Galeri',
+    faqs: 'FAQ', settings: 'Pengaturan Website'
   };
   const contentDescriptions = {
     pages: ['Atur konten halaman utama.', 'Kelola bagian hero, profil, dan informasi penting perusahaan.'],
@@ -299,14 +300,19 @@
   let editingContentId = null;
   let accounts = [];
   let technicians = [];
+  let clients = [];
   let accountMeta = { current_page: 1, last_page: 1, total: 0 };
   let technicianMeta = { current_page: 1, last_page: 1, total: 0 };
+  let clientMeta = { current_page: 1, last_page: 1, total: 0 };
   let accountPage = 1;
   let technicianPage = 1;
+  let clientPage = 1;
   let accountEditingId = null;
   let technicianEditingId = null;
+  let clientEditingId = null;
   let accountSearchTimer = null;
   let technicianSearchTimer = null;
+  let clientSearchTimer = null;
   let inventoryItems = [];
   let inventoryMovements = [];
   let inventoryTechnicianStocks = [];
@@ -323,6 +329,11 @@
   let inventoryItemEditingId = null;
   let inventorySearchTimers = { items: null, movements: null, technicians: null };
   let inventoryTab = 'items';
+  // Read-only Data Master catalog: independent pagination and filters, shared inventory API.
+  let stockCatalogItems = [];
+  let stockCatalogMeta = { current_page: 1, last_page: 1, total: 0 };
+  let stockCatalogPage = 1;
+  let stockCatalogSearchTimer = null;
 
   function inventoryQuantity(value) {
     const amount = Number(value);
@@ -453,7 +464,7 @@
       return `<tr><td><div class="inventory-item-name"><strong>${esc(stock.technician_name || 'Teknisi tidak tersedia')}</strong><small>${esc(stock.technician_code || '')}</small></div></td>
         <td>${esc(stock.item_name || '-')}</td><td>${esc(stock.sku || '-')}</td><td><strong>${inventoryQuantity(stock.quantity)} ${esc(stock.unit || '')}</strong></td>
         <td><div class="inventory-tech-batches">${batches || '<small class="inventory-secondary">Detail batch tidak tersedia</small>'}</div></td>
-        <td><span class="inventory-status-badge ${stock.technician_status === 'off_duty' ? 'cancelled' : stock.technician_status === 'assigned' ? 'planned' : 'completed'}">${stock.technician_status === 'assigned' ? 'Sedang bertugas' : stock.technician_status === 'off_duty' ? 'Di luar tugas' : 'Tersedia'}</span></td>
+        <td><span class="inventory-status-badge ${stock.technician_status === 'off_duty' ? 'technician-off-duty' : stock.technician_status === 'assigned' ? 'technician-assigned' : 'technician-available'}">${stock.technician_status === 'assigned' ? 'Sedang Bertugas' : stock.technician_status === 'off_duty' ? 'Di Luar Tugas' : 'Tersedia'}</span></td>
         <td>${inventoryDateTime(stock.updated_at)}</td></tr>`;
     }).join('');
     $('#inventoryTechStocksEmpty').hidden = inventoryTechnicianStocks.length > 0;
@@ -514,6 +525,64 @@
     await Promise.all([refreshInventorySummary(), refreshInventoryOptions()]);
     await setInventoryTab(inventoryTab);
   }
+  function stockCatalogCondition(item) {
+    const warehouse = Number(item.stock_on_hand || 0);
+    const minimum = Number(item.minimum_stock || 0);
+    const technician = Number(item.technician_stock || 0);
+    if (minimum > 0 && warehouse <= minimum) {
+      return { label: warehouse <= 0 ? 'Stok kosong' : 'Stok menipis', tone: 'low' };
+    }
+    if (warehouse > 0) return { label: 'Tersedia', tone: 'good' };
+    if (technician > 0) return { label: 'Di teknisi', tone: 'field' };
+    return { label: 'Stok kosong', tone: 'empty' };
+  }
+  function renderStockCatalog() {
+    $('#stockCatalogRows').innerHTML = stockCatalogItems.map((item) => {
+      const condition = stockCatalogCondition(item);
+      const kind = item.item_type === 'asset' ? 'Peralatan / aset' : 'Bahan habis pakai';
+      return `<tr>
+        <td><div class="inventory-item-name"><strong>${esc(item.name || '-')}</strong><small>${esc(item.sku || '-')}</small>${item.brand ? `<small>${esc(item.brand)}</small>` : ''}</div></td>
+        <td>${esc(item.category || '-')}</td>
+        <td><span class="inventory-type-tag ${item.item_type === 'asset' ? 'asset' : 'consumable'}">${esc(kind)}</span>${item.track_expiry ? '<small class="stock-catalog-secondary">Pelacakan kedaluwarsa</small>' : ''}</td>
+        <td><div class="inventory-stock-value"><strong>${inventoryQuantity(item.stock_on_hand)} ${esc(item.unit || '')}</strong><small>Di gudang</small></div></td>
+        <td><div class="inventory-stock-value"><strong>${inventoryQuantity(item.technician_stock)} ${esc(item.unit || '')}</strong><small>Terdistribusi</small></div></td>
+        <td><div class="inventory-stock-value"><strong>${inventoryQuantity(item.minimum_stock)} ${esc(item.unit || '')}</strong><small>Batas minimum</small></div></td>
+        <td><span class="stock-catalog-condition is-${condition.tone}">${esc(condition.label)}</span></td>
+        <td><span class="inventory-status-badge ${item.is_active ? 'completed' : 'cancelled'}">${item.is_active ? 'Aktif' : 'Nonaktif'}</span></td>
+      </tr>`;
+    }).join('');
+    $('#stockCatalogEmpty').hidden = stockCatalogItems.length > 0;
+    $('#stockCatalogCount').textContent = `${stockCatalogMeta.total || 0} barang`;
+    $('#stockCatalogTableCount').textContent = `Menampilkan ${stockCatalogItems.length} dari ${stockCatalogMeta.total || 0} barang`;
+    $('#stockCatalogPageLabel').textContent = `${stockCatalogMeta.current_page || 1} / ${stockCatalogMeta.last_page || 1}`;
+    $('#stockCatalogPrev').disabled = (stockCatalogMeta.current_page || 1) <= 1;
+    $('#stockCatalogNext').disabled = (stockCatalogMeta.current_page || 1) >= (stockCatalogMeta.last_page || 1);
+  }
+  async function refreshStockCatalogSummary() {
+    const response = await apiRequest('/inventory/summary');
+    const summary = response.summary || {};
+    $('#stockCatalogStatItems').textContent = inventoryQuantity(summary.items || 0);
+    $('#stockCatalogStatStocked').textContent = inventoryQuantity(summary.stocked_items || 0);
+    $('#stockCatalogStatLow').textContent = inventoryQuantity(summary.low_stock || 0);
+    $('#stockCatalogStatExpiry').textContent = inventoryQuantity(summary.expiring_batches || 0);
+  }
+  async function refreshStockCatalog() {
+    if (!apiMode) throw new Error('Data stok hanya tersedia saat terhubung ke database server.');
+    const params = new URLSearchParams({
+      search: $('#stockCatalogSearch').value.trim(),
+      type: $('#stockCatalogTypeFilter').value || 'all',
+      status: $('#stockCatalogStatusFilter').value || 'all',
+      page: String(stockCatalogPage),
+    });
+    const response = await apiRequest(`/inventory/items?${params.toString()}`);
+    stockCatalogItems = response.data || [];
+    stockCatalogMeta = response.meta || { current_page: 1, last_page: 1, total: stockCatalogItems.length };
+    renderStockCatalog();
+  }
+  async function refreshStockCatalogPage() {
+    await Promise.all([refreshStockCatalogSummary(), refreshStockCatalog()]);
+  }
+
   function addInventoryItem() {
     inventoryItemEditingId = null;
     const form = $('#inventoryItemForm');
@@ -770,7 +839,46 @@
     return hour < 11 ? 'pagi' : hour < 15 ? 'siang' : hour < 18 ? 'sore' : 'malam';
   }
   function buildWhatsAppMessage(booking) {
-    return `Halo, selamat ${greeting()}. Kami dari JASPEST.\n\nTerima kasih telah menghubungi kami. Berikut ringkasan pengajuan Anda:\n\nNama: ${booking.name || '-'}\nNomor WhatsApp: ${formatPhone(booking.whatsapp)}\nAlamat lokasi: ${booking.address || '-'}\nPerkiraan luasan: ${booking.area || '-'} m²\nKebutuhan layanan: ${booking.need || '-'}\nJenis lokasi: ${booking.property === 'bisnis' ? 'Bisnis' : 'Rumah'}${booking.company ? `\nNama perusahaan: ${booking.company}` : ''}\nKeterangan: ${booking.description || '-'}\n\nKami akan membantu Anda menemukan solusi penanganan hama yang tepat. Tim kami siap berdiskusi lebih lanjut mengenai kebutuhan lokasi Anda.\n\nTerima kasih.\nJASPEST — Jaya Abadi Solusi.`;
+    const clean = (value, fallback = '-') => {
+      const text = String(value ?? '').replace(/[\r\n\t]+/g, ' ').replace(/[\*_~`]/g, '').trim();
+      return text || fallback;
+    };
+    const company = clean(booking.company, '');
+    const name = clean(booking.name);
+    const displayName = company || name;
+    const numericArea = Number(String(booking.area ?? '').replace(',', '.'));
+    const area = Number.isFinite(numericArea)
+      ? new Intl.NumberFormat('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(numericArea)
+      : '-';
+    const lines = [
+      `Halo Bapak/Ibu *${displayName}* 👋`,
+      '',
+      'Terima kasih telah menghubungi *CV Jaya Abadi Solusi (JASPEST)*.',
+      '',
+      'Kami telah menerima permintaan layanan Anda melalui formulir website JASPEST. Berikut ringkasan data yang Anda kirimkan:',
+      '',
+      '*DETAIL PENGAJUAN*',
+      `Nomor Pengajuan: *${clean(booking.reference || booking.id)}*`,
+      `Nama: ${name}`,
+    ];
+    if (company) lines.push(`Nama Perusahaan: ${company}`);
+    lines.push(
+      `Nomor WhatsApp: ${clean(formatPhone(booking.whatsapp))}`,
+      `Layanan: ${clean(booking.need)}`,
+      `Jenis Lokasi: ${booking.property === 'bisnis' ? 'Bisnis' : 'Rumah'}`,
+      `Perkiraan Luasan: ${area} m²`,
+      `Alamat Lokasi: ${clean(booking.address)}`,
+      `Keterangan: ${clean(booking.description)}`,
+      '',
+      'Tim kami akan meninjau kebutuhan tersebut dan segera menghubungi Anda untuk tindak lanjut.',
+      'Apabila ada informasi tambahan, silakan membalas pesan ini.',
+      '',
+      'Terima kasih atas kepercayaan Anda.',
+      '',
+      '*CV JAYA ABADI SOLUSI*',
+      '*JASPEST — Professional Pest Control*'
+    );
+    return lines.join('\n');
   }
 
   async function apiRequest(path, options = {}) {
@@ -961,10 +1069,10 @@
   function renderAttentionHint() {
     const hint = $('#attentionFollowHint');
     if (!hint) return;
-    hint.textContent = 'Status otomatis berubah saat admin membuka tautan WhatsApp.';
+    hint.textContent = 'Pengajuan yang sudah ditindaklanjuti oleh tim.';
   }
   function eventLabel(event) {
-    return ({ status_changed: 'Status diperbarui', whatsapp_opened: 'WhatsApp dibuka', note_added: 'Catatan admin', order_confirmed: 'Order dikonfirmasi' })[event.event] || 'Pengajuan masuk';
+    return ({ status_changed: 'Status diperbarui', whatsapp_opened: 'Tindak lanjut dimulai', automatic_whatsapp_followup: 'Tindak lanjut WhatsApp', note_added: 'Catatan admin', order_confirmed: 'Order dikonfirmasi', manual_order_created: 'Deal Order ditambahkan', client_linked: 'Klien ditautkan' })[event.event] || 'Pengajuan masuk';
   }
   function renderEventList(events) {
     if (!events.length) return '<p class="muted-empty">Belum ada riwayat aktivitas.</p>';
@@ -1056,15 +1164,65 @@
     modal.hidden = true;
     if (!$$('.modal-backdrop:not([hidden])').length) document.body.style.overflow = '';
   }
+  let photoLightboxTrigger = null;
+  let photoLightboxPreviousOverflow = '';
+
+  function ensurePhotoLightbox() {
+    if ($('#photoLightbox')) return;
+    const lightbox = document.createElement('div');
+    lightbox.id = 'photoLightbox';
+    lightbox.className = 'photo-lightbox';
+    lightbox.hidden = true;
+    lightbox.innerHTML = `
+      <section class="photo-lightbox__dialog" role="dialog" aria-modal="true" aria-labelledby="photoLightboxCaption">
+        <button type="button" class="photo-lightbox__close" data-photo-lightbox-close aria-label="Tutup foto" title="Tutup (Esc)">×</button>
+        <figure class="photo-lightbox__figure">
+          <img class="photo-lightbox__image" id="photoLightboxImage" alt="" draggable="false">
+          <figcaption class="photo-lightbox__caption" id="photoLightboxCaption"></figcaption>
+        </figure>
+      </section>`;
+    document.body.append(lightbox);
+    lightbox.addEventListener('click', (event) => {
+      if (event.target === lightbox || event.target.closest('[data-photo-lightbox-close]')) closePhotoLightbox();
+    });
+    $('#photoLightboxImage', lightbox).addEventListener('error', () => {
+      showError('Foto tidak dapat dimuat. Periksa koneksi atau akses file, lalu coba kembali.');
+      closePhotoLightbox();
+    });
+  }
+
+  function openPhotoLightbox(url, name, trigger) {
+    ensurePhotoLightbox();
+    const lightbox = $('#photoLightbox');
+    const image = $('#photoLightboxImage');
+    photoLightboxTrigger = trigger || null;
+    photoLightboxPreviousOverflow = document.body.style.overflow;
+    image.alt = name || 'Foto klien';
+    image.src = url;
+    $('#photoLightboxCaption').textContent = name || 'Foto klien';
+    lightbox.hidden = false;
+    document.body.style.overflow = 'hidden';
+    $('[data-photo-lightbox-close]', lightbox).focus();
+  }
+
+  function closePhotoLightbox() {
+    const lightbox = $('#photoLightbox');
+    if (!lightbox || lightbox.hidden) return;
+    lightbox.hidden = true;
+    const image = $('#photoLightboxImage', lightbox);
+    image.removeAttribute('src');
+    image.alt = '';
+    document.body.style.overflow = photoLightboxPreviousOverflow;
+    if (photoLightboxTrigger?.isConnected) photoLightboxTrigger.focus();
+    photoLightboxTrigger = null;
+  }
+
   function renderPhoto(photo, index) {
     if (photo && typeof photo === 'object' && photo.url) {
       const name = photo.name || `Foto temuan ${index + 1}`;
       const url = esc(photo.url);
       const safeName = esc(name);
-      // Use the authenticated same-origin image endpoint directly. Native browser
-      // image loading avoids fetch/Blob length checks; clicking opens the full image
-      // in a new tab while preserving the admin page in the current tab.
-      return `<a class="photo-link" href="${url}" target="_blank" rel="noopener noreferrer" referrerpolicy="same-origin" aria-label="Buka ${safeName} ukuran penuh di tab baru" title="Klik untuk membuka foto ukuran penuh di tab baru"><img src="${url}" alt="${safeName}" loading="lazy" decoding="async" referrerpolicy="same-origin"><span>${safeName}<small>Buka ukuran penuh ↗</small></span></a>`;
+      return `<button type="button" class="photo-link" data-photo-url="${url}" data-photo-name="${safeName}" aria-label="Perbesar foto: ${safeName}" title="Klik untuk melihat foto lebih besar"><img src="${url}" alt="${safeName}" loading="lazy" decoding="async" referrerpolicy="same-origin"><span>${safeName}<small>Lihat foto ↗</small></span></button>`;
     }
     return `<div class="photo-placeholder">▧<br>${esc(typeof photo === 'string' ? photo : `Foto ${index + 1}`)}</div>`;
   }
@@ -1078,7 +1236,82 @@
       button.setAttribute('aria-pressed', String(active));
       button.disabled = status === 'converted' && !active;
     });
+    const followupButton = $('#detailFollowupWhatsapp');
+    if (followupButton) {
+      const followupActive = status === 'followup';
+      followupButton.classList.toggle('is-active', followupActive);
+      followupButton.setAttribute('aria-pressed', String(followupActive));
+      followupButton.disabled = !booking.consent || ['converted', 'lost'].includes(status);
+    }
   }
+
+  function renderWhatsappNotificationPanel(notification, section, container, retry) {
+    if (!notification) {
+      section.hidden = true;
+      retry.hidden = true;
+      container.innerHTML = '';
+      return;
+    }
+
+    const states = {
+      queued: ['Menunggu pengiriman', 'notification-neutral'],
+      sending: ['Sedang diproses', 'notification-info'],
+      accepted: ['Dalam antrean pengiriman', 'notification-info'],
+      sent: ['Terkirim', 'notification-success'],
+      failed: ['Belum berhasil dikirim', 'notification-danger'],
+      not_configured: ['Pengiriman belum tersedia', 'notification-warning'],
+      skipped_consent: ['Persetujuan pelanggan belum tercatat', 'notification-neutral'],
+      skipped_invalid_number: ['Nomor pelanggan perlu diperiksa', 'notification-warning'],
+      unknown: ['Status pengiriman belum dapat dipastikan', 'notification-warning']
+    };
+    const [label, tone] = states[notification.status] || ['Status tidak tersedia', 'notification-neutral'];
+    const details = [
+      `<div class="whatsapp-notification-status"><span class="notification-status-dot ${tone}"></span><strong>${esc(label)}</strong></div>`,
+      notification.recipient ? `<small>Tujuan: +${esc(notification.recipient)}</small>` : '',
+      notification.accepted_at ? `<small>Diterima untuk diproses: ${esc(new Date(notification.accepted_at).toLocaleString('id-ID'))}</small>` : '',
+      notification.sent_at ? `<small>Waktu terkirim: ${esc(new Date(notification.sent_at).toLocaleString('id-ID'))}</small>` : '',
+      notification.last_error ? `<p class="whatsapp-notification-error">${esc(notification.last_error)}</p>` : '',
+      notification.status === 'unknown' ? '<p class="whatsapp-notification-help">Periksa riwayat pesan sebelum mencoba kembali agar pelanggan tidak menerima pesan ganda.</p>' : ''
+    ].filter(Boolean);
+    container.innerHTML = details.join('');
+    section.hidden = false;
+    retry.hidden = notification.retryable !== true;
+    retry.disabled = false;
+  }
+
+  function renderWhatsappNotification(notification) {
+    renderWhatsappNotificationPanel(
+      notification,
+      $('#detailWhatsappNotificationSection'),
+      $('#detailWhatsappNotification'),
+      $('#retryDealWhatsapp')
+    );
+  }
+
+
+  async function retryDealWhatsappNotification() {
+    if (!currentBooking || !apiMode) return;
+    const button = $('#retryDealWhatsapp');
+    const original = button.innerHTML;
+    button.disabled = true;
+    button.innerHTML = '<span>Mengirim…</span>';
+    try {
+      const result = await apiRequest(`/bookings/${encodeURIComponent(currentBooking.id)}/whatsapp-notification/retry`, { method: 'POST' });
+      button.innerHTML = original;
+      currentBooking.whatsapp_notification = result.notification;
+      renderWhatsappNotification(result.notification);
+      if (result.notification.status === 'accepted' || result.notification.status === 'sent') {
+        toast('Pesan konfirmasi berhasil diproses.', 'success');
+      } else {
+        showWarning(result.notification.last_error || 'Pesan konfirmasi belum berhasil diproses. Periksa detail dan coba kembali.');
+      }
+    } catch (error) {
+      showError(error.message || 'Notifikasi gagal dikirim ulang.');
+      button.disabled = false;
+      button.innerHTML = original;
+    }
+  }
+
 
   async function openDetail(id) {
     try {
@@ -1105,7 +1338,8 @@
       $('#detailFields').innerHTML = fields.map(([label, value, full]) => `<div class="detail-field ${full ? 'full' : ''}"><small>${esc(label)}</small><strong>${esc(value || '-')}</strong></div>`).join('');
       $('#detailPhotos').innerHTML = booking.photos?.length ? booking.photos.map(renderPhoto).join('') : '<div class="photo-placeholder">Belum ada foto</div>';
       $('#detailConsent').textContent = booking.consent ? 'Klien menyetujui untuk dihubungi oleh tim JASPEST.' : 'Persetujuan kontak belum tercatat.';
-      $('#detailWhatsapp').disabled = !booking.consent;
+      renderWhatsappNotification(booking.whatsapp_notification || null);
+      $('#detailFollowupWhatsapp').disabled = !booking.consent || ['converted', 'lost'].includes(normalizeBookingStatus(booking.status));
       const events = booking.events || [];
       $('#detailEvents').innerHTML = renderEventList(events);
       $('#detailNoteInput').value = '';
@@ -1113,7 +1347,7 @@
     } catch (error) { showError(error.message); }
   }
   async function openWhatsApp(id) {
-    const booking = bookings.find((item) => item.id === id || item.reference === id) || recentBookings.find((item) => item.id === id || item.reference === id) || (currentBooking?.id === id ? currentBooking : null);
+    const booking = (currentBooking?.id === id || currentBooking?.reference === id ? currentBooking : null) || bookings.find((item) => item.id === id || item.reference === id) || recentBookings.find((item) => item.id === id || item.reference === id);
     if (!booking) { showError('Data booking tidak ditemukan.'); return; }
     if (!booking.consent) { showWarning('Klien belum menyetujui untuk dihubungi.'); return; }
 
@@ -1122,7 +1356,7 @@
 
     if (!apiMode) {
       // Preview mode mirrors the live status behavior without a server connection.
-      if (normalizeBookingStatus(booking.status) !== 'converted') {
+      if (!['converted', 'lost'].includes(normalizeBookingStatus(booking.status))) {
         booking.status = 'followup';
         booking.followedUpAt = new Date().toISOString();
       }
@@ -1134,13 +1368,24 @@
       updateStats(); renderRecent(); renderBookings();
       $('#whatsappPreviewMessage').textContent = buildWhatsAppMessage(booking);
       showModal('whatsappPreviewModal');
-      toast(booking.status === 'converted' ? 'Status Deal Order dipertahankan.' : 'Status booking otomatis berubah menjadi Follow-up.', 'info');
+      toast(['converted', 'lost'].includes(normalizeBookingStatus(booking.status)) ? 'Status akhir booking tetap dipertahankan.' : 'Pratinjau pesan Follow-up siap dibuka di WhatsApp.', 'info');
       return;
     }
 
     const url = `https://wa.me/${phone}?text=${encodeURIComponent(buildWhatsAppMessage(booking))}`;
     // Open synchronously from the click to avoid popup blockers.
-    window.open(url, '_blank', 'noopener,noreferrer');
+    let whatsappWindow = null;
+    try {
+      whatsappWindow = window.open(url, '_blank');
+      if (!whatsappWindow) {
+        showWarning('Jendela percakapan tidak dapat dibuka. Izinkan pop-up untuk halaman admin ini, lalu coba kembali.');
+        return;
+      }
+      whatsappWindow.opener = null;
+    } catch (openError) {
+      showWarning('Percakapan tidak dapat dibuka. Periksa pengaturan browser, lalu coba kembali.');
+      return;
+    }
 
     try {
       const updated = await apiRequest(`/bookings/${encodeURIComponent(id)}/whatsapp-opened`, { method: 'POST' });
@@ -1156,8 +1401,10 @@
       }
       await Promise.all([refreshDashboard(), refreshBookings()]);
       toast(updated.status === 'converted'
-        ? 'WhatsApp dibuka. Status Deal Order tetap dipertahankan.'
-        : 'WhatsApp dibuka. Status booking otomatis berubah menjadi Follow-up.', 'success');
+        ? 'Percakapan dibuka. Status Deal Order tetap dipertahankan.'
+        : updated.status === 'lost'
+          ? 'Percakapan dibuka. Status Tidak Deal tetap dipertahankan.'
+          : 'Pesan tindak lanjut siap ditinjau dan dikirim.', 'success');
     } catch (error) {
       showError(error.message || 'Status booking belum berhasil diperbarui.');
     }
@@ -1187,7 +1434,7 @@
       const response = await apiRequest('/booking-technicians');
       const list = Array.isArray(response.data) ? response.data : [];
       const available = list.filter((item) => item.is_available === true || item.operational_status === 'available');
-      const statusText = { available: 'Tersedia', assigned: 'Sedang bertugas', off_duty: 'Di luar tugas' };
+      const statusText = { available: 'Tersedia', assigned: 'Sedang Bertugas', off_duty: 'Di Luar Tugas' };
       if (list.length === 0) {
         select.innerHTML = '<option value="">Belum ada data teknisi</option>';
         hint.textContent = 'Tambahkan teknisi terlebih dahulu melalui menu Data Teknisi.';
@@ -1258,9 +1505,162 @@
         showWarning('Order sudah tersimpan, tetapi ringkasan belum dapat diperbarui. Muat ulang halaman untuk melihat data terbaru.');
         return;
       }
-      toast('Deal Order berhasil dikonfirmasi. Teknisi sekarang berstatus Sedang bertugas.', 'success');
+      const notice = updated.whatsapp_notification;
+      if (notice?.status === 'accepted' || notice?.status === 'sent') {
+        toast('Deal Order berhasil dikonfirmasi. Pesan konfirmasi masuk antrean pengiriman.', 'success');
+      } else if (notice?.status === 'not_configured') {
+        showWarning('Deal Order berhasil disimpan, tetapi pesan konfirmasi belum dapat dikirim. Hubungi administrator sistem.');
+      } else if (notice?.status === 'failed') {
+        showWarning('Deal Order berhasil disimpan, tetapi pesan konfirmasi belum berhasil dikirim. Buka detail order untuk mencoba kembali.');
+      } else if (notice?.status === 'unknown') {
+        showWarning('Deal Order berhasil disimpan, tetapi status pengiriman belum dapat dipastikan. Periksa riwayat pesan sebelum mencoba kembali.');
+      } else if (notice?.status === 'skipped_consent' || notice?.status === 'skipped_invalid_number') {
+        showWarning('Deal Order berhasil disimpan, tetapi notifikasi tidak dikirim. Periksa persetujuan dan nomor WhatsApp pelanggan.');
+      } else {
+        toast('Deal Order berhasil dikonfirmasi. Teknisi sekarang berstatus Sedang bertugas.', 'success');
+      }
     } catch (error) {
       showError(error.message || 'Order belum berhasil disimpan. Periksa data dan ketersediaan teknisi.');
+    } finally {
+      submit.disabled = false;
+      submit.innerHTML = original;
+    }
+  }
+
+  function updateManualCompanyField() {
+    const isBusiness = $('#manualPropertyType').value === 'bisnis';
+    const wrapper = $('#manualCompanyField');
+    const input = $('#manualCompanyName');
+    wrapper.hidden = !isBusiness;
+    input.required = isBusiness;
+    if (!isBusiness) input.value = '';
+  }
+
+  async function openManualBooking() {
+    if (!apiMode) {
+      showWarning('Penambahan Deal Order memerlukan koneksi ke server.');
+      return;
+    }
+
+    const form = $('#manualBookingForm');
+    const serviceSelect = $('#manualServiceSelect');
+    const technicianSelect = $('#manualTechnicianSelect');
+    const submit = $('#manualBookingSubmit');
+    const hint = $('#manualTechnicianHint');
+
+    form.reset();
+    updateManualCompanyField();
+    serviceSelect.innerHTML = '<option value="">Memuat layanan…</option>';
+    technicianSelect.innerHTML = '<option value="">Memuat teknisi…</option>';
+    technicianSelect.disabled = true;
+    submit.disabled = true;
+    hint.textContent = 'Memuat daftar teknisi…';
+    hint.classList.remove('is-warning');
+    showModal('manualBookingModal');
+
+    try {
+      const [serviceResponse, technicianResponse] = await Promise.all([
+        apiRequest('/content/services'),
+        apiRequest('/booking-technicians')
+      ]);
+
+      const services = (Array.isArray(serviceResponse.data) ? serviceResponse.data : [])
+        .filter((item) => item.status === 'Aktif' && item.slug)
+        .map((item) => ({ slug: item.slug, title: item.title }));
+      serviceSelect.innerHTML = '<option value="">Pilih layanan</option>'
+        + '<option value="konsultasi">Konsultasi</option>'
+        + services.map((service) => `<option value="${esc(service.slug)}">${esc(service.title)}</option>`).join('');
+
+      const technicians = Array.isArray(technicianResponse.data) ? technicianResponse.data : [];
+      const available = technicians.filter((item) => item.is_available === true || item.operational_status === 'available');
+      const statusText = { available: 'Tersedia', assigned: 'Sedang Bertugas', off_duty: 'Di Luar Tugas' };
+      technicianSelect.innerHTML = '<option value="">Pilih teknisi</option>' + technicians.map((technician) => {
+        const isAvailable = technician.is_available === true || technician.operational_status === 'available';
+        const label = `${technician.technician_code || 'TKN'} — ${technician.full_name}`;
+        const suffix = isAvailable ? '' : ` (${statusText[technician.operational_status] || 'Tidak tersedia'})`;
+        return `<option value="${Number(technician.id)}" ${isAvailable ? '' : 'disabled'}>${esc(label + suffix)}</option>`;
+      }).join('');
+      technicianSelect.disabled = available.length === 0;
+      submit.disabled = available.length === 0;
+      hint.textContent = available.length
+        ? `${available.length} teknisi tersedia.`
+        : 'Belum ada teknisi yang tersedia. Perbarui status teknisi sebelum menambahkan Deal Order.';
+      hint.classList.toggle('is-warning', available.length === 0);
+    } catch (error) {
+      closeModal('manualBookingModal');
+      showError(error.message || 'Form Deal Order gagal dimuat.');
+    }
+  }
+
+  async function saveManualBooking(event) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    if (!form.reportValidity()) return;
+
+    const submit = $('#manualBookingSubmit');
+    const original = submit.innerHTML;
+    const values = Object.fromEntries(new FormData(form).entries());
+    values.order_price = parseThousandsInput(values.order_price);
+    values.order_area = parseThousandsInput(values.order_area);
+    values.company_name = values.property_type === 'bisnis' ? String(values.company_name || '').trim() : null;
+    values.description = String(values.description || '').trim();
+    values.consent = true;
+
+    const price = Number(values.order_price);
+    const area = Number(values.order_area);
+    if (!Number.isFinite(price) || price <= 0 || !Number.isFinite(area) || area <= 0) {
+      showWarning('Periksa kembali harga dan luasan pekerjaan. Keduanya harus lebih dari nol.');
+      return;
+    }
+
+    const customer = values.company_name || values.full_name;
+    const technicianLabel = $('#manualTechnicianSelect').selectedOptions[0]?.textContent || 'Teknisi';
+    submit.disabled = true;
+    const confirmed = await confirmDialog({
+      title: 'Simpan Deal Order?',
+      message: `${customer} akan langsung dicatat sebagai Deal Order dengan nilai ${formatRupiah(price)}, luasan ${area.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} m², pelaksanaan ${formatDateLong(values.scheduled_date)}, dan teknisi ${technicianLabel}.`,
+      confirmText: 'Simpan Deal Order'
+    });
+    if (!confirmed) {
+      submit.disabled = false;
+      return;
+    }
+
+    submit.innerHTML = '<span>Menyimpan…</span>';
+    try {
+      const created = await apiRequest('/bookings/manual', { method: 'POST', body: values });
+      closeModal('manualBookingModal');
+      $('#bookingSearch').value = '';
+      $('#statusFilter').value = 'converted';
+      $('#typeFilter').value = 'all';
+      $('#dateFrom').value = '';
+      $('#dateTo').value = '';
+      bookingPage = 1;
+      syncDateLimits();
+      syncSummaryFilter();
+      const refreshResults = await Promise.allSettled([refreshDashboard(), refreshBookings()]);
+      if (refreshResults.some((result) => result.status === 'rejected')) {
+        showWarning('Deal Order berhasil disimpan. Sebagian ringkasan belum diperbarui; muat ulang halaman untuk melihat data terbaru.');
+      } else {
+        const notice = created.whatsapp_notification;
+        if (notice?.status === 'accepted' || notice?.status === 'sent') {
+          toast(`Deal Order ${created.reference || created.id} berhasil ditambahkan. Pesan konfirmasi masuk antrean pengiriman.`, 'success');
+        } else if (notice?.status === 'not_configured' || notice?.status === 'failed' || notice?.status === 'unknown') {
+          showWarning(`Deal Order ${created.reference || created.id} berhasil ditambahkan, tetapi pesan konfirmasi belum dapat dipastikan terkirim. Periksa detail order.`);
+        } else if (notice?.status === 'skipped_consent' || notice?.status === 'skipped_invalid_number') {
+          showWarning('Deal Order berhasil ditambahkan. Periksa persetujuan dan nomor kontak pelanggan.');
+        } else {
+          toast(`Deal Order ${created.reference || created.id} berhasil ditambahkan.`, 'success');
+        }
+      }
+      if ($('#page-clients')?.classList.contains('active')) {
+        refreshClients().catch((error) => showError(error.message));
+      }
+      if ($('#page-technicians')?.classList.contains('active')) {
+        refreshTechnicians().catch((error) => showError(error.message));
+      }
+    } catch (error) {
+      showError(error.message || 'Deal Order belum berhasil disimpan. Periksa kembali data dan ketersediaan teknisi.');
     } finally {
       submit.disabled = false;
       submit.innerHTML = original;
@@ -1538,10 +1938,10 @@
     return ({ direksi: 'Direksi', finance: 'Finance', logistik: 'Logistik', marketing: 'Marketing' })[role] || 'Tidak diketahui';
   }
   function technicianStatusLabel(status) {
-    return ({ available: 'Tersedia', assigned: 'Sedang bertugas', off_duty: 'Di luar tugas' })[status] || status;
+    return ({ available: 'Tersedia', assigned: 'Sedang Bertugas', off_duty: 'Di Luar Tugas' })[status] || status;
   }
   function technicianStatusClass(status) {
-    return ({ available: 'status-contacted', assigned: 'status-converted', off_duty: 'status-followup' })[status] || 'status-new';
+    return ({ available: 'status-technician-available', assigned: 'status-technician-assigned', off_duty: 'status-technician-off-duty' })[status] || 'status-new';
   }
   function updateAccountSummary(summary = {}) {
     $('#accountTotal').textContent = Number(summary.total || 0);
@@ -1660,12 +2060,87 @@
     } catch (error) { showError(error.message); }
   }
 
+  function clientStatusLabel(status) { return status === 'active' ? 'Aktif' : 'Nonaktif'; }
+  function clientStatusClass(status) { return status === 'active' ? 'status-contacted' : 'status-new'; }
+  function updateClientSummary(summary = {}) {
+    $('#clientTotal').textContent = Number(summary.total || 0);
+    $('#clientActive').textContent = Number(summary.active || 0);
+    $('#clientLinkedOrders').textContent = Number(summary.linked_orders || 0);
+  }
+  function renderClientRows() {
+    $('#clientRows').innerHTML = clients.map((client) => `
+      <tr>
+        <td><div class="master-person"><span class="client-initial">${esc(initials(client.full_name))}</span><span><strong>${esc(client.full_name)}</strong><small>${esc(client.client_code)}</small></span></div></td>
+        <td class="master-cell">${esc(client.company_name || 'Perorangan')}</td>
+        <td class="master-contact">${esc(formatPhone(client.whatsapp))}</td>
+        <td><span class="client-order-count">${Number(client.order_count || 0)} order</span></td>
+        <td class="master-cell"><strong>${esc(formatRupiah(client.lifetime_value || 0))}</strong></td>
+        <td><span class="status-pill ${clientStatusClass(client.status)}">${esc(clientStatusLabel(client.status))}</span></td>
+        <td class="master-actions"><div class="table-actions"><button type="button" class="table-action" data-edit-client="${esc(client.id)}" title="Edit data klien" aria-label="Edit data klien ${esc(client.full_name)}">${uiIcon('edit')}<span>Edit</span></button></div></td>
+      </tr>`).join('');
+    $('#emptyClients').hidden = clients.length > 0;
+    $('#clientCount').textContent = `${clientMeta.total || 0} klien`;
+    $('#clientDirectoryCount').textContent = `${clientMeta.total || 0} klien`;
+    $('#clientTableCount').textContent = `Menampilkan ${clients.length} dari ${clientMeta.total || 0} klien`;
+    $('#clientPageLabel').textContent = `${clientMeta.current_page || 1} / ${clientMeta.last_page || 1}`;
+    $('#clientsPrev').disabled = (clientMeta.current_page || 1) <= 1;
+    $('#clientsNext').disabled = (clientMeta.current_page || 1) >= (clientMeta.last_page || 1);
+  }
+  async function refreshClients() {
+    if (!apiMode) { showWarning('Data Klien memerlukan koneksi database server.'); return; }
+    const params = new URLSearchParams({
+      search: $('#clientSearch').value.trim(),
+      status: $('#clientStatusFilter').value || 'all',
+      page: String(clientPage)
+    });
+    const response = await apiRequest(`/clients?${params.toString()}`);
+    clients = response.data || [];
+    clientMeta = response.meta || { current_page: 1, last_page: 1, total: clients.length };
+    updateClientSummary(response.summary || {});
+    renderClientRows();
+    if (Number(response.sync_issues || 0) > 0) {
+      showWarning(`${Number(response.sync_issues)} Deal Order belum dapat disinkronkan karena data identitas perlu diperiksa.`);
+    }
+  }
+  function editClient(id) {
+    const client = clients.find((item) => String(item.id) === String(id));
+    if (!client) return;
+    clientEditingId = client.id;
+    const form = $('#clientForm');
+    Object.entries({
+      full_name: client.full_name, company_name: client.company_name || '', whatsapp: client.whatsapp,
+      email: client.email || '', address: client.address || '', status: client.status || 'active', notes: client.notes || ''
+    }).forEach(([key, value]) => { form.elements.namedItem(key).value = value ?? ''; });
+    $('#clientCodeReadonly').textContent = `Kode klien · ${client.client_code}`;
+    $('#clientModalTitle').textContent = 'Edit data klien';
+    showModal('clientModal');
+  }
+  async function saveClient(event) {
+    event.preventDefault();
+    if (!clientEditingId) return;
+    const form = event.currentTarget;
+    const submit = form.querySelector('button[type="submit"]');
+    const original = submit.innerHTML;
+    submit.disabled = true;
+    submit.innerHTML = '<span>Menyimpan…</span>';
+    try {
+      const values = Object.fromEntries(new FormData(form).entries());
+      const response = await apiRequest(`/clients/${encodeURIComponent(clientEditingId)}`, { method: 'PUT', body: values });
+      await refreshClients();
+      closeModal('clientModal');
+      toast(response.message || 'Data klien berhasil diperbarui.', 'success');
+      clientEditingId = null;
+    } catch (error) { showError(error.message); }
+    finally { submit.disabled = false; submit.innerHTML = original; }
+  }
+
   function renderTechnicianRows() {
     $('#technicianRows').innerHTML = technicians.map((technician) => `
       <tr>
         <td><div class="master-person"><span class="client-initial">${esc(initials(technician.full_name))}</span><span><strong>${esc(technician.full_name)}</strong><small>${esc(technician.technician_code)}</small></span></div></td>
         <td class="master-cell"><strong>${esc(technician.specialization)}</strong><small>${esc(technician.certification || 'Sertifikasi belum dicatat')}</small></td>
-        <td class="master-cell">${esc(technician.service_area || 'Belum ditentukan')}<small>${esc(formatPhone(technician.whatsapp))}</small></td>
+        <td class="master-cell technician-email-cell">${esc(technician.email || 'Email belum diisi')}</td>
+        <td class="master-cell">${esc(technician.service_area || 'Belum ditentukan')}</td>
         <td><span class="status-pill ${technicianStatusClass(technician.operational_status)}">${esc(technicianStatusLabel(technician.operational_status))}</span></td>
         <td class="master-actions"><div class="table-actions"><button type="button" class="table-action" data-edit-technician="${esc(technician.id)}" title="Edit teknisi" aria-label="Edit ${esc(technician.full_name)}">${uiIcon('edit')}<span>Edit</span></button><button type="button" class="table-action delete" data-delete-technician="${esc(technician.id)}" title="Hapus teknisi" aria-label="Hapus teknisi ${esc(technician.full_name)}">${uiIcon('trash')}<span>Hapus</span></button></div></td>
       </tr>`).join('');
@@ -1704,7 +2179,7 @@
     technicianEditingId = technician.id;
     const form = $('#technicianForm');
     Object.entries({
-      full_name: technician.full_name, whatsapp: technician.whatsapp,
+      full_name: technician.full_name, email: technician.email || '',
       address: technician.address, technician_code: technician.technician_code,
       specialization: technician.specialization, service_area: technician.service_area,
       certification: technician.certification, operational_status: technician.operational_status,
@@ -1761,13 +2236,13 @@
     $$('.nav-link[data-page]').forEach((button) => button.classList.toggle('active', button.dataset.page === page || (page === 'content' && button.dataset.page === currentContentType)));
     const masterNavToggle = $('#masterNavToggle');
     const masterSubmenu = $('#masterSubmenu');
-    const masterPageActive = page === 'accounts' || page === 'technicians';
+    const masterPageActive = ['accounts', 'technicians', 'clients', 'stock-catalog'].includes(page);
     if (masterNavToggle && masterSubmenu) {
       masterNavToggle.classList.toggle('active', masterPageActive);
       masterNavToggle.setAttribute('aria-expanded', String(masterPageActive));
       masterSubmenu.hidden = !masterPageActive;
     }
-    const pageTitles = { bookings: 'Data booking', accounts: 'Data Karyawan', technicians: 'Data Teknisi', inventory: 'Inventaris & Gudang' };
+    const pageTitles = { bookings: 'Data Booking', accounts: 'Data Karyawan', technicians: 'Data Teknisi', clients: 'Data Klien', 'stock-catalog': 'Data Stok & Bahan', inventory: 'Inventaris & Gudang' };
     const label = page === 'content' ? contentLabels[currentContentType] : (pageTitles[page] || 'Ringkasan');
     $('#breadcrumbCurrent').textContent = label;
     history.replaceState(null, '', `#${page === 'content' ? currentContentType : page}`);
@@ -1778,6 +2253,8 @@
     if (page === 'bookings') refreshBookings().catch((error) => showError(error.message));
     if (page === 'accounts' && canManageAccounts) refreshAccounts().catch((error) => showError(error.message));
     if (page === 'technicians') refreshTechnicians().catch((error) => showError(error.message));
+    if (page === 'clients') refreshClients().catch((error) => showError(error.message));
+    if (page === 'stock-catalog') refreshStockCatalogPage().catch((error) => showError(error.message));
     if (page === 'inventory') refreshInventory().catch((error) => showError(error.message));
   }
 
@@ -1815,6 +2292,7 @@
           // Then fetch the current booking page so the table and pagination metadata are fresh.
           await refreshDashboard();
           await refreshBookings();
+          if ($('#page-clients')?.classList.contains('active')) await refreshClients();
 
           // Keep an open detail modal in sync when its record was the one updated.
           const reference = payload.reference;
@@ -1875,7 +2353,14 @@
   if (window.JASPEST_ECHO_CONFIGURED) connectRealtime();
 
   function bindEvents() {
+    ensurePhotoLightbox();
     document.addEventListener('click', (event) => {
+      const photoButton = event.target.closest('#detailPhotos [data-photo-url]');
+      if (photoButton) {
+        event.preventDefault();
+        openPhotoLightbox(photoButton.dataset.photoUrl, photoButton.dataset.photoName || 'Foto klien', photoButton);
+        return;
+      }
       const navToggle = event.target.closest('[data-nav-toggle="master"]');
       if (navToggle) {
         const submenu = $('#masterSubmenu');
@@ -1901,6 +2386,7 @@
       const removeAccountButton = event.target.closest('[data-delete-account]'); if (removeAccountButton) { deleteAccount(removeAccountButton.dataset.deleteAccount); return; }
       const editTechnicianButton = event.target.closest('[data-edit-technician]'); if (editTechnicianButton) { editTechnician(editTechnicianButton.dataset.editTechnician); return; }
       const removeTechnicianButton = event.target.closest('[data-delete-technician]'); if (removeTechnicianButton) { deleteTechnician(removeTechnicianButton.dataset.deleteTechnician); return; }
+      const editClientButton = event.target.closest('[data-edit-client]'); if (editClientButton) { editClient(editClientButton.dataset.editClient); return; }
       const editInventoryButton = event.target.closest('[data-edit-inventory-item]'); if (editInventoryButton) { editInventoryItem(editInventoryButton.dataset.editInventoryItem); return; }
       const removeInventoryButton = event.target.closest('[data-delete-inventory-item]'); if (removeInventoryButton) { deleteInventoryItem(removeInventoryButton.dataset.deleteInventoryItem); return; }
       const inventoryTabButton = event.target.closest('[data-inventory-tab]'); if (inventoryTabButton) { setInventoryTab(inventoryTabButton.dataset.inventoryTab).catch((error) => showError(error.message)); return; }
@@ -1946,10 +2432,25 @@
       clearTimeout(technicianSearchTimer); technicianSearchTimer = setTimeout(() => { technicianPage = 1; refreshTechnicians().catch((error) => showError(error.message)); }, 320);
     });
     $('#technicianStatusFilter').addEventListener('change', () => { technicianPage = 1; refreshTechnicians().catch((error) => showError(error.message)); });
+    $('#clientSearch').addEventListener('input', () => {
+      clearTimeout(clientSearchTimer); clientSearchTimer = setTimeout(() => { clientPage = 1; refreshClients().catch((error) => showError(error.message)); }, 320);
+    });
+    $('#clientStatusFilter').addEventListener('change', () => { clientPage = 1; refreshClients().catch((error) => showError(error.message)); });
     $('#accountsPrev').addEventListener('click', () => { if (accountPage > 1) { accountPage -= 1; refreshAccounts().catch((error) => showError(error.message)); } });
     $('#accountsNext').addEventListener('click', () => { if (accountPage < accountMeta.last_page) { accountPage += 1; refreshAccounts().catch((error) => showError(error.message)); } });
     $('#techniciansPrev').addEventListener('click', () => { if (technicianPage > 1) { technicianPage -= 1; refreshTechnicians().catch((error) => showError(error.message)); } });
     $('#techniciansNext').addEventListener('click', () => { if (technicianPage < technicianMeta.last_page) { technicianPage += 1; refreshTechnicians().catch((error) => showError(error.message)); } });
+    $('#clientsPrev').addEventListener('click', () => { if (clientPage > 1) { clientPage -= 1; refreshClients().catch((error) => showError(error.message)); } });
+    $('#clientsNext').addEventListener('click', () => { if (clientPage < clientMeta.last_page) { clientPage += 1; refreshClients().catch((error) => showError(error.message)); } });
+    $('#stockCatalogSearch').addEventListener('input', () => {
+      clearTimeout(stockCatalogSearchTimer);
+      stockCatalogSearchTimer = setTimeout(() => { stockCatalogPage = 1; refreshStockCatalog().catch((error) => showError(error.message)); }, 320);
+    });
+    $('#stockCatalogTypeFilter').addEventListener('change', () => { stockCatalogPage = 1; refreshStockCatalog().catch((error) => showError(error.message)); });
+    $('#stockCatalogStatusFilter').addEventListener('change', () => { stockCatalogPage = 1; refreshStockCatalog().catch((error) => showError(error.message)); });
+    $('#stockCatalogPrev').addEventListener('click', () => { if (stockCatalogPage > 1) { stockCatalogPage -= 1; refreshStockCatalog().catch((error) => showError(error.message)); } });
+    $('#stockCatalogNext').addEventListener('click', () => { if (stockCatalogPage < stockCatalogMeta.last_page) { stockCatalogPage += 1; refreshStockCatalog().catch((error) => showError(error.message)); } });
+    $('#clientForm').addEventListener('submit', saveClient);
     $('#addAccount').addEventListener('click', addAccount);
     $('#emptyAddAccount').addEventListener('click', addAccount);
     $('#accountForm').addEventListener('submit', saveAccount);
@@ -1994,6 +2495,10 @@
       if (select) updateInventoryMaintenance(select.dataset.maintenanceStatus, select.value);
     });
     $('#saveBookingNote').addEventListener('click', saveBookingNote);
+    $('#addManualBooking').addEventListener('click', openManualBooking);
+    $('#manualPropertyType').addEventListener('change', updateManualCompanyField);
+    bindThousandsInputs($('#manualBookingForm'));
+    $('#manualBookingForm').addEventListener('submit', saveManualBooking);
     bindThousandsInputs($('#orderForm'));
     $('#orderForm').addEventListener('submit', saveOrderConversion);
     $('#detailNoteInput').addEventListener('keydown', (event) => { if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) { event.preventDefault(); saveBookingNote(); } });
@@ -2018,7 +2523,8 @@
     $('#bookingsPrev').addEventListener('click', () => { if (bookingPage > 1) { bookingPage -= 1; refreshBookings().catch((error) => showError(error.message)); } });
     $('#bookingsNext').addEventListener('click', () => { if (bookingPage < bookingMeta.last_page) { bookingPage += 1; refreshBookings().catch((error) => showError(error.message)); } });
     $('#exportBookings').addEventListener('click', handleExport);
-    $('#detailWhatsapp').addEventListener('click', () => currentBooking && openWhatsApp(currentBooking.id));
+    $('#detailFollowupWhatsapp').addEventListener('click', () => currentBooking && openWhatsApp(currentBooking.id));
+    $('#retryDealWhatsapp').addEventListener('click', retryDealWhatsappNotification);
     $('#copyWhatsAppPreview').addEventListener('click', async () => {
       const message = $('#whatsappPreviewMessage').textContent;
       try {
@@ -2070,9 +2576,13 @@
       if (!(image instanceof HTMLImageElement) || !image.closest('#detailPhotos')) return;
       image.classList.add('photo-load-failed');
       const hint = image.closest('.photo-link')?.querySelector('small');
-      if (hint) hint.textContent = 'Gagal dimuat — klik untuk coba buka tab baru';
+      if (hint) hint.textContent = 'Gagal dimuat — klik untuk mencoba kembali';
     }, true);
     document.addEventListener('keydown', (event) => {
+      if ($('#photoLightbox') && !$('#photoLightbox').hidden) {
+        if (event.key === 'Escape') { event.preventDefault(); closePhotoLightbox(); }
+        return;
+      }
       if (event.key !== 'Escape') return;
       const openModals = $$('.modal-backdrop:not([hidden])');
       if (openModals.length) { closeModal(openModals[openModals.length - 1].id); return; }
@@ -2097,7 +2607,7 @@
     bindEvents();
     if (location.hash && contentLabels[location.hash.slice(1)]) {
       await showContentPage(location.hash.slice(1));
-    } else if (['#bookings', '#accounts', '#employees', '#technicians', '#personnel', '#inventory'].includes(location.hash)) {
+    } else if (['#bookings', '#accounts', '#employees', '#technicians', '#personnel', '#clients', '#stock-catalog', '#inventory'].includes(location.hash)) {
       const legacyPage = location.hash.slice(1);
       // Keep old bookmarks working while directing them to the newly separated pages.
       const destination = legacyPage === 'employees'

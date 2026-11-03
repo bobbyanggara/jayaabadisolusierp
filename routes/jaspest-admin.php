@@ -3,6 +3,7 @@
 use App\Http\Controllers\JaspestAdminApiController;
 use App\Http\Controllers\JaspestAdminAuthController;
 use App\Http\Controllers\JaspestAdminController;
+use App\Http\Controllers\JaspestFonnteWebhookController;
 use App\Http\Controllers\JaspestEnquiryController;
 use App\Http\Middleware\EnsureJaspestAdmin;
 use Illuminate\Support\Facades\Route;
@@ -26,6 +27,8 @@ Route::middleware('web')->group(function (): void {
             Route::prefix('api')->name('api.')->group(function (): void {
                 Route::get('/dashboard', [JaspestAdminApiController::class, 'dashboard'])->name('dashboard');
                 Route::get('/bookings', [JaspestAdminApiController::class, 'bookings'])->name('bookings.index');
+                Route::post('/bookings/manual', [JaspestAdminApiController::class, 'storeManualDealOrder'])
+                    ->middleware('throttle:20,1')->name('bookings.manual.store');
                 Route::get('/bookings/export', [JaspestAdminApiController::class, 'exportBookings'])->name('bookings.export');
                 Route::get('/bookings/{enquiry}', [JaspestAdminApiController::class, 'showBooking'])->name('bookings.show');
                 Route::get('/booking-technicians', [JaspestAdminApiController::class, 'bookingTechnicians'])->name('bookings.technicians');
@@ -37,6 +40,8 @@ Route::middleware('web')->group(function (): void {
                     ->middleware('throttle:30,1')->name('bookings.notes');
                 Route::patch('/bookings/{enquiry}/status', [JaspestAdminApiController::class, 'updateBookingStatus'])
                     ->middleware('throttle:30,1')->name('bookings.status');
+                Route::post('/bookings/{enquiry}/whatsapp-notification/retry', [JaspestAdminApiController::class, 'retryDealOrderWhatsapp'])
+                    ->middleware('throttle:5,1')->name('bookings.whatsapp-notification.retry');
 
                 Route::get('/accounts', [JaspestAdminApiController::class, 'accounts'])->middleware('can:manage-jaspest-accounts')->name('accounts.index');
                 Route::post('/accounts', [JaspestAdminApiController::class, 'storeAccount'])
@@ -45,6 +50,10 @@ Route::middleware('web')->group(function (): void {
                     ->whereNumber('account')->middleware(['throttle:30,1', 'can:manage-jaspest-accounts'])->name('accounts.update');
                 Route::delete('/accounts/{account}', [JaspestAdminApiController::class, 'deleteAccount'])
                     ->whereNumber('account')->middleware(['throttle:30,1', 'can:manage-jaspest-accounts'])->name('accounts.delete');
+
+                Route::get('/clients', [JaspestAdminApiController::class, 'clients'])->name('clients.index');
+                Route::put('/clients/{client}', [JaspestAdminApiController::class, 'updateClient'])
+                    ->whereNumber('client')->middleware('throttle:30,1')->name('clients.update');
 
                 Route::get('/technicians', [JaspestAdminApiController::class, 'technicians'])->name('technicians.index');
                 Route::post('/technicians', [JaspestAdminApiController::class, 'storeTechnician'])
@@ -90,3 +99,11 @@ Route::middleware('web')->group(function (): void {
             });
         });
 });
+
+
+// Fonnte status callback uses a high-entropy path secret and deliberately does
+// not use the admin session/CSRF middleware. Configure this URL on the Fonnte device.
+Route::post('/integrations/fonnte/status/{secret}', [JaspestFonnteWebhookController::class, 'updateStatus'])
+    ->where('secret', '[A-Za-z0-9_-]{32,128}')
+    ->middleware('throttle:120,1')
+    ->name('jaspest.fonnte.webhook.status');

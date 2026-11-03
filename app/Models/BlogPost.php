@@ -48,7 +48,7 @@ class BlogPost extends Model
             'datePublished' => $this->published_at->toIso8601String(),
             'dateModified' => $this->updated_at->toIso8601String(),
             'author' => ['@type' => 'Organization', 'name' => $this->author_name, 'url' => url('/')],
-            'publisher' => ['@type' => 'Organization', 'name' => 'JASPEST — Jaya Abadi Solusi', 'url' => url('/')],
+            'publisher' => ['@type' => 'Organization', 'name' => 'JASPEST — CV Jaya Abadi Solusi', 'url' => url('/')],
             'mainEntityOfPage' => ['@type' => 'WebPage', '@id' => route('jaspest.blog.show', $this->slug)],
             'inLanguage' => 'id-ID',
             'articleSection' => $this->category,

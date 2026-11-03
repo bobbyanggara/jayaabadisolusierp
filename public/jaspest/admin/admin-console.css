@@ -221,11 +221,26 @@ form#contentForm{display:flex;flex-direction:column;min-height:0}
 .detail-section>p{color:var(--muted)}
 .detail-note{margin-top:16px;padding:10px 12px;border-left:3px solid var(--amber);background:var(--amber-soft);color:var(--amber);font-size:14px}
 .photo-preview{display:flex;flex-wrap:wrap;gap:10px}
-.photo-link{display:block;width:150px;border:1px solid var(--line);border-radius:var(--r-ctl);overflow:hidden}
-.photo-link img{display:block;width:100%;height:100px;object-fit:cover}
-.photo-link span{display:block;padding:6px 8px;font-size:14px;line-height:1.3}
-.photo-link small{display:block;color:var(--brand);font-size:13px}
+.photo-link{appearance:none;display:block;width:150px;padding:0;border:1px solid var(--line);border-radius:var(--r-ctl);overflow:hidden;background:var(--surface);color:var(--ink);font:inherit;text-align:left;cursor:zoom-in;transition:border-color .16s ease,box-shadow .16s ease,transform .16s ease}
+.photo-link:hover{border-color:var(--brand);box-shadow:0 5px 16px rgba(10,28,38,.12);transform:translateY(-1px)}
+.photo-link:focus-visible{outline:3px solid color-mix(in srgb,var(--brand) 42%,transparent);outline-offset:3px}
+.photo-link img{display:block;width:100%;height:100px;object-fit:cover;background:var(--sunken);transition:transform .2s ease}
+.photo-link:hover img{transform:scale(1.035)}
+.photo-link span{display:block;padding:7px 9px;font-size:13px;line-height:1.35;overflow-wrap:anywhere}
+.photo-link small{display:block;margin-top:3px;color:var(--brand);font-size:12px;font-weight:650}
 .photo-placeholder{padding:18px;border:1px dashed var(--line-strong);border-radius:var(--r-ctl);color:var(--muted)}
+.photo-lightbox{position:fixed;inset:0;z-index:130;display:grid;place-items:center;padding:28px;background:rgba(4,10,16,.9);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px);animation:photo-lightbox-in .16s ease-out}
+.photo-lightbox[hidden]{display:none!important}
+.photo-lightbox__dialog{position:relative;display:grid;place-items:center;width:100%;height:100%;min-width:0;min-height:0;outline:none}
+.photo-lightbox__figure{display:grid;grid-template-rows:minmax(0,1fr) auto;justify-items:center;gap:12px;width:100%;height:100%;min-width:0;min-height:0;margin:0}
+.photo-lightbox__image{display:block;min-width:0;min-height:0;max-width:min(94vw,1500px);max-height:calc(100dvh - 104px);width:auto;height:auto;object-fit:contain;border-radius:9px;box-shadow:0 20px 70px rgba(0,0,0,.38)}
+.photo-lightbox__caption{max-width:min(90vw,900px);color:rgba(255,255,255,.88);font-size:13px;line-height:1.4;text-align:center;overflow-wrap:anywhere}
+.photo-lightbox__close{position:fixed;top:16px;right:18px;z-index:1;display:grid;place-items:center;width:42px;height:42px;border:1px solid rgba(255,255,255,.26);border-radius:50%;background:rgba(255,255,255,.1);color:#fff;font-size:28px;line-height:1;cursor:pointer;transition:background .15s ease,transform .15s ease}
+.photo-lightbox__close:hover{background:rgba(255,255,255,.22);transform:scale(1.04)}
+.photo-lightbox__close:focus-visible{outline:3px solid #fff;outline-offset:3px}
+@keyframes photo-lightbox-in{from{opacity:0}to{opacity:1}}
+@media(max-width:560px){.photo-lightbox{padding:16px}.photo-lightbox__image{max-width:96vw;max-height:calc(100dvh - 88px);border-radius:6px}.photo-lightbox__close{top:10px;right:10px;width:38px;height:38px}}
+@media(prefers-reduced-motion:reduce){.photo-lightbox,.photo-link,.photo-link img{animation:none;transition:none}}
 .note-form{display:grid;gap:8px;justify-items:start}
 .note-form textarea,.form-label input,.form-label textarea,.form-label select{width:100%;padding:9px 10px;border:1px solid var(--line-strong);border-radius:var(--r-ctl);background:var(--surface);resize:vertical}
 .detail-events{display:grid;gap:0}
@@ -504,7 +519,7 @@ form#accountForm,form#technicianForm{display:flex;flex-direction:column;min-heig
 @media (max-width: 720px) {
   .booking-detail-footer { align-items: stretch; }
   .booking-detail-footer .footer-close,
-  .booking-detail-footer #detailWhatsapp { flex: 1 1 100%; }
+  
   .booking-status-actions {
     width: 100%;
     margin-left: 0;
@@ -551,6 +566,16 @@ form#accountForm,form#technicianForm{display:flex;flex-direction:column;min-heig
   --state-lost-ink: #b42332;
   --state-lost-bg: #fff0f1;
   --state-lost-border: #f2c4ca;
+  /* Pastel technician palette: visible at a glance without using saturated fills. */
+  --technician-available-ink: #276747;
+  --technician-available-bg: #eff8ef;
+  --technician-available-border: #d0e7d0;
+  --technician-assigned-ink: #876200;
+  --technician-assigned-bg: #fff9e2;
+  --technician-assigned-border: #f2e2a8;
+  --technician-off-duty-ink: #a52f3c;
+  --technician-off-duty-bg: #fff1f2;
+  --technician-off-duty-border: #f3cbd0;
   --control-height: 42px;
   --control-radius: 10px;
 }
@@ -570,6 +595,15 @@ html[data-theme="dark"] {
   --state-lost-ink: #ff9ba4;
   --state-lost-bg: #3b2228;
   --state-lost-border: #70404a;
+  --technician-available-ink: #a9dfb7;
+  --technician-available-bg: #1e3428;
+  --technician-available-border: #365c42;
+  --technician-assigned-ink: #f3d784;
+  --technician-assigned-bg: #3b321a;
+  --technician-assigned-border: #66532b;
+  --technician-off-duty-ink: #ffa5ac;
+  --technician-off-duty-bg: #3b2228;
+  --technician-off-duty-border: #70404a;
 }
 
 /* Common control hierarchy and interaction states */
@@ -645,6 +679,21 @@ body.jas-admin .table-action.wa:hover { background: var(--state-contact-bg); bor
 .status-pill.status-converted { color: var(--state-order-ink); background: var(--state-order-bg); border-color: var(--state-order-border); }
 .status-pill.status-new,
 .status-pill.status-lost { color: var(--state-lost-ink); background: var(--state-lost-bg); border-color: var(--state-lost-border); }
+/* Status teknisi memakai identitas warna operasional yang konsisten. */
+.status-pill.status-technician-available { color: var(--technician-available-ink); background: var(--technician-available-bg); border-color: var(--technician-available-border); }
+.status-pill.status-technician-assigned { color: var(--technician-assigned-ink); background: var(--technician-assigned-bg); border-color: var(--technician-assigned-border); }
+.status-pill.status-technician-off-duty { color: var(--technician-off-duty-ink); background: var(--technician-off-duty-bg); border-color: var(--technician-off-duty-border); }
+.technician-email-cell { max-width: 250px; overflow-wrap: anywhere; }
+.technician-summary [data-technician-filter="available"] .summary-dot { background: var(--technician-available-ink); }
+.technician-summary [data-technician-filter="assigned"] .summary-dot { background: var(--technician-assigned-ink); }
+.technician-summary [data-technician-filter="off_duty"] .summary-dot { background: var(--technician-off-duty-ink); }
+.technician-summary [data-technician-filter="available"][aria-pressed="true"] { border-bottom-color: var(--technician-available-ink); background: var(--technician-available-bg); color: var(--technician-available-ink); }
+.technician-summary [data-technician-filter="assigned"][aria-pressed="true"] { border-bottom-color: var(--technician-assigned-ink); background: var(--technician-assigned-bg); color: var(--technician-assigned-ink); }
+.technician-summary [data-technician-filter="off_duty"][aria-pressed="true"] { border-bottom-color: var(--technician-off-duty-ink); background: var(--technician-off-duty-bg); color: var(--technician-off-duty-ink); }
+.technician-summary .summary-filter[aria-pressed="true"] strong { color: inherit; }
+.inventory-status-badge.technician-available { color: var(--technician-available-ink); background: var(--technician-available-bg); border-color: var(--technician-available-border); }
+.inventory-status-badge.technician-assigned { color: var(--technician-assigned-ink); background: var(--technician-assigned-bg); border-color: var(--technician-assigned-border); }
+.inventory-status-badge.technician-off-duty { color: var(--technician-off-duty-ink); background: var(--technician-off-duty-bg); border-color: var(--technician-off-duty-border); }
 .status-cell { gap: 4px; }
 .status-cell .wait-note { font-size: 12px; }
 
@@ -754,7 +803,7 @@ body.jas-admin .table-action.wa:hover { background: var(--state-contact-bg); bor
 .booking-status-button:disabled { opacity: .38; cursor: not-allowed; box-shadow: none; }
 .booking-detail-footer { justify-content: space-between; gap: 10px; padding: 14px 24px; }
 .booking-detail-footer .footer-close { margin-right: auto; }
-.booking-detail-footer .btn-whatsapp { min-width: 205px; }
+
 
 /* Order confirmation: clear two-step visual grouping and comfortable form controls. */
 .order-modal { width: min(720px, 100%); border-radius: 18px; }
@@ -822,7 +871,7 @@ body.jas-admin .table-action.wa:hover { background: var(--state-contact-bg); bor
   .booking-status-button { min-height: 43px; padding-inline: 8px; font-size: 12px; }
   .booking-detail-footer { align-items: stretch; padding: 12px 16px; }
   .booking-detail-footer .footer-close { flex: 0 0 auto; min-width: 105px; margin: 0; }
-  .booking-detail-footer .btn-whatsapp { flex: 1 1 auto; min-width: 0; }
+  
   .order-modal .modal-head { padding: 19px 18px 15px; }
   .order-modal .modal-body { padding: 15px 16px 18px; gap: 12px; }
   .order-form-section { padding: 13px; }
@@ -836,7 +885,7 @@ body.jas-admin .table-action.wa:hover { background: var(--state-contact-bg); bor
   .booking-status-button { justify-content: flex-start; padding-inline: 11px; }
   .detail-status-panel-note { display: none; }
   .booking-detail-footer .footer-close { flex: 1 1 100%; }
-  .booking-detail-footer .btn-whatsapp { flex: 1 1 100%; }
+  
 }
 /* Final state refinements: selected status remains clear without relying on color alone. */
 .booking-status-button.is-active {
@@ -881,7 +930,7 @@ body.jas-admin .booking-status-footer-heading span {
 }
 body.jas-admin .booking-detail-footer .booking-status-actions {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   align-items: stretch;
   justify-content: initial;
   flex: 1 1 auto;
@@ -906,20 +955,9 @@ body.jas-admin .booking-detail-footer .booking-status-button .ui-icon {
   width: 15px;
   height: 15px;
 }
-body.jas-admin .booking-detail-footer #detailWhatsapp {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex: 0 0 auto;
-  min-width: 190px;
-  min-height: 44px;
-  margin: 0;
-  white-space: nowrap;
-}
 @media (max-width: 900px) {
   body.jas-admin .detail-modal .booking-detail-footer { gap: 12px; }
   body.jas-admin .booking-status-footer-group { flex: 1 1 100%; }
-  body.jas-admin .booking-detail-footer #detailWhatsapp { flex: 1 1 100%; }
 }
 @media (max-width: 560px) {
   body.jas-admin .detail-modal .booking-detail-footer { padding: 12px 16px; gap: 10px; }
@@ -929,7 +967,6 @@ body.jas-admin .booking-detail-footer #detailWhatsapp {
   body.jas-admin .booking-detail-footer .booking-status-actions { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
   body.jas-admin .booking-detail-footer .booking-status-button { min-height: 40px; padding: 7px 5px; gap: 4px; font-size: 11px; }
   body.jas-admin .booking-detail-footer .booking-status-button .ui-icon { width: 14px; height: 14px; flex-basis: 14px; }
-  body.jas-admin .booking-detail-footer #detailWhatsapp { width: 100%; min-width: 0; }
 }
 @media (max-width: 380px) {
   body.jas-admin .booking-detail-footer .booking-status-button { white-space: normal; line-height: 1.15; }
@@ -1047,3 +1084,112 @@ body.jas-admin .booking-detail-footer #detailWhatsapp {
 .nav-sub-indicator{width:6px;height:6px;flex:0 0 6px;border:1.5px solid currentColor;border-radius:50%;opacity:.8}
 .nav-sub-link.active .nav-sub-indicator{background:currentColor;opacity:1}
 @media(prefers-reduced-motion:reduce){.nav-chevron{transition:none}}
+
+
+/* ——— Data Klien: sumber Deal Order, antrean impor, dan direktori klien ——— */
+.client-summary .summary-filter{cursor:default}
+.client-panel{margin-top:18px}
+.client-panel-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:18px 20px 12px}
+.client-panel-heading h2{margin:0;font-size:16px;font-weight:750;letter-spacing:-.01em}
+.client-panel-heading p{margin:5px 0 0;color:var(--muted);font-size:13px;line-height:1.5}
+.client-queue-count{flex:none;padding:5px 9px;border-radius:7px;background:var(--sunken);color:var(--muted);font-size:12px;font-weight:700;white-space:nowrap}
+.client-toolbar{padding-top:10px}
+.client-toolbar .search-box{flex:1 1 320px}
+.client-toolbar select{min-width:150px}
+.client-candidate-table{min-width:1000px}
+.client-candidate-table .master-person{min-width:230px;align-items:flex-start}
+.client-candidate-table .master-person .client-initial{flex:none}
+.client-candidate-table .master-person>span:last-child{min-width:0}
+.client-candidate-table .master-person small{overflow-wrap:anywhere}
+.client-match-note,.client-source-note{display:block;max-width:320px;margin-top:4px;font-size:11px;line-height:1.4;white-space:normal}
+.client-match-note{color:var(--brand-text);font-weight:650}
+.client-source-note{color:var(--muted)}
+.client-order-count{display:inline-flex;align-items:center;justify-content:center;min-width:58px;padding:4px 8px;border:1px solid var(--line);border-radius:6px;background:var(--sunken);font-size:12px;font-weight:700;white-space:nowrap}
+.client-import-action{min-height:32px;padding:0 10px;color:var(--brand-text);border-color:var(--line-strong);background:var(--surface);font-weight:700}
+.client-import-action:hover:not(:disabled){background:var(--brand-soft);border-color:var(--brand)}
+.client-code-readonly{display:inline-flex;align-self:flex-start;padding:6px 9px;margin-bottom:14px;border:1px solid var(--line);border-radius:7px;background:var(--sunken);color:var(--muted);font-size:12px;font-weight:750;letter-spacing:.025em}
+form#clientForm{display:flex;flex-direction:column;min-height:0}
+#page-clients .privacy-footnote{margin-top:14px}
+@media(max-width:860px){
+  .client-panel-heading{padding:15px 14px 10px}
+  .client-candidate-table{min-width:940px}
+  .client-import-action{width:auto!important;min-width:36px}
+}
+@media(max-width:560px){
+  .client-panel-heading{align-items:flex-start}
+  .client-queue-count{font-size:11px}
+  .client-toolbar .search-box{flex-basis:100%}
+  .client-toolbar select{width:100%}
+  #clientModal .form-two-cols{grid-template-columns:1fr}
+}
+
+
+/* ——— Data Master: katalog stok & bahan read-only ——— */
+.stock-catalog-heading{align-items:center}
+.stock-catalog-readonly{display:flex;align-items:flex-start;gap:10px;margin:0 0 14px;padding:12px 14px;border:1px solid var(--line);border-radius:11px;background:var(--surface);color:var(--muted);font-size:13px;line-height:1.55}
+.stock-catalog-readonly .ui-icon{width:18px;height:18px;flex:0 0 18px;margin-top:1px;color:var(--brand-text)}
+.stock-catalog-readonly strong{color:var(--ink);font-weight:750}
+.stock-catalog-stat-grid{grid-template-columns:repeat(4,minmax(0,1fr));margin-bottom:14px}
+.stock-catalog-panel{overflow:hidden}
+.stock-catalog-panel-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:18px 20px 12px}
+.stock-catalog-panel-heading h2{margin:0;font-size:16px;font-weight:750;letter-spacing:-.01em}
+.stock-catalog-panel-heading p{margin:5px 0 0;color:var(--muted);font-size:13px;line-height:1.5}
+.stock-catalog-view-tag{display:inline-flex;align-items:center;gap:6px;flex:none;padding:5px 9px;border:1px solid var(--line);border-radius:7px;background:var(--sunken);color:var(--muted);font-size:11px;font-weight:750;white-space:nowrap}
+.stock-catalog-view-tag .ui-icon{width:14px;height:14px}
+.stock-catalog-toolbar{padding-top:10px}
+.stock-catalog-toolbar .search-box{flex:1 1 300px}
+.stock-catalog-toolbar select{min-width:155px}
+.stock-catalog-table{min-width:1120px}
+.stock-catalog-table td{font-size:13px}
+.stock-catalog-secondary{display:block;margin-top:4px;color:var(--muted);font-size:11px;line-height:1.35}
+.stock-catalog-condition{display:inline-flex;align-items:center;justify-content:center;min-height:25px;padding:4px 8px;border:1px solid var(--line);border-radius:6px;background:var(--sunken);font-size:11px;font-weight:750;white-space:nowrap}
+.stock-catalog-condition.is-good{color:var(--green);background:var(--green-soft);border-color:color-mix(in srgb,var(--green) 20%,var(--line))}
+.stock-catalog-condition.is-low{color:var(--amber);background:var(--amber-soft);border-color:color-mix(in srgb,var(--amber) 22%,var(--line))}
+.stock-catalog-condition.is-field{color:var(--brand-text);background:var(--brand-soft);border-color:var(--line)}
+.stock-catalog-condition.is-empty{color:var(--muted);background:var(--sunken)}
+#page-stock-catalog .table-scroll{max-width:100%;overflow-x:auto}
+@media(max-width:1100px){.stock-catalog-stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:860px){.stock-catalog-panel-heading{padding:15px 14px 10px}.stock-catalog-toolbar .search-box{flex-basis:100%}.stock-catalog-toolbar select{flex:1 1 150px}}
+@media(max-width:560px){.stock-catalog-heading{align-items:flex-start}.stock-catalog-stat-grid{grid-template-columns:1fr 1fr;gap:8px}.stock-catalog-readonly{font-size:12px;padding:10px 11px}.stock-catalog-panel-heading{align-items:flex-start;flex-direction:column}.stock-catalog-toolbar select{width:100%}}
+
+/* ——— Deal Order: status konfirmasi WhatsApp ——— */
+.whatsapp-notification-section{padding-top:2px}
+.whatsapp-notification-card{display:grid;gap:6px;padding:13px 14px;border:1px solid var(--line);border-radius:9px;background:var(--sunken);color:var(--muted);font-size:13px;line-height:1.45}
+.whatsapp-notification-status{display:flex;align-items:center;gap:9px;color:var(--ink);font-size:14px}
+.notification-status-dot{width:9px;height:9px;flex:0 0 9px;border-radius:50%;background:var(--faint)}
+.notification-neutral{background:var(--faint)}
+.notification-info{background:var(--brand)}
+.notification-success{background:var(--green)}
+.notification-danger{background:var(--red)}
+.notification-warning{background:var(--amber)}
+.whatsapp-notification-error{margin-top:3px;padding:9px 10px;border-left:3px solid var(--red);border-radius:4px;background:var(--red-soft);color:var(--red);overflow-wrap:anywhere}
+.whatsapp-notification-help{margin-top:3px;color:var(--amber);font-size:12px}
+.whatsapp-notification-retry{justify-self:start;margin-top:9px;min-height:34px}
+
+
+/* Follow-up is initiated by the admin from the booking detail. */
+body.jas-admin .booking-detail-footer { justify-content: flex-start; }
+body.jas-admin .booking-detail-footer .booking-status-footer-group { flex: 1 1 100%; width: 100%; }
+body.jas-admin .booking-detail-footer .booking-status-actions { grid-template-columns: repeat(3, minmax(0, 1fr)); width: 100%; }
+body.jas-admin .booking-detail-footer .booking-followup-action { color: var(--state-follow-ink); background: var(--state-follow-bg); border-color: var(--state-follow-border); }
+body.jas-admin .booking-detail-footer .booking-followup-action.is-active { color: #fff !important; background: #94600b; border-color: #94600b; }
+body.jas-admin .booking-detail-footer .booking-followup-action .ui-icon { color: currentColor; }
+@media (max-width: 560px) {
+  body.jas-admin .booking-detail-footer .booking-status-actions { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  body.jas-admin .booking-detail-footer .booking-status-button { min-width: 0; white-space: normal; }
+}
+
+/* Manual Deal Order form */
+.manual-booking-modal { width: min(820px, 100%); }
+.manual-booking-modal .modal-body { max-height: min(72vh, 760px); overflow-y: auto; overscroll-behavior: contain; }
+.manual-booking-modal .form-label > textarea { display: block; width: 100%; min-height: 78px; margin-top: 6px; padding: 9px 11px; border: 1px solid var(--line-strong); border-radius: 9px; background: var(--surface); color: var(--ink); font: inherit; font-size: 13px; resize: vertical; }
+.manual-booking-modal .form-label > textarea:focus { border-color: var(--focus); outline: 3px solid color-mix(in srgb, var(--focus) 16%, transparent); outline-offset: 0; }
+.manual-booking-modal .form-field-full { grid-column: 1 / -1; }
+.manual-company-field[hidden] { display: none !important; }
+.manual-booking-modal .manual-consent { display: flex; align-items: flex-start; gap: 10px; margin: 14px 0 0; padding: 12px 13px; border: 1px solid var(--line); border-radius: 10px; background: var(--sunken); color: var(--muted); font-size: 12px; line-height: 1.5; }
+.manual-booking-modal .manual-consent input { flex: 0 0 auto; width: 16px; height: 16px; margin-top: 1px; accent-color: var(--brand); }
+.manual-booking-modal .modal-footer { position: sticky; bottom: 0; background: var(--surface); }
+@media (max-width: 720px) {
+  .manual-booking-modal .modal-body { max-height: 68vh; }
+  .manual-booking-modal .form-field-full { grid-column: auto; }
+}

@@ -1,6 +1,6 @@
 /* Konten awal JASPEST. Nantinya diganti dengan konten terbit dari admin Laravel. */
 window.JASPEST_CONTENT = {
-  brand: { name: 'JASPEST', company: 'Jaya Abadi Solusi', tagline: 'Solusi pengendalian hama untuk rumah dan bisnis.', logo: null },
+  brand: { name: 'JASPEST', company: 'CV Jaya Abadi Solusi', tagline: 'Solusi pengendalian hama untuk rumah dan bisnis.', logo: null },
   services: [
     { id: 'pest-control', name: 'Pest Control', icon: 'bug', label: 'Pengendalian hama umum', description: 'Bantu jaga kenyamanan ruang Anda dari gangguan hama yang tidak diinginkan.', detail: 'Ceritakan jenis gangguan atau temuan hama di lokasi Anda. Tim JASPEST akan membahas kebutuhan pengendalian hama yang sesuai dengan kondisi rumah maupun tempat usaha Anda.' },
     { id: 'rodent-control', name: 'Rodent Control', icon: 'mouse', label: 'Pengendalian tikus', description: 'Pendekatan pengendalian tikus untuk kebutuhan hunian dan lingkungan usaha.', detail: 'Layanan untuk kebutuhan pengendalian tikus di hunian atau tempat usaha. Sampaikan lokasi dan temuan yang Anda jumpai agar tim dapat memahami kebutuhan Anda. Metode dan rincian penanganan dijelaskan langsung oleh tim.' },

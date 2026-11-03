@@ -1,1 +1,0 @@
-<dialog class="content-dialog" id="content-dialog" aria-labelledby="dialog-title"><button class="dialog-close icon-button" id="dialog-close" aria-label="Tutup"><svg aria-hidden="true"><use href="#i-close"/></svg></button><div id="dialog-content"></div></dialog>

@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\BlogPost;
 use App\Models\JaspestContentItem;
+use App\Models\JaspestClient;
+use App\Models\JaspestClientEnquiryLink;
 use App\Models\JaspestEnquiry;
 use App\Models\JaspestEnquiryEvent;
 use App\Models\JaspestInventoryBatch;
@@ -13,6 +15,8 @@ use App\Models\JaspestInventoryMovement;
 use App\Models\JaspestInventoryTechnicianStock;
 use App\Models\JaspestInventoryTechnicianBatch;
 use App\Models\JaspestTechnician;
+use App\Models\JaspestWhatsappNotification;
+use App\Services\JaspestFonnteService;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\QueryException;
@@ -30,7 +34,7 @@ class JaspestAdminApiController extends Controller
 {
     private const CONTENT_TYPES = ['pages', 'services', 'pests', 'methods', 'articles', 'gallery', 'faqs', 'settings'];
     private const STATUSES = ['new', 'followup', 'converted', 'lost'];
-    private const STATUS_ACTIONS = ['followup', 'converted', 'lost'];
+    private const STATUS_ACTIONS = ['converted', 'lost'];
     private const DIVISION_ROLES = ['direksi', 'finance', 'logistik', 'marketing'];
 
     public function dashboard(): JsonResponse
@@ -377,8 +381,11 @@ class JaspestAdminApiController extends Controller
 
     public function showBooking(JaspestEnquiry $enquiry): JsonResponse
     {
-        $enquiry->load(['photos', 'events']);
+        $enquiry->load(['photos', 'events', 'whatsappNotification']);
         $resource = $this->bookingResource($enquiry);
+        $resource['whatsapp_notification'] = $enquiry->whatsappNotification
+            ? $this->whatsappNotificationResource($enquiry->whatsappNotification)
+            : null;
         $resource['photos'] = $enquiry->photos->map(fn ($photo): array => [
             'id' => $photo->id,
             'name' => $photo->original_name,
@@ -390,7 +397,9 @@ class JaspestAdminApiController extends Controller
             'event' => $event->event,
             'from_status' => $event->from_status,
             'to_status' => $event->to_status,
-            'note' => $event->note,
+            'note' => $event->event === 'whatsapp_opened'
+                ? 'Pesan tindak lanjut disiapkan dari data pengajuan dan percakapan pelanggan dibuka untuk ditinjau.'
+                : $event->note,
             'author' => $event->user_id ? ($authors[$event->user_id] ?? null) : null,
             'created_at' => $event->created_at?->copy()->timezone('Asia/Jakarta')->toIso8601String(),
         ])->values();
@@ -651,33 +660,39 @@ class JaspestAdminApiController extends Controller
     {
         abort_unless($enquiry->consent, 422, 'Klien belum menyetujui untuk dihubungi.');
 
-        DB::transaction(function () use ($enquiry): void {
-            $before = $enquiry->status;
-            // A completed order is terminal; opening WhatsApp must not downgrade it.
-            $nextStatus = $before === 'converted' ? 'converted' : 'followup';
+        $updatedEnquiry = DB::transaction(function () use ($enquiry): JaspestEnquiry {
+            $locked = JaspestEnquiry::query()->lockForUpdate()->findOrFail($enquiry->id);
+            $before = $locked->status;
+            // Follow-up is only a wa.me action. Opening the prepared chat does not
+            // prove the message was sent; the admin must press Send in WhatsApp.
+            // Keep terminal statuses unchanged even if an old link is opened.
+            $terminal = in_array($before, ['converted', 'lost'], true);
+            $nextStatus = $terminal ? $before : 'followup';
             $timestamp = now();
 
-            $enquiry->forceFill([
+            $locked->forceFill([
                 'wa_opened_at' => $timestamp,
                 'status' => $nextStatus,
-                'followed_up_at' => $nextStatus === 'followup' ? $timestamp : $enquiry->followed_up_at,
+                'followed_up_at' => $nextStatus === 'followup' ? $timestamp : $locked->followed_up_at,
             ])->save();
 
             JaspestEnquiryEvent::create([
-                'enquiry_id' => $enquiry->id,
+                'enquiry_id' => $locked->id,
                 'user_id' => auth()->id(),
                 'event' => 'whatsapp_opened',
                 'from_status' => $before,
                 'to_status' => $nextStatus,
-                'note' => $before !== $nextStatus
-                    ? 'Admin membuka tautan WhatsApp. Status otomatis diubah menjadi Follow-up.'
+                'note' => $nextStatus === 'followup'
+                    ? 'Admin menyiapkan pesan tindak lanjut berdasarkan data formulir dan membuka percakapan WhatsApp untuk ditinjau sebelum dikirim.'
                     : ($nextStatus === 'converted'
-                        ? 'Admin membuka tautan WhatsApp. Status Deal Order tetap dipertahankan.'
-                        : 'Admin membuka tautan WhatsApp. Status Follow-up diperbarui.'),
+                        ? 'Admin membuka percakapan WhatsApp. Status Deal Order tetap dipertahankan.'
+                        : 'Admin membuka percakapan WhatsApp. Status Tidak Deal tetap dipertahankan.'),
             ]);
+
+            return $locked->fresh();
         });
 
-        return response()->json($this->bookingResource($enquiry->fresh()->loadCount('photos')));
+        return response()->json($this->bookingResource($updatedEnquiry->loadCount('photos')));
     }
 
     /** Catatan internal admin. Disimpan sebagai aktivitas (event) sehingga tampil di riwayat tanpa migrasi baru. */
@@ -713,7 +728,180 @@ class JaspestAdminApiController extends Controller
         ], 201);
     }
 
-    public function updateBookingStatus(Request $request, JaspestEnquiry $enquiry): JsonResponse
+    public function storeManualDealOrder(Request $request, JaspestFonnteService $fonnte): JsonResponse
+    {
+        if (is_string($request->input('whatsapp'))) {
+            $request->merge([
+                'whatsapp' => preg_replace('/[\s().-]+/', '', trim($request->input('whatsapp'))),
+            ]);
+        }
+
+        $validated = $request->validate([
+            'full_name' => ['required', 'string', 'min:2', 'max:150'],
+            'whatsapp' => ['required', 'string', 'max:24', 'regex:/^\+?[0-9]{8,15}$/'],
+            'address' => ['required', 'string', 'min:5', 'max:1000'],
+            'property_type' => ['required', Rule::in(['rumah', 'bisnis'])],
+            'company_name' => ['required_if:property_type,bisnis', 'nullable', 'string', 'max:200'],
+            'need' => ['required', 'string', 'max:100', function (string $attribute, mixed $value, \Closure $fail): void {
+                if ($value !== 'konsultasi' && ! JaspestContentItem::query()
+                    ->where('type', 'services')->where('status', 'active')->where('slug', $value)->exists()) {
+                    $fail('Pilih layanan yang masih tersedia.');
+                }
+            }],
+            'description' => ['nullable', 'string', 'max:3000'],
+            'order_price' => ['required', 'numeric', 'min:1', 'max:999999999999.99'],
+            'order_area' => ['required', 'numeric', 'gt:0', 'max:9999999999.99'],
+            'scheduled_date' => ['required', 'date_format:Y-m-d'],
+            'assigned_technician_id' => [
+                'required', 'integer',
+                Rule::exists('jaspest_technicians', 'id')->where('operational_status', 'available'),
+            ],
+            'consent' => ['accepted'],
+        ], [
+            'full_name.required' => 'Nama pelanggan wajib diisi.',
+            'whatsapp.required' => 'Nomor WhatsApp wajib diisi.',
+            'whatsapp.regex' => 'Masukkan nomor WhatsApp yang valid dengan 8–15 digit.',
+            'address.required' => 'Alamat pelanggan wajib diisi.',
+            'property_type.required' => 'Pilih jenis lokasi pelanggan.',
+            'company_name.required_if' => 'Nama perusahaan wajib diisi untuk pelanggan bisnis.',
+            'need.required' => 'Pilih layanan yang dipesan.',
+            'order_price.required' => 'Harga kesepakatan wajib diisi.',
+            'order_price.min' => 'Harga kesepakatan harus lebih dari Rp0.',
+            'order_area.required' => 'Luasan pekerjaan wajib diisi.',
+            'order_area.gt' => 'Luasan pekerjaan harus lebih dari 0 m².',
+            'scheduled_date.required' => 'Tanggal pelaksanaan wajib dipilih.',
+            'assigned_technician_id.required' => 'Pilih teknisi yang akan ditugaskan.',
+            'assigned_technician_id.exists' => 'Teknisi yang dipilih sudah tidak tersedia. Muat ulang daftar dan pilih teknisi lain.',
+            'consent.accepted' => 'Persetujuan pelanggan untuk menerima konfirmasi WhatsApp wajib dicentang.',
+        ]);
+
+        $normalizedPhone = $fonnte->normalizeIndonesianMobile((string) $validated['whatsapp']);
+        if ($normalizedPhone === null) {
+            throw ValidationException::withMessages([
+                'whatsapp' => 'Masukkan nomor WhatsApp Indonesia yang valid, misalnya 081234567890.',
+            ]);
+        }
+
+        $area = round((float) $validated['order_area'], 2);
+        $price = round((float) $validated['order_price'], 2);
+        $companyName = $validated['property_type'] === 'bisnis'
+            ? trim((string) ($validated['company_name'] ?? ''))
+            : null;
+        $reference = '';
+        do {
+            $reference = 'JAS-'.now('Asia/Jakarta')->format('ymd').'-'.Str::upper(Str::random(6));
+        } while (JaspestEnquiry::query()->where('reference', $reference)->exists());
+
+        $result = DB::transaction(function () use (
+            $validated,
+            $normalizedPhone,
+            $companyName,
+            $area,
+            $price,
+            $reference,
+        ): array {
+            /** @var JaspestTechnician $technician */
+            $technician = JaspestTechnician::query()
+                ->whereKey((int) $validated['assigned_technician_id'])
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if ($technician->operational_status !== 'available') {
+                throw ValidationException::withMessages([
+                    'assigned_technician_id' => 'Teknisi tersebut baru saja ditugaskan. Pilih teknisi lain yang tersedia.',
+                ]);
+            }
+
+            $enquiry = JaspestEnquiry::create([
+                'reference' => $reference,
+                'full_name' => trim($validated['full_name']),
+                'whatsapp' => $normalizedPhone,
+                'address' => trim($validated['address']),
+                'estimated_area' => $area,
+                'need' => $validated['need'],
+                'property_type' => $validated['property_type'],
+                'company_name' => $companyName,
+                'description' => trim((string) ($validated['description'] ?? '')),
+                'consent' => true,
+                'status' => 'converted',
+                'converted_at' => now(),
+                'order_price' => $price,
+                'order_area' => $area,
+                'scheduled_date' => $validated['scheduled_date'],
+                'assigned_technician_id' => $technician->id,
+                'assigned_technician_name' => $technician->full_name,
+            ]);
+
+            $technician->forceFill(['operational_status' => 'assigned'])->save();
+
+            JaspestEnquiryEvent::create([
+                'enquiry_id' => $enquiry->id,
+                'user_id' => auth()->id(),
+                'event' => 'manual_order_created',
+                'from_status' => null,
+                'to_status' => 'converted',
+                'note' => 'Deal Order dicatat langsung melalui halaman Data Booking.',
+                'metadata' => [
+                    'source' => 'admin_manual',
+                    'order_price' => $price,
+                    'order_area' => $area,
+                    'scheduled_date' => $validated['scheduled_date'],
+                    'assigned_technician_id' => $technician->id,
+                    'assigned_technician_name' => $technician->full_name,
+                ],
+            ]);
+
+            // Profil klien dibuat dan ditautkan dalam transaksi yang sama dengan Deal Order.
+            $this->synchronizeDealOrderClient($enquiry);
+
+            $notification = JaspestWhatsappNotification::query()->firstOrCreate(
+                [
+                    'enquiry_id' => $enquiry->id,
+                    'notification_type' => 'deal_order_confirmation',
+                ],
+                [
+                    'recipient' => $normalizedPhone,
+                    'message' => '',
+                    'status' => 'queued',
+                ]
+            );
+
+            return [
+                'enquiry_id' => $enquiry->id,
+                'notification_id' => $notification->id,
+            ];
+        }, 3);
+
+        $enquiry = JaspestEnquiry::query()->findOrFail($result['enquiry_id']);
+        $notification = JaspestWhatsappNotification::query()->find($result['notification_id']);
+        if ($notification) {
+            try {
+                $notification = $fonnte->sendDealOrderConfirmation($enquiry, $notification);
+            } catch (\Throwable $exception) {
+                report($exception);
+                try {
+                    $notification->forceFill([
+                        'status' => 'failed',
+                        'last_error' => 'Order berhasil disimpan, tetapi pesan konfirmasi belum dapat diproses. Periksa log aplikasi sebelum mencoba kembali.',
+                        'failed_at' => now(),
+                    ])->save();
+                    $notification->refresh();
+                } catch (\Throwable $loggingException) {
+                    report($loggingException);
+                }
+            }
+        }
+
+        $resource = $this->bookingResource($enquiry->fresh()->loadCount('photos'));
+        $resource['whatsapp_notification'] = $notification
+            ? $this->whatsappNotificationResource($notification)
+            : null;
+        $resource['message'] = 'Deal Order berhasil ditambahkan.';
+
+        return response()->json($resource, 201);
+    }
+
+    public function updateBookingStatus(Request $request, JaspestEnquiry $enquiry, JaspestFonnteService $fonnte): JsonResponse
     {
         $validated = $request->validate([
             'status' => ['required', Rule::in(self::STATUS_ACTIONS)],
@@ -739,8 +927,10 @@ class JaspestAdminApiController extends Controller
 
         $status = $validated['status'];
 
+        $whatsappNotificationId = null;
+
         if ($status === 'converted') {
-            DB::transaction(function () use ($enquiry, $validated): void {
+            DB::transaction(function () use ($enquiry, $validated, &$whatsappNotificationId, $fonnte): void {
                 /** @var JaspestEnquiry $lockedEnquiry */
                 $lockedEnquiry = JaspestEnquiry::query()->lockForUpdate()->findOrFail($enquiry->id);
                 if ($lockedEnquiry->status === 'converted') {
@@ -791,7 +981,49 @@ class JaspestAdminApiController extends Controller
                         'technician_code' => $technician->technician_code,
                     ],
                 ]);
+
+                // Profil klien dan relasi order dibuat otomatis dalam transaksi yang sama.
+                $this->synchronizeDealOrderClient($lockedEnquiry);
+
+                $normalizedRecipient = $fonnte->normalizeIndonesianMobile((string) $lockedEnquiry->whatsapp);
+                $notification = JaspestWhatsappNotification::query()->firstOrCreate(
+                    [
+                        'enquiry_id' => $lockedEnquiry->id,
+                        'notification_type' => 'deal_order_confirmation',
+                    ],
+                    [
+                        'recipient' => $normalizedRecipient ?: substr((preg_replace('/\D+/', '', (string) $lockedEnquiry->whatsapp) ?: 'invalid'), 0, 20),
+                        'message' => '',
+                        'status' => 'queued',
+                    ]
+                );
+                $whatsappNotificationId = $notification->id;
             });
+
+            // The order and its client relation are committed before calling Fonnte.
+            // Provider errors never roll back a valid Deal Order.
+            $notification = $whatsappNotificationId
+                ? JaspestWhatsappNotification::query()->find($whatsappNotificationId)
+                : null;
+            if ($notification) {
+                try {
+                    $notification = $fonnte->sendDealOrderConfirmation($enquiry->fresh(), $notification);
+                } catch (\Throwable $exception) {
+                    // Never make a committed Deal Order appear to have failed
+                    // just because a notification bookkeeping step failed.
+                    report($exception);
+                    try {
+                        $notification->forceFill([
+                            'status' => 'failed',
+                            'last_error' => 'Order berhasil tersimpan, tetapi proses notifikasi mengalami kesalahan internal. Periksa log aplikasi sebelum mencoba ulang.',
+                            'failed_at' => now(),
+                        ])->save();
+                        $notification->refresh();
+                    } catch (\Throwable $loggingException) {
+                        report($loggingException);
+                    }
+                }
+            }
         } else {
             if ($enquiry->status === 'converted') {
                 abort(422, 'Booking berstatus Deal Order tidak dapat dikembalikan melalui dashboard ini.');
@@ -813,7 +1045,39 @@ class JaspestAdminApiController extends Controller
             ]);
         }
 
-        return response()->json($this->bookingResource($enquiry->fresh()->loadCount('photos')));
+        $freshEnquiry = $enquiry->fresh()->loadCount('photos');
+        $resource = $this->bookingResource($freshEnquiry);
+        if ($status === 'converted' && isset($notification)) {
+            $resource['whatsapp_notification'] = $this->whatsappNotificationResource($notification);
+        }
+
+        return response()->json($resource);
+    }
+
+    public function retryDealOrderWhatsapp(
+        Request $request,
+        JaspestEnquiry $enquiry,
+        JaspestFonnteService $fonnte,
+    ): JsonResponse {
+        abort_unless($enquiry->status === 'converted', 409, 'Notifikasi konfirmasi hanya tersedia untuk booking berstatus Deal Order.');
+
+        /** @var JaspestWhatsappNotification|null $notification */
+        $notification = $enquiry->whatsappNotification()->first();
+        abort_if(! $notification, 404, 'Riwayat notifikasi Deal Order belum tersedia.');
+
+        if (! in_array($notification->status, ['failed', 'not_configured'], true)) {
+            abort(409, 'Notifikasi ini tidak dapat dikirim ulang dari status saat ini.');
+        }
+
+        if (! $enquiry->consent) {
+            abort(422, 'Pelanggan belum memberikan persetujuan untuk dihubungi.');
+        }
+
+        $notification = $fonnte->sendDealOrderConfirmation($enquiry, $notification, true);
+
+        return response()->json([
+            'notification' => $this->whatsappNotificationResource($notification),
+        ]);
     }
 
     public function accounts(Request $request): JsonResponse
@@ -961,6 +1225,217 @@ class JaspestAdminApiController extends Controller
         ][$role] ?? 'Tidak diketahui';
     }
 
+    /**
+     * Direktori klien otomatis dari seluruh booking berstatus Deal Order.
+     * Satu nomor WhatsApp dinormalisasi menjadi satu profil klien dan dapat
+     * memiliki banyak booking/order yang tertaut.
+     */
+    public function clients(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'search' => ['nullable', 'string', 'max:100'],
+            'status' => ['nullable', Rule::in(['all', 'active', 'inactive'])],
+            'page' => ['nullable', 'integer', 'min:1'],
+        ]);
+
+        // Rekonsiliasi idempotent untuk Deal Order lama atau order yang dibuat
+        // melalui jalur integrasi lain. Order baru juga disinkronkan saat konversi.
+        $syncIssues = $this->synchronizeUnlinkedDealOrders();
+
+        $search = trim((string) ($validated['search'] ?? ''));
+        $clientQuery = JaspestClient::query()
+            ->withCount('enquiries')
+            ->withSum('enquiries as lifetime_value', 'order_price')
+            ->orderBy('full_name')->orderBy('id');
+
+        if ($search !== '') {
+            $clientQuery->where(function ($builder) use ($search): void {
+                $builder->where('client_code', 'like', "%{$search}%")
+                    ->orWhere('full_name', 'like', "%{$search}%")
+                    ->orWhere('company_name', 'like', "%{$search}%")
+                    ->orWhere('whatsapp', 'like', "%{$search}%");
+            });
+        }
+        if (($validated['status'] ?? 'all') !== 'all') {
+            $clientQuery->where('status', $validated['status']);
+        }
+
+        $clientPage = $clientQuery->paginate(15, ['*'], 'page')->withQueryString();
+        $summary = [
+            'total' => JaspestClient::count(),
+            'active' => JaspestClient::where('status', 'active')->count(),
+            'inactive' => JaspestClient::where('status', 'inactive')->count(),
+            'linked_orders' => JaspestClientEnquiryLink::count(),
+        ];
+
+        return response()->json([
+            'data' => $clientPage->getCollection()
+                ->map(fn (JaspestClient $client): array => $this->clientResource($client))
+                ->values(),
+            'meta' => [
+                'current_page' => $clientPage->currentPage(),
+                'last_page' => $clientPage->lastPage(),
+                'total' => $clientPage->total(),
+            ],
+            'summary' => $summary,
+            'sync_issues' => $syncIssues,
+        ])->header('Cache-Control', 'no-store, private');
+    }
+
+    /** Sinkronkan semua Deal Order yang belum memiliki relasi klien. Aman dipanggil berulang. */
+    private function synchronizeUnlinkedDealOrders(): int
+    {
+        $issues = 0;
+
+        JaspestEnquiry::query()
+            ->where('status', 'converted')
+            ->whereDoesntHave('clientLink')
+            ->orderBy('id')
+            ->chunkById(100, function ($orders) use (&$issues): void {
+                foreach ($orders as $order) {
+                    try {
+                        $this->synchronizeDealOrderClient($order);
+                    } catch (ValidationException|QueryException $exception) {
+                        // Data yang tidak memenuhi syarat tetap terlihat sebagai
+                        // booking Deal Order dan dapat diperbaiki tanpa membuat
+                        // profil klien yang identitasnya tidak valid.
+                        $issues++;
+                        if ($exception instanceof QueryException) {
+                            report($exception);
+                        }
+                    }
+                }
+            });
+
+        return $issues;
+    }
+
+    /**
+     * Buat/temukan profil berdasarkan nomor WhatsApp dan tautkan Deal Order.
+     * Dipanggil di dalam transaksi konversi maupun rekonsiliasi direktori.
+     */
+    private function synchronizeDealOrderClient(JaspestEnquiry $enquiry): ?JaspestClient
+    {
+        return DB::transaction(function () use ($enquiry): ?JaspestClient {
+            $lockedEnquiry = JaspestEnquiry::query()->lockForUpdate()->findOrFail($enquiry->id);
+            if ($lockedEnquiry->status !== 'converted') {
+                return null;
+            }
+
+            $existingLink = JaspestClientEnquiryLink::query()
+                ->where('enquiry_id', $lockedEnquiry->id)
+                ->lockForUpdate()
+                ->first();
+            if ($existingLink) {
+                return JaspestClient::query()->findOrFail($existingLink->client_id);
+            }
+
+            $normalized = $this->normalizeClientWhatsapp((string) $lockedEnquiry->whatsapp);
+            if (! preg_match('/^628[1-9][0-9]{7,11}$/', $normalized)) {
+                throw ValidationException::withMessages([
+                    'whatsapp' => 'Deal Order '.$lockedEnquiry->reference.' belum dapat disinkronkan: nomor WhatsApp tidak valid.',
+                ]);
+            }
+
+            // Unique index pada whatsapp_normalized melindungi dua order dari
+            // nomor yang sama agar tidak menghasilkan dua profil klien.
+            $client = JaspestClient::query()->firstOrCreate(
+                ['whatsapp_normalized' => $normalized],
+                [
+                    'client_code' => 'KLI-'.Str::upper(Str::random(10)),
+                    'full_name' => $lockedEnquiry->full_name,
+                    'company_name' => $lockedEnquiry->company_name,
+                    'whatsapp' => $lockedEnquiry->whatsapp,
+                    'email' => null,
+                    'address' => $lockedEnquiry->address,
+                    'status' => 'active',
+                ]
+            );
+
+            // Unique index enquiry_id menjamin satu booking hanya tertaut ke
+            // satu klien meskipun sinkronisasi dipanggil hampir bersamaan.
+            $link = JaspestClientEnquiryLink::query()->firstOrCreate(
+                ['enquiry_id' => $lockedEnquiry->id],
+                [
+                    'client_id' => $client->id,
+                    'linked_by' => auth()->id(),
+                ]
+            );
+
+            if ((int) $link->client_id !== (int) $client->id) {
+                $client = JaspestClient::query()->findOrFail($link->client_id);
+            }
+
+            if ($link->wasRecentlyCreated) {
+                JaspestEnquiryEvent::create([
+                    'enquiry_id' => $lockedEnquiry->id,
+                    'user_id' => auth()->id(),
+                    'event' => 'client_linked',
+                    'from_status' => 'converted',
+                    'to_status' => 'converted',
+                    'note' => 'Data klien otomatis disinkronkan dari Deal Order: '.$client->client_code.' — '.$client->full_name.'.',
+                    'metadata' => [
+                        'client_id' => $client->id,
+                        'client_code' => $client->client_code,
+                        'automatic' => true,
+                    ],
+                ]);
+            }
+
+            return $client;
+        }, 3);
+    }
+
+    public function updateClient(Request $request, JaspestClient $client): JsonResponse
+    {
+        if (is_string($request->input('whatsapp'))) {
+            $phone = preg_replace('/[\\s().-]+/', '', trim($request->input('whatsapp')));
+            $request->merge(['whatsapp' => $phone]);
+        }
+
+        $validated = $request->validate([
+            'full_name' => ['required', 'string', 'min:2', 'max:150'],
+            'company_name' => ['nullable', 'string', 'max:200'],
+            'whatsapp' => ['required', 'string', 'max:24', 'regex:/^\\+?[0-9]{8,15}$/'],
+            'email' => ['nullable', 'email', 'max:150'],
+            'address' => ['nullable', 'string', 'max:3000'],
+            'status' => ['required', Rule::in(['active', 'inactive'])],
+            'notes' => ['nullable', 'string', 'max:3000'],
+        ], [
+            'whatsapp.regex' => 'Nomor WhatsApp harus terdiri dari 8–15 digit dan boleh diawali tanda +.',
+        ]);
+
+        $validated['whatsapp_normalized'] = $this->normalizeClientWhatsapp($validated['whatsapp']);
+        $duplicate = JaspestClient::query()
+            ->where('whatsapp_normalized', $validated['whatsapp_normalized'])
+            ->where('id', '<>', $client->id)
+            ->exists();
+        if ($duplicate) {
+            throw ValidationException::withMessages([
+                'whatsapp' => 'Nomor WhatsApp tersebut sudah digunakan oleh klien lain. Periksa Data Klien sebelum menyimpan.',
+            ]);
+        }
+
+        $client->update($validated);
+
+        return response()->json([
+            'message' => 'Data klien berhasil diperbarui.',
+            'data' => $this->clientResource($client->fresh()->loadCount('enquiries')->loadSum('enquiries as lifetime_value', 'order_price')),
+        ]);
+    }
+
+    private function normalizeClientWhatsapp(string $phone): string
+    {
+        $digits = preg_replace('/\\D+/', '', $phone) ?? '';
+        if (str_starts_with($digits, '0')) {
+            return '62'.substr($digits, 1);
+        }
+        if (str_starts_with($digits, '8')) {
+            return '62'.$digits;
+        }
+        return $digits;
+    }
+
     public function technicians(Request $request): JsonResponse
     {
         $validated = $request->validate([
@@ -975,7 +1450,6 @@ class JaspestAdminApiController extends Controller
             $query->where(function ($builder) use ($search): void {
                 $builder->where('full_name', 'like', "%{$search}%")
                     ->orWhere('technician_code', 'like', "%{$search}%")
-                    ->orWhere('whatsapp', 'like', "%{$search}%")
                     ->orWhere('email', 'like', "%{$search}%")
                     ->orWhere('specialization', 'like', "%{$search}%")
                     ->orWhere('service_area', 'like', "%{$search}%");
@@ -1074,10 +1548,13 @@ class JaspestAdminApiController extends Controller
 
     private function validatedTechnician(Request $request, ?JaspestTechnician $technician = null): array
     {
+        if (is_string($request->input('email'))) {
+            $request->merge(['email' => mb_strtolower(trim($request->input('email')))]);
+        }
+
         return $request->validate([
             'full_name' => ['required', 'string', 'min:2', 'max:150'],
-            'whatsapp' => ['required', 'string', 'max:24', 'regex:/^\+?[0-9\s().-]{8,24}$/'],
-            'email' => ['nullable', 'email', 'max:150'],
+            'email' => ['required', 'string', 'email', 'max:150'],
             'address' => ['nullable', 'string', 'max:2000'],
             'technician_code' => ['nullable', 'string', 'max:30', Rule::unique('jaspest_technicians', 'technician_code')->ignore($technician?->id)],
             'specialization' => ['required', 'string', 'min:2', 'max:120'],
@@ -1085,6 +1562,10 @@ class JaspestAdminApiController extends Controller
             'certification' => ['nullable', 'string', 'max:180'],
             'operational_status' => ['required', Rule::in(['available', 'assigned', 'off_duty'])],
             'notes' => ['nullable', 'string', 'max:3000'],
+        ], [
+            'email.required' => 'Email teknisi wajib diisi.',
+            'email.email' => 'Masukkan alamat email teknisi yang valid.',
+            'email.max' => 'Email teknisi maksimal 150 karakter.',
         ]);
     }
 
@@ -1882,6 +2363,11 @@ class JaspestAdminApiController extends Controller
             'image_alt' => $data['image_alt'] ?? null,
             'data' => $extra,
         ];
+        if ($type === 'settings' && $slug === 'nama-perusahaan') {
+            $companyName = trim((string) ($payload['description'] ?? ''));
+            $companyName = preg_replace('/^(?:PT|CV)\.?\s*/iu', '', $companyName) ?: 'Jaya Abadi Solusi';
+            $payload['description'] = 'CV '.(trim($companyName) ?: 'Jaya Abadi Solusi');
+        }
         if ($request->hasFile('image')) {
             $payload['image_path'] = $request->file('image')->store('jaspest-content', config('jaspest_admin.content_disk', 'public'));
         }
@@ -1970,13 +2456,31 @@ class JaspestAdminApiController extends Controller
         ];
     }
 
+    private function clientResource(JaspestClient $client): array
+    {
+        return [
+            'id' => $client->id,
+            'client_code' => $client->client_code,
+            'full_name' => $client->full_name,
+            'company_name' => $client->company_name,
+            'whatsapp' => $client->whatsapp,
+            'email' => $client->email,
+            'address' => $client->address,
+            'status' => $client->status,
+            'notes' => $client->notes,
+            'order_count' => (int) ($client->enquiries_count ?? $client->enquiries()->count()),
+            'lifetime_value' => (string) ($client->lifetime_value ?? $client->enquiries()->sum('order_price') ?? 0),
+            'created_at' => $client->created_at?->toIso8601String(),
+            'updated_at' => $client->updated_at?->toIso8601String(),
+        ];
+    }
+
     private function technicianResource(JaspestTechnician $technician): array
     {
         return [
             'id' => $technician->id,
             'technician_code' => $technician->technician_code,
             'full_name' => $technician->full_name,
-            'whatsapp' => $technician->whatsapp,
             'email' => $technician->email,
             'address' => $technician->address,
             'specialization' => $technician->specialization,
@@ -1985,6 +2489,26 @@ class JaspestAdminApiController extends Controller
             'operational_status' => $technician->operational_status,
             'notes' => $technician->notes,
             'created_at' => $technician->created_at?->toIso8601String(),
+        ];
+    }
+
+    private function whatsappNotificationResource(JaspestWhatsappNotification $notification): array
+    {
+        return [
+            'status' => $notification->status,
+            'recipient' => $notification->recipient,
+            'last_error' => match ($notification->status) {
+                'not_configured' => 'Pesan konfirmasi belum dapat dikirim. Hubungi administrator sistem.',
+                'failed' => 'Pesan konfirmasi belum berhasil dikirim. Periksa nomor pelanggan dan koneksi, lalu coba kirim ulang.',
+                'unknown' => 'Status pengiriman belum dapat dipastikan. Periksa riwayat pesan sebelum mencoba kembali.',
+                'skipped_consent' => 'Persetujuan pelanggan untuk menerima pesan belum tercatat.',
+                'skipped_invalid_number' => 'Nomor WhatsApp pelanggan perlu diperiksa.',
+                default => null,
+            },
+            'accepted_at' => $notification->accepted_at?->copy()->timezone('Asia/Jakarta')->toIso8601String(),
+            'sent_at' => $notification->sent_at?->copy()->timezone('Asia/Jakarta')->toIso8601String(),
+            'failed_at' => $notification->failed_at?->copy()->timezone('Asia/Jakarta')->toIso8601String(),
+            'retryable' => in_array($notification->status, ['failed', 'not_configured'], true),
         ];
     }
 

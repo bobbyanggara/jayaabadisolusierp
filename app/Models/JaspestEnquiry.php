@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class JaspestEnquiry extends Model
 {
@@ -51,4 +52,16 @@ class JaspestEnquiry extends Model
     {
         return $this->belongsTo(JaspestTechnician::class, 'assigned_technician_id');
     }
+
+    public function clientLink(): HasOne
+    {
+        return $this->hasOne(JaspestClientEnquiryLink::class, 'enquiry_id');
+    }
+
+    public function whatsappNotification(): HasOne
+    {
+        return $this->hasOne(JaspestWhatsappNotification::class, 'enquiry_id')
+            ->where('notification_type', 'deal_order_confirmation');
+    }
+
 }

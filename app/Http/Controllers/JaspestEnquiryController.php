@@ -129,6 +129,9 @@ class JaspestEnquiryController extends Controller
             report($broadcastException);
         }
 
+        // Follow-up is initiated manually by an admin through a wa.me link.
+        // The customer submission never sends an automated WhatsApp message.
+
         return response()->json(['reference' => $enquiry->reference], 201);
     }
     /**

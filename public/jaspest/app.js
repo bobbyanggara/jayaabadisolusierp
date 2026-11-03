@@ -347,11 +347,11 @@
   if(!config.previewMode&&config.enquiryEndpoint)$('#preview-form-note').hidden=true;
   if (content.brand && typeof content.brand === 'object') {
     $$('.brand-name').forEach(element => { element.textContent = content.brand.name || 'JASPEST'; });
-    $$('.brand-sub').forEach(element => { element.textContent = content.brand.company || 'Jaya Abadi Solusi'; });
+    $$('.brand-sub').forEach(element => { element.textContent = content.brand.company || 'CV Jaya Abadi Solusi'; });
     const footerTagline = $('.footer-main>p');
     if (footerTagline && content.brand.tagline) footerTagline.textContent = content.brand.tagline;
     const copyright = $('.footer-bottom>span:first-child');
-    if (copyright) copyright.textContent = `© ${new Date().getFullYear()} ${content.brand.name || 'JASPEST'} · ${content.brand.company || 'Jaya Abadi Solusi'}`;
+    if (copyright) copyright.textContent = `© ${new Date().getFullYear()} ${content.brand.name || 'JASPEST'} · ${content.brand.company || 'CV Jaya Abadi Solusi'}`;
   }
   if(content.brand.logo && safeUrl(content.brand.logo)){
     $$('.brand').forEach(brand=>{const logo=document.createElement('img');logo.src=safeUrl(content.brand.logo);logo.alt=content.brand.name;logo.className='brand-uploaded-logo';brand.replaceChildren(logo);});
