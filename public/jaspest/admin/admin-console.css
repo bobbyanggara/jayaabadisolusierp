@@ -566,16 +566,6 @@ form#accountForm,form#technicianForm{display:flex;flex-direction:column;min-heig
   --state-lost-ink: #b42332;
   --state-lost-bg: #fff0f1;
   --state-lost-border: #f2c4ca;
-  /* Pastel technician palette: visible at a glance without using saturated fills. */
-  --technician-available-ink: #276747;
-  --technician-available-bg: #eff8ef;
-  --technician-available-border: #d0e7d0;
-  --technician-assigned-ink: #876200;
-  --technician-assigned-bg: #fff9e2;
-  --technician-assigned-border: #f2e2a8;
-  --technician-off-duty-ink: #a52f3c;
-  --technician-off-duty-bg: #fff1f2;
-  --technician-off-duty-border: #f3cbd0;
   --control-height: 42px;
   --control-radius: 10px;
 }
@@ -595,15 +585,6 @@ html[data-theme="dark"] {
   --state-lost-ink: #ff9ba4;
   --state-lost-bg: #3b2228;
   --state-lost-border: #70404a;
-  --technician-available-ink: #a9dfb7;
-  --technician-available-bg: #1e3428;
-  --technician-available-border: #365c42;
-  --technician-assigned-ink: #f3d784;
-  --technician-assigned-bg: #3b321a;
-  --technician-assigned-border: #66532b;
-  --technician-off-duty-ink: #ffa5ac;
-  --technician-off-duty-bg: #3b2228;
-  --technician-off-duty-border: #70404a;
 }
 
 /* Common control hierarchy and interaction states */
@@ -679,21 +660,6 @@ body.jas-admin .table-action.wa:hover { background: var(--state-contact-bg); bor
 .status-pill.status-converted { color: var(--state-order-ink); background: var(--state-order-bg); border-color: var(--state-order-border); }
 .status-pill.status-new,
 .status-pill.status-lost { color: var(--state-lost-ink); background: var(--state-lost-bg); border-color: var(--state-lost-border); }
-/* Status teknisi memakai identitas warna operasional yang konsisten. */
-.status-pill.status-technician-available { color: var(--technician-available-ink); background: var(--technician-available-bg); border-color: var(--technician-available-border); }
-.status-pill.status-technician-assigned { color: var(--technician-assigned-ink); background: var(--technician-assigned-bg); border-color: var(--technician-assigned-border); }
-.status-pill.status-technician-off-duty { color: var(--technician-off-duty-ink); background: var(--technician-off-duty-bg); border-color: var(--technician-off-duty-border); }
-.technician-email-cell { max-width: 250px; overflow-wrap: anywhere; }
-.technician-summary [data-technician-filter="available"] .summary-dot { background: var(--technician-available-ink); }
-.technician-summary [data-technician-filter="assigned"] .summary-dot { background: var(--technician-assigned-ink); }
-.technician-summary [data-technician-filter="off_duty"] .summary-dot { background: var(--technician-off-duty-ink); }
-.technician-summary [data-technician-filter="available"][aria-pressed="true"] { border-bottom-color: var(--technician-available-ink); background: var(--technician-available-bg); color: var(--technician-available-ink); }
-.technician-summary [data-technician-filter="assigned"][aria-pressed="true"] { border-bottom-color: var(--technician-assigned-ink); background: var(--technician-assigned-bg); color: var(--technician-assigned-ink); }
-.technician-summary [data-technician-filter="off_duty"][aria-pressed="true"] { border-bottom-color: var(--technician-off-duty-ink); background: var(--technician-off-duty-bg); color: var(--technician-off-duty-ink); }
-.technician-summary .summary-filter[aria-pressed="true"] strong { color: inherit; }
-.inventory-status-badge.technician-available { color: var(--technician-available-ink); background: var(--technician-available-bg); border-color: var(--technician-available-border); }
-.inventory-status-badge.technician-assigned { color: var(--technician-assigned-ink); background: var(--technician-assigned-bg); border-color: var(--technician-assigned-border); }
-.inventory-status-badge.technician-off-duty { color: var(--technician-off-duty-ink); background: var(--technician-off-duty-bg); border-color: var(--technician-off-duty-border); }
 .status-cell { gap: 4px; }
 .status-cell .wait-note { font-size: 12px; }
 
@@ -1192,4 +1158,47 @@ body.jas-admin .booking-detail-footer .booking-followup-action .ui-icon { color:
 @media (max-width: 720px) {
   .manual-booking-modal .modal-body { max-height: 68vh; }
   .manual-booking-modal .form-field-full { grid-column: auto; }
+}
+
+
+/* Status teknisi — palet pastel konsisten di Data Teknisi dan saldo teknisi. */
+.technician-status-chip {
+  border: 1px solid transparent !important;
+  border-radius: 999px !important;
+  font-weight: 700 !important;
+  line-height: 1.25;
+}
+.status-pill.technician-status-chip::before { background: currentColor; }
+.technician-state-available {
+  color: #286846 !important;
+  background: #edf8f0 !important;
+  border-color: #cfe7d5 !important;
+}
+.technician-state-assigned {
+  color: #805f08 !important;
+  background: #fff8df !important;
+  border-color: #f0e1a8 !important;
+}
+.technician-state-off-duty {
+  color: #a2363e !important;
+  background: #fff0f0 !important;
+  border-color: #f0cdd0 !important;
+}
+.technician-summary .technician-dot-available { background: #8dbb99; }
+.technician-summary .technician-dot-assigned { background: #e3c45e; }
+.technician-summary .technician-dot-off-duty { background: #db9298; }
+html[data-theme=dark] .technician-state-available {
+  color: #d2f0dc !important;
+  background: #203c2d !important;
+  border-color: #355a42 !important;
+}
+html[data-theme=dark] .technician-state-assigned {
+  color: #f6e6a8 !important;
+  background: #40371e !important;
+  border-color: #66572e !important;
+}
+html[data-theme=dark] .technician-state-off-duty {
+  color: #ffd5d8 !important;
+  background: #45272b !important;
+  border-color: #704047 !important;
 }

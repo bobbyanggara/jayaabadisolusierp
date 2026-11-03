@@ -464,7 +464,7 @@
       return `<tr><td><div class="inventory-item-name"><strong>${esc(stock.technician_name || 'Teknisi tidak tersedia')}</strong><small>${esc(stock.technician_code || '')}</small></div></td>
         <td>${esc(stock.item_name || '-')}</td><td>${esc(stock.sku || '-')}</td><td><strong>${inventoryQuantity(stock.quantity)} ${esc(stock.unit || '')}</strong></td>
         <td><div class="inventory-tech-batches">${batches || '<small class="inventory-secondary">Detail batch tidak tersedia</small>'}</div></td>
-        <td><span class="inventory-status-badge ${stock.technician_status === 'off_duty' ? 'technician-off-duty' : stock.technician_status === 'assigned' ? 'technician-assigned' : 'technician-available'}">${stock.technician_status === 'assigned' ? 'Sedang Bertugas' : stock.technician_status === 'off_duty' ? 'Di Luar Tugas' : 'Tersedia'}</span></td>
+        <td><span class="inventory-status-badge technician-status-chip ${stock.technician_status === 'assigned' ? 'technician-state-assigned' : stock.technician_status === 'off_duty' ? 'technician-state-off-duty' : 'technician-state-available'}">${stock.technician_status === 'assigned' ? 'Sedang bertugas' : stock.technician_status === 'off_duty' ? 'Di luar tugas' : 'Tersedia'}</span></td>
         <td>${inventoryDateTime(stock.updated_at)}</td></tr>`;
     }).join('');
     $('#inventoryTechStocksEmpty').hidden = inventoryTechnicianStocks.length > 0;
@@ -1434,7 +1434,7 @@
       const response = await apiRequest('/booking-technicians');
       const list = Array.isArray(response.data) ? response.data : [];
       const available = list.filter((item) => item.is_available === true || item.operational_status === 'available');
-      const statusText = { available: 'Tersedia', assigned: 'Sedang Bertugas', off_duty: 'Di Luar Tugas' };
+      const statusText = { available: 'Tersedia', assigned: 'Sedang bertugas', off_duty: 'Di luar tugas' };
       if (list.length === 0) {
         select.innerHTML = '<option value="">Belum ada data teknisi</option>';
         hint.textContent = 'Tambahkan teknisi terlebih dahulu melalui menu Data Teknisi.';
@@ -1573,7 +1573,7 @@
 
       const technicians = Array.isArray(technicianResponse.data) ? technicianResponse.data : [];
       const available = technicians.filter((item) => item.is_available === true || item.operational_status === 'available');
-      const statusText = { available: 'Tersedia', assigned: 'Sedang Bertugas', off_duty: 'Di Luar Tugas' };
+      const statusText = { available: 'Tersedia', assigned: 'Sedang bertugas', off_duty: 'Di luar tugas' };
       technicianSelect.innerHTML = '<option value="">Pilih teknisi</option>' + technicians.map((technician) => {
         const isAvailable = technician.is_available === true || technician.operational_status === 'available';
         const label = `${technician.technician_code || 'TKN'} — ${technician.full_name}`;
@@ -1938,10 +1938,10 @@
     return ({ direksi: 'Direksi', finance: 'Finance', logistik: 'Logistik', marketing: 'Marketing' })[role] || 'Tidak diketahui';
   }
   function technicianStatusLabel(status) {
-    return ({ available: 'Tersedia', assigned: 'Sedang Bertugas', off_duty: 'Di Luar Tugas' })[status] || status;
+    return ({ available: 'Tersedia', assigned: 'Sedang bertugas', off_duty: 'Di luar tugas' })[status] || status;
   }
   function technicianStatusClass(status) {
-    return ({ available: 'status-technician-available', assigned: 'status-technician-assigned', off_duty: 'status-technician-off-duty' })[status] || 'status-new';
+    return ({ available: 'technician-state-available', assigned: 'technician-state-assigned', off_duty: 'technician-state-off-duty' })[status] || 'technician-state-off-duty';
   }
   function updateAccountSummary(summary = {}) {
     $('#accountTotal').textContent = Number(summary.total || 0);
@@ -2139,9 +2139,8 @@
       <tr>
         <td><div class="master-person"><span class="client-initial">${esc(initials(technician.full_name))}</span><span><strong>${esc(technician.full_name)}</strong><small>${esc(technician.technician_code)}</small></span></div></td>
         <td class="master-cell"><strong>${esc(technician.specialization)}</strong><small>${esc(technician.certification || 'Sertifikasi belum dicatat')}</small></td>
-        <td class="master-cell technician-email-cell">${esc(technician.email || 'Email belum diisi')}</td>
-        <td class="master-cell">${esc(technician.service_area || 'Belum ditentukan')}</td>
-        <td><span class="status-pill ${technicianStatusClass(technician.operational_status)}">${esc(technicianStatusLabel(technician.operational_status))}</span></td>
+        <td class="master-cell">${esc(technician.service_area || 'Belum ditentukan')}<small>${esc(formatPhone(technician.whatsapp))}</small></td>
+        <td><span class="status-pill technician-status-chip ${technicianStatusClass(technician.operational_status)}">${esc(technicianStatusLabel(technician.operational_status))}</span></td>
         <td class="master-actions"><div class="table-actions"><button type="button" class="table-action" data-edit-technician="${esc(technician.id)}" title="Edit teknisi" aria-label="Edit ${esc(technician.full_name)}">${uiIcon('edit')}<span>Edit</span></button><button type="button" class="table-action delete" data-delete-technician="${esc(technician.id)}" title="Hapus teknisi" aria-label="Hapus teknisi ${esc(technician.full_name)}">${uiIcon('trash')}<span>Hapus</span></button></div></td>
       </tr>`).join('');
     $('#emptyTechnicians').hidden = technicians.length > 0;
@@ -2179,7 +2178,7 @@
     technicianEditingId = technician.id;
     const form = $('#technicianForm');
     Object.entries({
-      full_name: technician.full_name, email: technician.email || '',
+      full_name: technician.full_name, whatsapp: technician.whatsapp,
       address: technician.address, technician_code: technician.technician_code,
       specialization: technician.specialization, service_area: technician.service_area,
       certification: technician.certification, operational_status: technician.operational_status,
