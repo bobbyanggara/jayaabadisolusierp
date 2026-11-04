@@ -60,8 +60,15 @@
     /* ---------- 2. Penanda menu aktif (scrollspy) ---------- */
     if (hasIO) {
       var links = {};
+      var sectionLinks = new Map();
       document.querySelectorAll('.desktop-nav a[href^="#"]').forEach(function (a) {
-        links[a.getAttribute('href').slice(1)] = a;
+        var id = a.getAttribute('href').slice(1);
+        links[id] = a;
+        /* tautan bisa menunjuk elemen di dalam section (mis. #lokasi di dalam #konsultasi),
+           jadi petakan ke section induknya agar scrollspy tetap mengenali */
+        var target = document.getElementById(id);
+        var section = target && target.closest('main > section, main > .section');
+        if (section) sectionLinks.set(section, a);
       });
       var ids = Object.keys(links);
       if (ids.length) {
@@ -72,7 +79,7 @@
           entries.forEach(function (entry) {
             if (!entry.isIntersecting) return;
             clearActive();
-            var link = links[entry.target.id];
+            var link = sectionLinks.get(entry.target) || links[entry.target.id];
             if (link) link.classList.add('is-active');
           });
         }, { rootMargin: '-45% 0px -50% 0px', threshold: 0 });

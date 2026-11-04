@@ -22,14 +22,14 @@
   <link rel="stylesheet" href="{{ asset('jaspest/styles.css') }}?v=15">
   <link rel="stylesheet" href="{{ asset('jaspest/blog.css') }}">
   <link rel="stylesheet" href="{{ asset('jaspest/animations.css') }}?v=23">
-  <link rel="stylesheet" href="{{ asset('jaspest/responsive-overrides.css') }}?v=20261104-04">
+  <link rel="stylesheet" href="{{ asset('jaspest/responsive-overrides.css') }}?v=20261104-05">
   <link rel="stylesheet" href="{{ asset('jaspest/certifications.css') }}?v=20261104-01">
   <link rel="stylesheet" href="{{ asset('jaspest/location-map.css') }}?v=20261104-03">
   <script>window.JASPEST_CONFIG = {{ Illuminate\Support\Js::from($jaspestConfig ?? []) }}; window.JASPEST_PUBLISHED_ARTICLES = {{ Illuminate\Support\Js::from($jaspestPublishedArticles) }}; window.JASPEST_DYNAMIC_CONTENT = {{ Illuminate\Support\Js::from($jaspestDynamicContent ?? []) }};</script>
   @include('jaspest.partials.cookie-consent')
   <script src="{{ asset('jaspest/content.js') }}?v=3" defer></script>
   <script src="{{ asset('jaspest/app.js') }}?v=6" defer></script>
-  <script src="{{ asset('jaspest/animations.js') }}?v=9" defer></script>
+  <script src="{{ asset('jaspest/animations.js') }}?v=10" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#main">Langsung ke konten</a>
@@ -58,7 +58,7 @@
   <header class="site-header" id="site-header">
     <div class="header-inner container">
       <a class="brand" href="#" aria-label="CV Jaya Abadi Solusi — beranda"><img class="brand-logo" src="{{ asset('jaspest/assets/logo-jas.png') }}" alt="Logo CV Jaya Abadi Solusi" width="458" height="368" decoding="async"></a>
-      <nav class="desktop-nav" aria-label="Navigasi utama"><a href="#layanan">Layanan</a><a href="#jenis-hama">Jenis hama</a><a href="#tentang">Tentang kami</a><a href="#galeri">Galeri</a><a href="#blog">Blog</a><a href="#lokasi">Lokasi</a></nav>
+      <nav class="desktop-nav" aria-label="Navigasi utama"><a href="#layanan">Layanan</a><a href="#jenis-hama">Jenis hama</a><a href="#tentang">Tentang kami</a><a href="#galeri">Galeri</a><a href="#blog">Blog</a><a href="#lokasi">Kontak</a></nav>
       <div class="header-actions"><button class="portal-link" data-portal><svg><use href="#i-lock"/></svg>Portal klien</button><a class="button button-small button-blue" href="#konsultasi">Konsultasi</a><button class="menu-toggle icon-button" id="menu-toggle" type="button" aria-expanded="false" aria-controls="mobile-nav" aria-label="Buka menu"><span class="menu-icon" aria-hidden="true"><span></span><span></span><span></span></span></button></div>
     </div>
   </header>
@@ -84,6 +84,8 @@
       $officeInfo = (array) (($jaspestDynamicContent ?? [])['office'] ?? []);
       $officeAddress = $officeInfo['address'] ?? 'Jl. Taruna Kav.IX No.126 Blk N - O, Sritanjung, Wage, Kec. Taman, Kabupaten Sidoarjo, Jawa Timur 61257';
       $officePhone = $officeInfo['phone'] ?? '(031) 85582382';
+      $officeEmail = $officeInfo['email'] ?? 'cv.jayaabadisolusi@yahoo.com';
+      $officeEmailHref = $officeInfo['emailHref'] ?? ($officeEmail !== '' ? 'mailto:'.$officeEmail : null);
     @endphp
     <section class="hero container" aria-labelledby="hero-title">
       <div class="hero-copy"><p class="hero-kicker"><span class="hero-kicker-mark" aria-hidden="true"><svg><use href="#i-bug"/></svg></span><span class="hero-kicker-text">Pengendalian hama oleh <strong>CV Jaya Abadi Solusi</strong></span></p><h1 id="hero-title">{{ $heroPage?->title ?: 'Rumah nyaman. Bisnis tetap jalan.' }}</h1><p class="hero-description">{{ $heroPage?->description ?: 'Jaga ruang yang berarti bagi Anda. Konsultasikan kebutuhan pengendalian hama rumah dan bisnis bersama JASPEST.' }}</p><div class="hero-cta"><a class="button button-red" href="#konsultasi">Ajukan konsultasi</a><a class="text-link" href="#layanan">Kenali layanan kami</a></div><div class="hero-audience"><span><svg><use href="#i-house"/></svg>Rumah & hunian</span><span class="audience-divider"></span><span><svg><use href="#i-building"/></svg>Bisnis & industri</span></div></div>
@@ -111,6 +113,9 @@
             <span class="form-kicker">LOKASI KANTOR</span>
             <div class="contact-map-row"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></svg><address>{{ $officeAddress }}</address></div>
             <div class="contact-map-row"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3H4a1 1 0 0 0-1 1c0 9.4 7.6 17 17 17a1 1 0 0 0 1-1v-3l-5-2-2 3c-3.2-1.3-5.7-3.8-7-7l3-2-2-5Z"/></svg><a href="{{ $officeInfo['phoneHref'] ?? 'tel:+623185582382' }}">{{ $officePhone }}</a></div>
+            @if(filled($officeEmail))
+            <div class="contact-map-row"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg><a href="{{ $officeEmailHref }}">{{ $officeEmail }}</a></div>
+            @endif
             <a class="button button-red" href="{{ $officeInfo['mapLink'] ?? ('https://www.google.com/maps/search/?api=1&query='.rawurlencode($officeAddress)) }}" target="_blank" rel="noopener noreferrer"><span>Petunjuk arah</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 3 14 21l-4-8-8-4 19-6Z"/><path d="m10 13 11-10"/></svg></a>
           </div>
         </div></div><div class="form-card"><div class="form-card-heading"><span class="form-kicker">FORMULIR PENGAJUAN</span><h3>Ceritakan kebutuhan Anda.</h3><p>Kolom bertanda <span class="required-mark">*</span> wajib diisi.</p></div><form id="enquiry-form" novalidate>

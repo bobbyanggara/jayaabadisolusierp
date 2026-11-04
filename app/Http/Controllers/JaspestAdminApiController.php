@@ -2289,6 +2289,13 @@ class JaspestAdminApiController extends Controller
             'keywords' => ['nullable', 'string', 'max:1000'],
         ]);
 
+        if ($type === 'settings' && $request->input('slug') === 'email-kantor' && filled($data['description'] ?? null)
+            && ! filter_var(trim((string) $data['description']), FILTER_VALIDATE_EMAIL)) {
+            throw ValidationException::withMessages([
+                'description' => 'Format email tidak valid. Contoh: nama@perusahaan.com',
+            ]);
+        }
+
         if ($isMapLink && filled($data['description'] ?? null)
             && ! JaspestMap::isGoogleMapsUrl((string) $data['description'])) {
             throw ValidationException::withMessages([

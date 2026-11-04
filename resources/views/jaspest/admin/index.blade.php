@@ -436,6 +436,6 @@
   <div class="toast-stack" id="toastStack" role="region" aria-label="Notifikasi"></div>
   <script>window.JASPEST_ADMIN_CONFIG = { mode: 'api', apiBase: @json($adminApiBase), loginUrl: @json($adminLoginUrl), canManageAccounts: @json($canManageAccounts) };</script>
   @vite('resources/js/app.js')
-  <script src="{{ asset('jaspest/admin/admin.js') }}?v=20261104-18" defer></script>
+  <script src="{{ asset('jaspest/admin/admin.js') }}?v=20261104-19" defer></script>
 </body>
 </html>

@@ -282,7 +282,7 @@
     gallery: ['Kelola Dokumentasi Galeri.', 'Foto yang aktif dapat ditampilkan pada galeri website publik.'],
     faqs: ['Kelola Pertanyaan Umum.', 'Pertanyaan dan jawaban aktif ditampilkan pada bagian informasi bantuan website.'],
     certifications: ['Kelola Sertifikasi & Keanggotaan.', 'Logo yang berstatus Aktif ditampilkan pada footer website. Tambahkan, ubah, atur urutan, atau nonaktifkan pengakuan perusahaan.'],
-    settings: ['Kelola Informasi Website & Lokasi Kantor.', 'Atur identitas perusahaan, alamat, nomor telepon, dan link Google Maps yang ditampilkan pada peta interaktif website.']
+    settings: ['Kelola Informasi Website & Lokasi Kantor.', 'Atur identitas perusahaan, alamat, nomor telepon, email, dan link Google Maps yang ditampilkan pada peta interaktif website.']
   };
   const seedBookings = [];
   const contentSeed = { pages: [], services: [], pests: [], methods: [], articles: [], gallery: [], faqs: [], certifications: [], settings: [] };
@@ -1955,6 +1955,9 @@
       } else if (item?.slug === 'telepon-kantor') {
         labels.description = 'Nomor Telepon Kantor';
         placeholders.description = 'Contoh: (031) 85582382';
+      } else if (item?.slug === 'email-kantor') {
+        labels.description = 'Email Kantor';
+        placeholders.description = 'Contoh: nama@perusahaan.com';
       }
     }
     const rows = { description: 2, body: 5 };
@@ -1986,7 +1989,7 @@
       if (rows[key] && control.tagName === 'TEXTAREA') control.rows = rows[key];
     });
 
-    const isLink = (isPage && slotFields.description?.kind === 'url') || (isSetting && item?.slug === 'link-google-maps');
+    const isLink = (isPage && slotFields.description?.kind === 'url') || (isSetting && (item?.slug === 'link-google-maps' || item?.slug === 'email-kantor'));
     const description = input('description');
     if (description) { description.autocapitalize = isLink ? 'off' : 'sentences'; description.spellcheck = !isLink; }
     if (isSetting && item?.slug === 'link-google-maps' && description) {
@@ -1999,7 +2002,9 @@
       field?.insertAdjacentHTML('beforeend', '<small class="field-hint slot-hint">Alamat ini menjadi informasi lokasi dan titik pencarian awal pada peta website.</small>');
     } else if (isSetting && item?.slug === 'telepon-kantor') {
       const field = form.querySelector('[data-content-field="description"]');
-      field?.insertAdjacentHTML('beforeend', '<small class="field-hint slot-hint">Nomor ini ditampilkan sebagai kontak kantor dan dapat ditekan pengunjung untuk menelepon.</small>');
+      field?.insertAdjacentHTML('beforeend', '<small class="field-hint slot-hint">Nomor ini ditampilkan sebagai kontak kantor dan dapat ditekan pengunjung untuk menelepon.</small>');    } else if (isSetting && item?.slug === 'email-kantor') {
+      const field = form.querySelector('[data-content-field="description"]');
+      field?.insertAdjacentHTML('beforeend', '<small class="field-hint slot-hint">Email ini tampil di bawah nomor telepon dan dapat ditekan pengunjung untuk mengirim email. Kosongkan untuk menyembunyikannya.</small>');
     }
 
     const removeImage = form.querySelector('[data-content-field="remove_image"]');

@@ -141,10 +141,16 @@ class JaspestAdminServiceProvider extends ServiceProvider
                 $officePhoneDigits = '62'.substr($officePhoneDigits, 1);
             }
             $officeMapLink = trim((string) ($settings->get('link-google-maps')?->description ?? ''));
+            $officeEmail = trim((string) ($settings->get('email-kantor')?->description ?? 'cv.jayaabadisolusi@yahoo.com'));
+            if (! filter_var($officeEmail, FILTER_VALIDATE_EMAIL)) {
+                $officeEmail = '';
+            }
             $content['office'] = [
                 'address' => $officeAddress,
                 'phone' => $officePhone,
                 'phoneHref' => $officePhoneDigits !== '' ? 'tel:+'.$officePhoneDigits : null,
+                'email' => $officeEmail,
+                'emailHref' => $officeEmail !== '' ? 'mailto:'.$officeEmail : null,
                 'mapEmbedUrl' => JaspestMap::embedUrl($officeMapLink, $officeAddress),
                 'mapLink' => JaspestMap::externalUrl($officeMapLink, $officeAddress),
             ];
