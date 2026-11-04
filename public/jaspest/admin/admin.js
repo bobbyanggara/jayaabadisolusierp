@@ -1955,6 +1955,9 @@
       } else if (item?.slug === 'telepon-kantor') {
         labels.description = 'Nomor Telepon Kantor';
         placeholders.description = 'Contoh: (031) 85582382';
+      } else if (item?.slug === 'teks-copyright') {
+        labels.description = 'Teks Hak Cipta (Footer)';
+        placeholders.description = '© {tahun} {nama} · {perusahaan}';
       } else if (item?.slug === 'email-kantor') {
         labels.description = 'Email Kantor';
         placeholders.description = 'Contoh: nama@perusahaan.com';
@@ -2002,7 +2005,10 @@
       field?.insertAdjacentHTML('beforeend', '<small class="field-hint slot-hint">Alamat ini menjadi informasi lokasi dan titik pencarian awal pada peta website.</small>');
     } else if (isSetting && item?.slug === 'telepon-kantor') {
       const field = form.querySelector('[data-content-field="description"]');
-      field?.insertAdjacentHTML('beforeend', '<small class="field-hint slot-hint">Nomor ini ditampilkan sebagai kontak kantor dan dapat ditekan pengunjung untuk menelepon.</small>');    } else if (isSetting && item?.slug === 'email-kantor') {
+      field?.insertAdjacentHTML('beforeend', '<small class="field-hint slot-hint">Nomor ini ditampilkan sebagai kontak kantor dan dapat ditekan pengunjung untuk menelepon.</small>');    } else if (isSetting && item?.slug === 'teks-copyright') {
+      const field = form.querySelector('[data-content-field="description"]');
+      field?.insertAdjacentHTML('beforeend', '<small class="field-hint slot-hint">Tulis <b>{tahun}</b> agar tahun otomatis mengikuti waktu (WIB), <b>{nama}</b> untuk nama website, dan <b>{perusahaan}</b> untuk nama perusahaan. Contoh: © {tahun} {nama} · {perusahaan}. Kosongkan untuk memakai format standar.</small>');
+    } else if (isSetting && item?.slug === 'email-kantor') {
       const field = form.querySelector('[data-content-field="description"]');
       field?.insertAdjacentHTML('beforeend', '<small class="field-hint slot-hint">Email ini tampil di bawah nomor telepon dan dapat ditekan pengunjung untuk mengirim email. Kosongkan untuk menyembunyikannya.</small>');
     }

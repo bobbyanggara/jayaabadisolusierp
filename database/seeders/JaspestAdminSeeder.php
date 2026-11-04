@@ -39,6 +39,7 @@ class JaspestAdminSeeder extends Seeder
             ['type' => 'settings', 'title' => 'Nama Website', 'slug' => 'nama-website', 'category' => 'Identitas', 'description' => 'JASPEST', 'body' => null, 'sort_order' => 1],
             ['type' => 'settings', 'title' => 'Nama Perusahaan', 'slug' => 'nama-perusahaan', 'category' => 'Identitas', 'description' => 'CV Jaya Abadi Solusi', 'body' => null, 'sort_order' => 2],
             ['type' => 'settings', 'title' => 'Tagline Website', 'slug' => 'tagline-website', 'category' => 'Identitas', 'description' => 'Solusi pengendalian hama untuk rumah dan bisnis.', 'body' => null, 'sort_order' => 3],
+            ['type' => 'settings', 'title' => 'Teks Hak Cipta', 'slug' => 'teks-copyright', 'category' => 'Identitas', 'description' => '© {tahun} {nama} · {perusahaan}', 'body' => null, 'sort_order' => 3],
             ['type' => 'settings', 'title' => 'Nomor WhatsApp', 'slug' => 'nomor-whatsapp', 'category' => 'Kontak', 'description' => '', 'body' => null, 'status' => 'draft', 'sort_order' => 4],
             ['type' => 'settings', 'title' => 'Alamat Kantor', 'slug' => 'alamat-kantor', 'category' => 'Lokasi Kantor', 'description' => 'Jl. Taruna Kav.IX No.126 Blk N - O, Sritanjung, Wage, Kec. Taman, Kabupaten Sidoarjo, Jawa Timur 61257', 'body' => null, 'sort_order' => 5],
             ['type' => 'settings', 'title' => 'Nomor Telepon Kantor', 'slug' => 'telepon-kantor', 'category' => 'Lokasi Kantor', 'description' => '(031) 85582382', 'body' => null, 'sort_order' => 6],

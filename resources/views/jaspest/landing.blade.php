@@ -28,7 +28,7 @@
   <script>window.JASPEST_CONFIG = {{ Illuminate\Support\Js::from($jaspestConfig ?? []) }}; window.JASPEST_PUBLISHED_ARTICLES = {{ Illuminate\Support\Js::from($jaspestPublishedArticles) }}; window.JASPEST_DYNAMIC_CONTENT = {{ Illuminate\Support\Js::from($jaspestDynamicContent ?? []) }};</script>
   @include('jaspest.partials.cookie-consent')
   <script src="{{ asset('jaspest/content.js') }}?v=3" defer></script>
-  <script src="{{ asset('jaspest/app.js') }}?v=6" defer></script>
+  <script src="{{ asset('jaspest/app.js') }}?v=7" defer></script>
   <script src="{{ asset('jaspest/animations.js') }}?v=10" defer></script>
 </head>
 <body>
@@ -155,7 +155,7 @@
         </div>
       </section>
     @endif
-    <div class="container footer-bottom"><span>© <span id="year">2026</span> JASPEST · CV Jaya Abadi Solusi</span><button type="button" data-privacy>Kebijakan privasi</button><button type="button" data-cookie-settings>Pengaturan cookie</button><span class="asa-credit">Build Better. Automate Faster. Grow Smarter. with <a href="https://www.asaproduction.tech/" target="_blank" rel="noopener noreferrer">Asa Production</a></span></div></footer>
+    <div class="container footer-bottom"><span>{{ ($jaspestDynamicContent['brand']['copyright'] ?? null) ?: '© '.now('Asia/Jakarta')->year.' JASPEST · CV Jaya Abadi Solusi' }}</span><button type="button" data-privacy>Kebijakan privasi</button><button type="button" data-cookie-settings>Pengaturan cookie</button><span class="asa-credit">Build Better. Automate Faster. Grow Smarter. with <a href="https://www.asaproduction.tech/" target="_blank" rel="noopener noreferrer">Asa Production</a></span></div></footer>
 
   <button class="chat-launcher" id="chat-launcher" aria-expanded="false" aria-controls="chat-panel"><span class="chat-launcher-icon"><svg><use href="#i-chat"/></svg></span><span>Tanya JASPEST</span><span class="chat-online-dot"></span></button>
   <section class="chat-panel" id="chat-panel" aria-label="Asisten FAQ JASPEST" hidden><div class="chat-header"><span class="chat-bot-icon"><svg><use href="#i-chat"/></svg></span><div><strong>Asisten FAQ JASPEST</strong><span>Informasi dari website JASPEST</span></div><button class="chat-close icon-button" id="chat-close" aria-label="Tutup asisten FAQ"><svg><use href="#i-close"/></svg></button></div><div class="chat-messages" id="chat-messages" role="log" aria-live="polite" aria-relevant="additions"></div><form class="chat-form" id="chat-form"><label class="sr-only" for="chat-input">Pertanyaan Anda</label><input id="chat-input" autocomplete="off" maxlength="500" placeholder="Tulis pertanyaan Anda…"><button type="submit" class="chat-send icon-button" aria-label="Kirim pertanyaan"><svg><use href="#i-send"/></svg></button></form><div class="chat-bottom-note">Jawaban berbasis FAQ, tanpa AI.</div></section>

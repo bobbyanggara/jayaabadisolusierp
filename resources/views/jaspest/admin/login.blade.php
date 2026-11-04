@@ -356,7 +356,7 @@
       </section>
 
       <p class="login-copy">
-        <span>© {{ date('Y') }} CV Jaya Abadi Solusi</span>
+        <span>© {{ now('Asia/Jakarta')->year }} CV Jaya Abadi Solusi</span>
         <span class="login-copy-sep" aria-hidden="true"></span>
         <a href="https://www.asaproduction.tech" target="_blank" rel="noopener noreferrer">Created By Asa Production</a>
       </p>

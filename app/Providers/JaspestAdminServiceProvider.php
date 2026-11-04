@@ -131,6 +131,13 @@ class JaspestAdminServiceProvider extends ServiceProvider
                 'company' => 'CV '.$companyName,
                 'tagline' => $settings->get('tagline-website')?->description ?: 'Solusi pengendalian hama untuk rumah dan bisnis.',
             ];
+            // Hak cipta: tahun mengikuti waktu server (WIB); teks bisa diubah di admin dengan {tahun}, {nama}, {perusahaan}.
+            $copyrightTemplate = trim((string) ($settings->get('teks-copyright')?->description ?? ''));
+            $content['brand']['copyright'] = strtr($copyrightTemplate !== '' ? $copyrightTemplate : '© {tahun} {nama} · {perusahaan}', [
+                '{tahun}' => (string) now('Asia/Jakarta')->year,
+                '{nama}' => $content['brand']['name'],
+                '{perusahaan}' => $content['brand']['company'],
+            ]);
             $config['whatsappNumber'] = $settings->get('nomor-whatsapp')?->description ?: ($config['whatsappNumber'] ?? null);
 
             $officeAddress = trim((string) ($settings->get('alamat-kantor')?->description
