@@ -1,0 +1,738 @@
+/*
+ * JASPEST admin — responsive refinement layer.
+ * Seluruh deklarasi hanya aktif pada tablet/ponsel. Layout desktop tidak diubah.
+ */
+
+@media (max-width: 1020px) {
+  body.jas-admin,
+  body.jas-admin .admin-shell,
+  body.jas-admin .main-area {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  body.jas-admin .main-area {
+    width: 100%;
+  }
+
+  body.jas-admin .page-wrap {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  body.jas-admin .page-view,
+  body.jas-admin .panel,
+  body.jas-admin .booking-panel,
+  body.jas-admin .table-scroll {
+    min-width: 0;
+  }
+}
+
+@media (max-width: 860px) {
+  html:has(body.jas-admin),
+  body.jas-admin {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  body.jas-admin .admin-shell {
+    width: 100%;
+    min-width: 0;
+    overflow-x: clip;
+  }
+
+  body.jas-admin .sidebar {
+    z-index: 45;
+    width: min(320px, 88vw);
+    max-width: 88vw;
+    height: 100vh;
+    height: 100dvh;
+    padding-bottom: max(14px, env(safe-area-inset-bottom));
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  body.jas-admin .sidebar.open {
+    transform: translateX(0);
+    box-shadow: 0 0 0 100vmax rgba(10, 24, 30, .46);
+  }
+
+  body.jas-admin .admin-brand {
+    gap: 11px;
+    padding: 16px 5px 14px;
+  }
+
+  body.jas-admin .brand-tile {
+    width: 58px;
+    height: 54px;
+    flex: 0 0 58px;
+  }
+
+  body.jas-admin .brand-copy {
+    min-width: 0;
+  }
+
+  body.jas-admin .brand-copy strong {
+    font-size: 19px;
+  }
+
+  body.jas-admin .brand-copy small {
+    font-size: 12px;
+    line-height: 1.35;
+  }
+
+  body.jas-admin .nav-link,
+  body.jas-admin .nav-sub-link {
+    min-height: 44px;
+  }
+
+  body.jas-admin .main-area {
+    margin-left: 0;
+    min-width: 0;
+    overflow-x: clip;
+  }
+
+  body.jas-admin .topbar {
+    min-height: 66px;
+    height: auto;
+    padding: 8px 16px;
+    gap: 10px;
+  }
+
+  body.jas-admin .topbar-left,
+  body.jas-admin .topbar-right,
+  body.jas-admin .account-stack,
+  body.jas-admin .profile-pill {
+    min-width: 0;
+  }
+
+  body.jas-admin .topbar-left {
+    gap: 10px;
+  }
+
+  body.jas-admin .breadcrumb {
+    min-width: 0;
+  }
+
+  body.jas-admin .breadcrumb strong {
+    max-width: min(50vw, 320px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 18px;
+  }
+
+  body.jas-admin .breadcrumb small {
+    font-size: 11px;
+  }
+
+  body.jas-admin .topbar-right {
+    margin-left: auto;
+    flex: 0 0 auto;
+  }
+
+  body.jas-admin .account-stack {
+    gap: 2px;
+  }
+
+  body.jas-admin .profile-pill {
+    gap: 7px;
+    padding: 3px;
+  }
+
+  body.jas-admin .profile-pill .avatar {
+    width: 33px;
+    height: 33px;
+  }
+
+  body.jas-admin .account-stack .logout-form {
+    margin-left: 0;
+    padding-left: 7px;
+  }
+
+  body.jas-admin .account-stack .logout-btn {
+    min-height: 34px;
+  }
+
+  body.jas-admin .page-wrap {
+    padding: 19px 16px 46px;
+  }
+
+  body.jas-admin .page-view {
+    width: 100%;
+    min-width: 0;
+  }
+
+  body.jas-admin .page-heading {
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  body.jas-admin .page-heading > div:first-child {
+    flex: 1 1 220px;
+    min-width: 0;
+  }
+
+  body.jas-admin .page-heading p {
+    max-width: 68ch;
+    font-size: 13px;
+    line-height: 1.55;
+  }
+
+  body.jas-admin .heading-actions {
+    flex: 0 1 auto;
+    flex-wrap: wrap;
+    gap: 7px;
+  }
+
+  body.jas-admin .heading-actions .btn {
+    min-height: 42px;
+  }
+
+  body.jas-admin .stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  body.jas-admin .stats-grid .stat-card {
+    min-width: 0;
+    min-height: 84px;
+    padding: 14px 15px;
+    gap: 10px;
+  }
+
+  body.jas-admin .stat-body {
+    min-width: 0;
+  }
+
+  body.jas-admin .stat-body strong,
+  body.jas-admin .stat-card strong {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    font-size: clamp(22px, 4vw, 29px);
+    line-height: 1.15;
+  }
+
+  body.jas-admin .stat-body small {
+    font-size: 12px;
+    line-height: 1.35;
+  }
+
+  body.jas-admin .dashboard-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  body.jas-admin .panel,
+  body.jas-admin .chart-panel,
+  body.jas-admin .action-panel {
+    min-width: 0;
+  }
+
+  body.jas-admin .panel-heading,
+  body.jas-admin .client-panel-heading,
+  body.jas-admin .stock-catalog-panel-heading {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  body.jas-admin .panel-heading > div,
+  body.jas-admin .client-panel-heading > div,
+  body.jas-admin .stock-catalog-panel-heading > div {
+    min-width: 0;
+  }
+
+  body.jas-admin .booking-summary {
+    max-width: 100%;
+    gap: 3px;
+    padding-bottom: 2px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  body.jas-admin .booking-summary::-webkit-scrollbar,
+  body.jas-admin .inventory-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  body.jas-admin .booking-summary .summary-filter {
+    flex: 0 0 auto;
+    min-height: 44px;
+    padding: 9px 12px;
+    white-space: nowrap;
+  }
+
+  body.jas-admin .booking-toolbar {
+    flex-wrap: wrap;
+    gap: 9px;
+    padding: 12px;
+  }
+
+  body.jas-admin .booking-toolbar .search-box,
+  body.jas-admin .client-toolbar .search-box,
+  body.jas-admin .inventory-toolbar .search-box,
+  body.jas-admin .stock-catalog-toolbar .search-box {
+    flex: 1 1 100%;
+    width: 100%;
+    max-width: none;
+  }
+
+  body.jas-admin .booking-toolbar select,
+  body.jas-admin .booking-toolbar input,
+  body.jas-admin .inventory-toolbar select,
+  body.jas-admin .stock-catalog-toolbar select,
+  body.jas-admin .client-toolbar select {
+    min-height: 42px;
+    max-width: 100%;
+  }
+
+  body.jas-admin .table-scroll {
+    max-width: 100%;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  body.jas-admin .table-scroll tr {
+    min-width: 0;
+  }
+
+  body.jas-admin .table-footer {
+    flex-wrap: wrap;
+    gap: 9px 12px;
+    padding: 11px 13px;
+  }
+
+  body.jas-admin .table-footer > span {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  body.jas-admin .table-pagination {
+    flex: 0 0 auto;
+  }
+
+  body.jas-admin .content-row {
+    min-width: 0;
+    flex-wrap: wrap;
+    gap: 9px;
+  }
+
+  body.jas-admin .content-row-copy {
+    flex: 1 1 160px;
+    min-width: 0;
+  }
+
+  body.jas-admin .content-row-copy small {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  body.jas-admin .content-row-actions {
+    flex: 0 0 auto;
+    margin-left: auto;
+  }
+
+  body.jas-admin .content-row-actions button {
+    min-width: 36px;
+    min-height: 38px;
+    justify-content: center;
+  }
+
+  body.jas-admin .form-two-cols,
+  body.jas-admin .detail-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  body.jas-admin .modal-backdrop {
+    padding: 0;
+    align-items: flex-end;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  body.jas-admin .modal {
+    width: 100% !important;
+    max-width: 100%;
+    max-height: min(92dvh, 900px);
+    border-radius: 20px 20px 0 0;
+    overscroll-behavior: contain;
+  }
+
+  body.jas-admin .modal-head,
+  body.jas-admin .modal-body {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+
+  body.jas-admin .modal-body {
+    min-height: 0;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  body.jas-admin .modal-footer {
+    padding: 12px 18px calc(12px + env(safe-area-inset-bottom));
+    gap: 8px;
+  }
+
+  body.jas-admin .modal-footer .btn,
+  body.jas-admin .modal-footer > button {
+    min-height: 42px;
+  }
+
+  body.jas-admin input,
+  body.jas-admin select,
+  body.jas-admin textarea {
+    max-width: 100%;
+  }
+
+  body.jas-admin .btn,
+  body.jas-admin .table-action,
+  body.jas-admin .date-clear {
+    min-height: 40px;
+  }
+
+  body.jas-admin .toast-stack {
+    right: 12px;
+    bottom: calc(12px + env(safe-area-inset-bottom));
+    left: 12px;
+    width: auto;
+    max-width: none;
+  }
+}
+
+@media (max-width: 560px) {
+  body.jas-admin .topbar {
+    min-height: 60px;
+    padding: 7px 12px;
+  }
+
+  body.jas-admin .breadcrumb strong {
+    max-width: 42vw;
+    font-size: 16px;
+  }
+
+  body.jas-admin .breadcrumb small {
+    font-size: 10px;
+  }
+
+  body.jas-admin .mobile-menu {
+    width: 40px;
+    height: 40px;
+    flex: 0 0 40px;
+  }
+
+  body.jas-admin .topbar-right {
+    gap: 6px;
+  }
+
+  body.jas-admin .profile-pill .avatar {
+    width: 31px;
+    height: 31px;
+  }
+
+  body.jas-admin .account-stack .logout-btn {
+    width: 34px;
+    min-height: 34px;
+  }
+
+  body.jas-admin .account-stack .back-site {
+    min-height: 22px;
+    padding: 1px 3px;
+    font-size: 11px;
+  }
+
+  body.jas-admin .page-wrap {
+    padding: 15px 12px 38px;
+  }
+
+  body.jas-admin .page-heading {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+
+  body.jas-admin .page-heading > div:first-child {
+    flex-basis: auto;
+  }
+
+  body.jas-admin .page-heading p {
+    font-size: 12px;
+  }
+
+  body.jas-admin .heading-actions {
+    width: 100%;
+  }
+
+  body.jas-admin .heading-actions .btn {
+    flex: 1 1 auto;
+    justify-content: center;
+    min-height: 44px;
+  }
+
+  body.jas-admin .stats-grid {
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  body.jas-admin .stats-grid .stat-card {
+    min-height: 78px;
+    padding: 12px 11px;
+    gap: 8px;
+    border-radius: 14px;
+  }
+
+  body.jas-admin .stat-icon {
+    display: none;
+  }
+
+  body.jas-admin .stat-body strong,
+  body.jas-admin .stat-card strong {
+    font-size: clamp(21px, 6vw, 27px);
+  }
+
+  body.jas-admin .stat-body small {
+    font-size: 11px;
+    line-height: 1.3;
+  }
+
+  body.jas-admin .chart-panel,
+  body.jas-admin .action-panel {
+    padding: 14px;
+  }
+
+  body.jas-admin .panel-heading h2,
+  body.jas-admin .client-panel-heading h2,
+  body.jas-admin .stock-catalog-panel-heading h2 {
+    font-size: 15px;
+  }
+
+  body.jas-admin .panel-heading p,
+  body.jas-admin .client-panel-heading p,
+  body.jas-admin .stock-catalog-panel-heading p {
+    font-size: 12px;
+    line-height: 1.5;
+  }
+
+  body.jas-admin .booking-summary {
+    margin-right: -12px;
+    padding-right: 12px;
+  }
+
+  body.jas-admin .booking-summary .summary-filter {
+    min-height: 42px;
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+
+  body.jas-admin .booking-summary .summary-filter strong {
+    font-size: 14px;
+  }
+
+  body.jas-admin .booking-toolbar {
+    padding: 10px;
+  }
+
+  body.jas-admin .booking-toolbar select,
+  body.jas-admin .booking-toolbar input,
+  body.jas-admin .client-toolbar select,
+  body.jas-admin .inventory-toolbar select,
+  body.jas-admin .stock-catalog-toolbar select {
+    width: 100%;
+    min-height: 44px;
+    font-size: 16px;
+  }
+
+  body.jas-admin .search-box input {
+    min-height: 44px;
+    font-size: 16px;
+  }
+
+  body.jas-admin .date-filter {
+    gap: 8px;
+  }
+
+  body.jas-admin .date-field {
+    min-height: 42px;
+    padding-inline: 9px;
+  }
+
+  body.jas-admin .date-field input {
+    min-height: 38px;
+    font-size: 14px;
+  }
+
+  body.jas-admin .table-scroll tr {
+    padding: 12px 11px;
+  }
+
+  body.jas-admin .table-footer {
+    align-items: flex-start;
+    padding: 10px 11px;
+    font-size: 12px;
+  }
+
+  body.jas-admin .table-footer > span:first-child {
+    flex: 1 1 100%;
+  }
+
+  body.jas-admin .table-pagination {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  body.jas-admin .content-row {
+    align-items: flex-start;
+    padding: 11px 0;
+  }
+
+  body.jas-admin .content-row-copy strong {
+    font-size: 13px;
+    line-height: 1.4;
+  }
+
+  body.jas-admin .content-row-copy small {
+    font-size: 12px;
+  }
+
+  body.jas-admin .content-row-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  body.jas-admin .form-two-cols,
+  body.jas-admin .detail-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  body.jas-admin .modal {
+    max-height: calc(100dvh - env(safe-area-inset-top));
+  }
+
+  body.jas-admin .modal-head,
+  body.jas-admin .modal-body {
+    padding-left: 15px;
+    padding-right: 15px;
+  }
+
+  body.jas-admin .modal-head h2 {
+    font-size: 18px;
+  }
+
+  body.jas-admin .modal-body {
+    padding-top: 15px;
+    padding-bottom: 18px;
+  }
+
+  body.jas-admin .modal-footer {
+    flex-wrap: wrap;
+    padding: 11px 15px calc(11px + env(safe-area-inset-bottom));
+  }
+
+  body.jas-admin .modal-footer .btn {
+    flex: 1 1 calc(50% - 8px);
+  }
+
+  body.jas-admin .form-label > input,
+  body.jas-admin .form-label > select,
+  body.jas-admin .form-label > textarea,
+  body.jas-admin .manual-booking-modal .form-label > textarea,
+  body.jas-admin .detail-status-editor select {
+    min-height: 44px;
+    font-size: 16px;
+  }
+
+  body.jas-admin .stock-catalog-stat-grid,
+  body.jas-admin .inventory-stat-grid,
+  body.jas-admin .inventory-stat-grid.stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  body.jas-admin .inventory-tabs {
+    margin-right: -12px;
+    padding-right: 12px;
+    overscroll-behavior-x: contain;
+  }
+
+  body.jas-admin .inventory-tab {
+    min-height: 44px;
+    padding-inline: 11px;
+    font-size: 12px;
+  }
+
+  body.jas-admin .inventory-stat {
+    min-width: 0;
+    padding: 12px;
+  }
+
+  body.jas-admin .inventory-stat strong {
+    font-size: 20px;
+    overflow-wrap: anywhere;
+  }
+
+  body.jas-admin .client-panel-heading,
+  body.jas-admin .stock-catalog-panel-heading {
+    padding: 14px 12px 10px;
+  }
+
+  body.jas-admin .client-queue-count,
+  body.jas-admin .stock-catalog-view-tag {
+    max-width: 100%;
+    white-space: normal;
+  }
+
+  body.jas-admin .toast-stack {
+    bottom: calc(10px + env(safe-area-inset-bottom));
+  }
+}
+
+@media (max-width: 380px) {
+  body.jas-admin .topbar {
+    padding-inline: 9px;
+  }
+
+  body.jas-admin .breadcrumb strong {
+    max-width: 37vw;
+    font-size: 15px;
+  }
+
+  body.jas-admin .page-wrap {
+    padding-inline: 10px;
+  }
+
+  body.jas-admin .stats-grid {
+    gap: 7px;
+  }
+
+  body.jas-admin .stats-grid .stat-card {
+    padding-inline: 9px;
+  }
+
+  body.jas-admin .stat-body small {
+    font-size: 10px;
+  }
+
+  body.jas-admin .modal-head,
+  body.jas-admin .modal-body {
+    padding-left: 13px;
+    padding-right: 13px;
+  }
+
+  body.jas-admin .modal-footer {
+    padding-right: 13px;
+    padding-left: 13px;
+  }
+}
+
+@media (max-width: 860px) and (prefers-reduced-motion: reduce) {
+  body.jas-admin .sidebar,
+  body.jas-admin .modal {
+    transition: none !important;
+    animation: none !important;
+  }
+}

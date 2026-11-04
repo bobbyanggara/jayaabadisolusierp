@@ -271,20 +271,21 @@
   const contentLabels = {
     pages: 'Konten Halaman', services: 'Layanan', pests: 'Jenis Hama',
     methods: 'Metode Penanganan', articles: 'Blog & Artikel', gallery: 'Galeri',
-    faqs: 'FAQ', settings: 'Pengaturan Website'
+    faqs: 'FAQ', certifications: 'Sertifikasi & Keanggotaan', settings: 'Pengaturan Website'
   };
   const contentDescriptions = {
-    pages: ['Kelola Konten Halaman.', 'Perbarui bagian utama, profil, dan informasi penting perusahaan.'],
+    pages: ['Kelola Konten Halaman.', 'Ubah teks dan foto pada halaman utama website. Setiap baris adalah satu bagian yang tampil di website, berurutan dari atas ke bawah.'],
     services: ['Kelola Layanan JASPEST.', 'Layanan aktif tersedia pada formulir permintaan layanan.'],
     pests: ['Kelola Informasi Jenis Hama.', 'Tambahkan nama, ciri, foto, dan informasi identifikasi hama.'],
     methods: ['Kelola Metode Penanganan.', 'Jelaskan metode, kegunaan, dan prosedur keselamatan.'],
     articles: ['Kelola Artikel Edukasi.', 'Artikel dapat diterbitkan atau disimpan sebagai draf.'],
     gallery: ['Kelola Dokumentasi Galeri.', 'Foto yang aktif dapat ditampilkan pada galeri website publik.'],
     faqs: ['Kelola Pertanyaan Umum.', 'Pertanyaan dan jawaban aktif ditampilkan pada bagian informasi bantuan website.'],
-    settings: ['Kelola Pengaturan Website.', 'Atur informasi kontak, identitas perusahaan, dan preferensi website.']
+    certifications: ['Kelola Sertifikasi & Keanggotaan.', 'Logo yang berstatus Aktif ditampilkan pada footer website. Tambahkan, ubah, atur urutan, atau nonaktifkan pengakuan perusahaan.'],
+    settings: ['Kelola Informasi Website & Lokasi Kantor.', 'Atur identitas perusahaan, alamat, nomor telepon, dan link Google Maps yang ditampilkan pada peta interaktif website.']
   };
   const seedBookings = [];
-  const contentSeed = { pages: [], services: [], pests: [], methods: [], articles: [], gallery: [], faqs: [], settings: [] };
+  const contentSeed = { pages: [], services: [], pests: [], methods: [], articles: [], gallery: [], faqs: [], certifications: [], settings: [] };
 
   let bookings = apiMode ? [] : loadLocal('jaspest-admin-bookings', seedBookings);
   let contentData = apiMode ? clone(contentSeed) : loadLocal('jaspest-admin-content', contentSeed);
@@ -298,6 +299,8 @@
   let currentBooking = null;
   let currentContentType = 'pages';
   let editingContentId = null;
+  let contentNoteDefault = null;
+  let contentFieldOrder = null;
   let accounts = [];
   let technicians = [];
   let clients = [];
@@ -535,6 +538,7 @@
     inventoryItemEditingId = null;
     const form = $('#inventoryItemForm');
     form.reset();
+    form.elements.namedItem('unit').querySelectorAll('option[data-legacy]').forEach((opt) => opt.remove());
     form.elements.stock_on_hand.value = '0';
     form.elements.damaged_quantity.value = '0';
     form.elements.condition_status.value = 'normal';
@@ -546,6 +550,11 @@
     if (!item) return;
     inventoryItemEditingId = item.id;
     const form = $('#inventoryItemForm');
+    const unitSelect = form.elements.namedItem('unit');
+    unitSelect.querySelectorAll('option[data-legacy]').forEach((opt) => opt.remove());
+    if (item.unit && ![...unitSelect.options].some((opt) => opt.value === item.unit)) {
+      const legacy = new Option(item.unit, item.unit); legacy.dataset.legacy = '1'; unitSelect.add(legacy);
+    }
     Object.entries({
       name: item.name, category: item.category, brand: item.brand, specification: item.specification,
       unit: item.unit, stock_on_hand: item.stock_on_hand, damaged_quantity: item.damaged_quantity,
@@ -917,11 +926,95 @@
       { label: 'Sen', total: 8 }, { label: 'Sel', total: 12 }, { label: 'Rab', total: 7 },
       { label: 'Kam', total: 15 }, { label: 'Jum', total: 10 }, { label: 'Sab', total: 18 }, { label: 'Min', total: 9 }
     ]);
-    const maximum = Math.max(1, ...values.map((item) => Number(item.total || 0)));
-    $('#chartBars').innerHTML = values.length ? values.map((item) => {
-      const height = Math.max(2, (Number(item.total || 0) / maximum) * 100);
-      return `<div class="chart-column" title="${esc(item.label)}: ${Number(item.total || 0)} permintaan layanan"><b>${Number(item.total || 0)}</b><i style="height:${height}%"></i><small>${esc(item.label)}</small></div>`;
-    }).join('') : '<p class="muted-empty">Belum ada data permintaan layanan untuk grafik.</p>';
+    const host = $('#chartBars');
+    if (!values.length) {
+      host.innerHTML = '<p class="muted-empty">Belum ada data permintaan layanan untuk grafik.</p>';
+      return;
+    }
+
+    const totals = values.map((item) => Number(item.total || 0));
+    const sum = totals.reduce((acc, value) => acc + value, 0);
+    const average = sum / totals.length;
+    const peakValue = Math.max(...totals);
+    const peakLabel = peakValue > 0 ? values[totals.indexOf(peakValue)].label : '-';
+    const todayValue = totals[totals.length - 1];
+    const previousValue = totals.length > 1 ? totals[totals.length - 2] : 0;
+    const diff = todayValue - previousValue;
+    const trend = diff === 0 ? '= sama dengan kemarin' : `${diff > 0 ? '▲' : '▼'} ${Math.abs(diff)} dari kemarin`;
+    const trendClass = diff > 0 ? 'is-up' : (diff < 0 ? 'is-down' : '');
+    const nowWib = new Intl.DateTimeFormat('id-ID', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone: 'Asia/Jakarta' }).format(new Date()).replace(':', '.');
+
+    // Geometri SVG (viewBox tetap, skala mengikuti lebar panel)
+    const W = 720, H = 250, padL = 34, padR = 22, padT = 30, padB = 34;
+    const plotW = W - padL - padR, plotH = H - padT - padB;
+    const step = Math.max(1, Math.ceil(peakValue / 4));
+    const yMax = step * 4;
+    const x = (i) => padL + (totals.length === 1 ? plotW / 2 : (plotW * i) / (totals.length - 1));
+    const y = (v) => padT + plotH - (v / yMax) * plotH;
+    const pts = totals.map((v, i) => [x(i), y(v)]);
+
+    // Kurva halus (Catmull-Rom → Bézier); titik kontrol dibatasi antar dua titik data agar garis tidak overshoot.
+    const floorY = padT + plotH;
+    let line = `M${pts[0][0].toFixed(1)},${pts[0][1].toFixed(1)}`;
+    for (let i = 0; i < pts.length - 1; i += 1) {
+      const p0 = pts[i - 1] || pts[i], p1 = pts[i], p2 = pts[i + 1], p3 = pts[i + 2] || p2;
+      const t = 0.18;
+      const lo = Math.min(p1[1], p2[1]), hi = Math.max(p1[1], p2[1]);
+      const c1y = Math.min(hi, Math.max(lo, p1[1] + (p2[1] - p0[1]) * t));
+      const c2y = Math.min(hi, Math.max(lo, p2[1] - (p3[1] - p1[1]) * t));
+      line += ` C${(p1[0] + (p2[0] - p0[0]) * t).toFixed(1)},${c1y.toFixed(1)} ${(p2[0] - (p3[0] - p1[0]) * t).toFixed(1)},${c2y.toFixed(1)} ${p2[0].toFixed(1)},${p2[1].toFixed(1)}`;
+    }
+    const area = `${line} L${pts[pts.length - 1][0].toFixed(1)},${floorY} L${pts[0][0].toFixed(1)},${floorY} Z`;
+
+    const grid = [0, 1, 2, 3, 4].map((n) => {
+      const gy = y(n * step);
+      return `<line class="cm-grid" x1="${padL}" x2="${W - padR}" y1="${gy.toFixed(1)}" y2="${gy.toFixed(1)}"/><text class="cm-axis" x="${padL - 8}" y="${(gy + 4).toFixed(1)}" text-anchor="end">${n * step}</text>`;
+    }).join('');
+
+    const colWidth = totals.length === 1 ? plotW : plotW / (totals.length - 1);
+    const points = values.map((item, i) => {
+      const isToday = i === values.length - 1;
+      const [px, py] = pts[i];
+      const label = esc(item.label);
+      return `<g class="cm-point${isToday ? ' is-today' : ''}" tabindex="0">
+        <title>${label}: ${totals[i]} permintaan layanan</title>
+        <rect class="cm-hit" x="${(px - colWidth / 2).toFixed(1)}" y="${padT}" width="${colWidth.toFixed(1)}" height="${plotH}"/>
+        <line class="cm-guide" x1="${px.toFixed(1)}" x2="${px.toFixed(1)}" y1="${py.toFixed(1)}" y2="${floorY}"/>
+        ${isToday ? `<circle class="cm-pulse" cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="7"/>` : ''}
+        <circle class="cm-dot" cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="${isToday ? 6 : 4.5}"/>
+        <text class="cm-value" x="${px.toFixed(1)}" y="${(py - 14).toFixed(1)}" text-anchor="middle">${totals[i]}</text>
+        <text class="cm-label" x="${px.toFixed(1)}" y="${H - 10}" text-anchor="middle">${label}</text>
+      </g>`;
+    }).join('');
+
+    host.innerHTML = `
+      <div class="cm-kpis">
+        <div class="cm-kpi"><small>Total ${totals.length} hari</small><strong>${sum}</strong><span class="cm-hint">Jumlah semua hari, termasuk hari ini</span></div>
+        <div class="cm-kpi"><small>Rata-rata / hari</small><strong>${average.toLocaleString('id-ID', { maximumFractionDigits: 1 })}</strong><span class="cm-hint">${sum} ÷ ${totals.length} hari</span></div>
+        <div class="cm-kpi"><small>Puncak</small><strong>${peakValue}<em>${esc(peakLabel)}</em></strong><span class="cm-hint">${peakValue > 0 ? 'Hari dengan permintaan terbanyak' : 'Belum ada permintaan'}</span></div>
+        <div class="cm-kpi is-today"><small>Hari ini</small><strong>${todayValue}<em class="${trendClass}">${trend}</em></strong><span class="cm-hint">Dihitung sampai ${nowWib} WIB</span></div>
+      </div>
+      <svg class="cm-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Grafik garis permintaan layanan masuk 7 hari terakhir">
+        <defs>
+          <linearGradient id="cmFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" class="cm-fill-top"/><stop offset="100%" class="cm-fill-bottom"/></linearGradient>
+        </defs>
+        ${grid}
+        <path class="cm-area" d="${area}"/>
+        <path class="cm-line" d="${line}"/>
+        ${points}
+      </svg>
+      <details class="cm-notes">
+        <summary>Cara membaca grafik</summary>
+        <ul>
+          <li><b>Sumber data:</b> jumlah permintaan layanan yang dibuat pada tiap hari, mulai ${totals.length - 1} hari lalu sampai hari ini. Semua status ikut dihitung (Baru, Follow-up, Deal Order, Tidak Deal), termasuk Order Manual.</li>
+          <li><b>Batas hari:</b> mengikuti waktu WIB (pukul 00.00–23.59).</li>
+          <li><b>Titik dan garis:</b> angka di atas titik adalah jumlah sebenarnya. Lengkung garis hanya penghubung, tidak ada nilai di antara dua hari.</li>
+          <li><b>Sumbu kiri:</b> menyesuaikan nilai tertinggi dan dibagi 4 interval sama besar (saat ini 0–${yMax}, tiap ${step}).</li>
+          <li><b>Hari ini (merah):</b> belum sehari penuh, jadi selisih “dari kemarin” dan rata-rata bisa terlihat lebih rendah di pagi hari.</li>
+          <li><b>Puncak:</b> bila ada beberapa hari dengan nilai sama, yang ditampilkan adalah hari paling awal.</li>
+          <li><b>Pembaruan:</b> angka dihitung saat halaman dimuat; muat ulang untuk melihat permintaan terbaru.</li>
+        </ul>
+      </details>`;
   }
   function renderRecent() {
     const rows = (recentBookings.length ? recentBookings : bookings).slice(0, 5);
@@ -1738,36 +1831,217 @@
     // Layanan memakai ikon pilihan masing-masing (sama seperti kartu layanan di website).
     if (type === 'services') return siteIcon(siteIcons[item.icon] ? item.icon : 'shield');
     // Jenis hama = ikon serangga, metode penanganan = ikon perisai (sama seperti kartu direktori website).
-    return siteIcon(({ pages: 'house', pests: 'bug', methods: 'shield', articles: 'file', gallery: 'camera', faqs: 'chat', settings: 'info' })[type] || 'info');
+    return siteIcon(({ pages: 'house', pests: 'bug', methods: 'shield', articles: 'file', gallery: 'camera', faqs: 'chat', certifications: 'shield', settings: 'info' })[type] || 'info');
+  }
+  // Ringkasan isi satu bagian halaman, persis seperti yang tampil di website.
+  function pageRowDetail(item) {
+    if (item.slug === 'video-tiktok') {
+      return item.status === 'Aktif' && item.description
+        ? `Tampil di website · ${item.description}`
+        : 'Belum tampil di website. Isi link video, lalu ubah status menjadi Aktif.';
+    }
+    const fields = Object.keys(item.slot?.fields || {});
+    const text = ['title', 'description', 'body'].filter((key) => fields.includes(key))
+      .map((key) => String(item[key] || '').replace(/\s+/g, ' ').trim()).filter(Boolean).join(' · ');
+    if (!text) return 'Belum diisi';
+    return text.length > 150 ? `${text.slice(0, 147)}…` : text;
+  }
+  function renderPageSections(items) {
+    $('#contentList').innerHTML = items.map((item) => {
+      const slot = item.slot || {};
+      const imageUrl = item.image_url || item.default_image_url;
+      const fallback = item.image_url && item.default_image_url ? item.default_image_url : '';
+      const thumb = imageUrl
+        ? `<img class="content-row-image" src="${esc(imageUrl)}" data-fallbacks="${esc(fallback)}" alt="" loading="lazy">`
+        : `<div class="content-row-icon">${siteIcon(slot.icon || 'info')}</div>`;
+      const status = slot.fields?.status
+        ? `<span class="status-pill ${item.status === 'Aktif' ? 'status-contacted' : 'status-followup'}">${esc(item.status)}</span>`
+        : '';
+      const name = `${slot.section || ''} · ${slot.label || item.title}`;
+      return `
+      <div class="content-row has-context">
+        ${thumb}
+        <div class="content-row-copy"><span class="content-row-kicker">${esc(String(slot.section || '').toUpperCase())}</span><strong>${esc(slot.label || item.title)}</strong><small>${esc(pageRowDetail(item))}</small></div>
+        ${status}
+        <div class="content-row-actions"><button data-edit-content="${esc(item.id)}" title="Edit" aria-label="Edit ${esc(name)}">${uiIcon('edit')}<span>Edit</span></button></div>
+      </div>`;
+    }).join('') || '<div class="empty-state"><span>▤</span><strong>Belum ada bagian halaman</strong><small>Muat ulang halaman ini.</small></div>';
+    $('#contentTotal').textContent = `${items.length} bagian`;
   }
   function renderContent() {
     const items = contentData[currentContentType] || [];
+    if (currentContentType === 'pages') { renderPageSections(items); return; }
     const query = $('#contentSearch').value.trim().toLowerCase();
     const filtered = items.filter((item) => [item.title, item.category, item.description, item.slug].some((value) => String(value || '').toLowerCase().includes(query)));
     $('#contentList').innerHTML = filtered.map((item) => `
       <div class="content-row">
         ${(item.image_url || item.default_image_url) ? `<img class="content-row-image" src="${esc(item.image_url || item.default_image_url)}" data-fallbacks="${esc(item.image_url && item.default_image_url ? item.default_image_url : '')}" alt="" loading="lazy">` : `<div class="content-row-icon">${contentIcon(currentContentType, item)}</div>`}
-        <div class="content-row-copy"><strong>${esc(item.title)}</strong><small>${esc(item.category || 'Tanpa kategori')} · ${esc(item.description || item.slug || '')}</small></div>
+        <div class="content-row-copy"><strong>${esc(item.title)}</strong><small>${esc(`${item.category || 'Tanpa kategori'} · ${currentContentType === 'settings' && item.slug === 'link-google-maps' ? (item.description ? 'Link Google Maps tersimpan · Peta mengikuti lokasi dari tautan ini.' : 'Belum ada link · Peta menggunakan alamat kantor.') : (item.description || item.slug || '')}`)}</small></div>
         <span class="status-pill ${item.status === 'Aktif' ? 'status-contacted' : 'status-followup'}">${esc(item.status)}</span>
-        <div class="content-row-actions"><button data-edit-content="${esc(item.id)}" title="Edit" aria-label="Edit ${esc(item.title)}">${uiIcon('edit')}<span>Edit</span></button>${currentContentType === 'pages' ? '' : `<button class="delete" data-delete-content="${esc(item.id)}" title="Hapus" aria-label="Hapus ${esc(item.title)}">${uiIcon('trash')}<span>Hapus</span></button>`}</div>
+        <div class="content-row-actions"><button data-edit-content="${esc(item.id)}" title="Edit" aria-label="Edit ${esc(item.title)}">${uiIcon('edit')}<span>Edit</span></button><button class="delete" data-delete-content="${esc(item.id)}" title="Hapus" aria-label="Hapus ${esc(item.title)}">${uiIcon('trash')}<span>Hapus</span></button></div>
       </div>`).join('') || '<div class="empty-state"><span>▤</span><strong>Belum ada konten</strong><small>Tambahkan data baru atau ubah kata pencarian.</small></div>';
     $('#contentTotal').textContent = `${filtered.length} data`;
   }
+  function setFieldText(field, text) {
+    const node = [...field.childNodes].find((child) => child.nodeType === Node.TEXT_NODE && child.textContent.trim());
+    if (node) node.textContent = field.classList.contains('form-checkbox') ? ` ${text}` : `${text} `;
+  }
+  // Menyusun form: untuk halaman utama hanya kolom milik bagian tersebut yang tampil (label, batas, dan petunjuk
+  // berasal dari definisi di server); untuk jenis konten lain tampilannya tetap seperti sebelumnya.
+  function configureContentForm(type, item = null) {
+    const form = $('#contentForm');
+    const isPage = type === 'pages';
+    const isCertification = type === 'certifications';
+    const isSetting = type === 'settings';
+    const article = type === 'articles';
+    const slotFields = isPage ? (item?.slot?.fields || {}) : {};
+    const input = (name) => form.elements.namedItem(name);
+
+    $$('.slot-hint', form).forEach((node) => node.remove());
+
+    // Urutan kolom: halaman utama mengikuti urutan di definisi bagian; jenis lain memakai urutan bawaan form.
+    const fieldsBox = form.querySelector('.modal-body');
+    if (!contentFieldOrder) contentFieldOrder = $$(':scope > [data-content-field]', fieldsBox).map((field) => field.dataset.contentField);
+    let wanted = contentFieldOrder;
+    if (isPage) {
+      const keys = Object.keys(slotFields);
+      const lastImage = Math.max(keys.indexOf('image'), keys.indexOf('image_alt'));
+      if (lastImage >= 0) keys.splice(lastImage + 1, 0, 'remove_image');
+      wanted = [...keys, ...contentFieldOrder.filter((key) => !keys.includes(key))];
+    }
+    wanted.forEach((key) => {
+      const field = fieldsBox.querySelector(`:scope > [data-content-field="${key}"]`);
+      if (field) fieldsBox.appendChild(field);
+    });
+
+    const hiddenForCertification = new Set(['slug', 'body', 'keywords', 'icon']);
+    const hiddenForSettings = new Set(['slug', 'body', 'keywords', 'sort-icon', 'icon', 'image', 'image_alt', 'remove_image']);
+    $$('[data-content-field]', form).forEach((field) => {
+      const key = field.dataset.contentField;
+      field.hidden = key === 'cta'
+        ? !Object.prototype.hasOwnProperty.call(slotFields, 'cta')
+        : isPage
+        ? !(Object.prototype.hasOwnProperty.call(slotFields, key) || (key === 'remove_image' && slotFields.image))
+        : (isCertification && hiddenForCertification.has(key)) || (isSetting && hiddenForSettings.has(key));
+    });
+
+    const labels = {
+      title: isCertification ? 'Nama sertifikasi / keanggotaan' : (isSetting ? 'Nama Pengaturan' : 'Nama / Judul'),
+      category: isCertification ? 'Jenis pengakuan' : (isSetting ? 'Kelompok Pengaturan' : 'Kategori / Ringkasan'),
+      description: isCertification ? 'Keterangan singkat' : (isSetting ? 'Nilai Pengaturan' : 'Deskripsi Singkat'),
+      body: 'Isi Konten',
+      image: isCertification ? (item ? 'Logo (unggah jika ingin mengganti)' : 'Logo (wajib, PNG/JPG/WebP)') : 'Gambar (JPG, PNG, WebP)',
+      image_alt: isCertification ? 'Teks alternatif logo' : 'Teks Alternatif Gambar',
+      status: 'Status',
+      cta: 'Teks tombol',
+      remove_image: 'Hapus gambar saat ini',
+    };
+    const placeholders = {
+      title: 'Masukkan nama atau judul',
+      category: isCertification ? 'Jenis pengakuan' : 'Contoh: Pengendalian Rayap',
+      description: isSetting ? 'Masukkan nilai pengaturan' : 'Ringkasan yang tampil pada kartu konten',
+      body: 'Tulis isi lengkap, jawaban FAQ, atau detail layanan...',
+      image_alt: 'Deskripsi singkat gambar',
+    };
+    const limits = { title: article ? 160 : 180, slug: article ? 180 : 200, category: article ? 60 : 120, description: isSetting ? 3000 : (article ? 300 : 500), body: 100000, image_alt: 180, cta: 40 };
+    if (isSetting) {
+      placeholders.category = 'Contoh: Lokasi Kantor';
+      if (item?.slug === 'link-google-maps') {
+        labels.description = 'Link Google Maps';
+        placeholders.description = 'Tempel link Google Maps kantor';
+      } else if (item?.slug === 'alamat-kantor') {
+        labels.description = 'Alamat Lengkap Kantor';
+        placeholders.description = 'Masukkan alamat kantor lengkap';
+      } else if (item?.slug === 'telepon-kantor') {
+        labels.description = 'Nomor Telepon Kantor';
+        placeholders.description = 'Contoh: (031) 85582382';
+      }
+    }
+    const rows = { description: 2, body: 5 };
+    const required = { title: true };
+
+    if (isPage) {
+      Object.keys(required).forEach((key) => { required[key] = false; });
+      Object.keys(placeholders).forEach((key) => { placeholders[key] = ''; });
+      Object.entries(slotFields).forEach(([key, def]) => {
+        if (def.label) labels[key] = def.label;
+        if (def.placeholder !== undefined) placeholders[key] = def.placeholder;
+        if (def.max) limits[key] = def.max;
+        if (def.rows) rows[key] = def.rows;
+        required[key] = Boolean(def.required);
+      });
+      if (slotFields.image?.remove_label) labels.remove_image = slotFields.image.remove_label;
+    }
+
+    Object.entries(labels).forEach(([key, label]) => {
+      const field = form.querySelector(`[data-content-field="${key}"]`);
+      if (field) setFieldText(field, label);
+    });
+    ['title', 'slug', 'category', 'description', 'body', 'image_alt', 'cta'].forEach((key) => {
+      const control = input(key);
+      if (!control) return;
+      control.maxLength = limits[key];
+      control.required = Boolean(required[key]);
+      if (placeholders[key] !== undefined) control.placeholder = placeholders[key];
+      if (rows[key] && control.tagName === 'TEXTAREA') control.rows = rows[key];
+    });
+
+    const isLink = (isPage && slotFields.description?.kind === 'url') || (isSetting && item?.slug === 'link-google-maps');
+    const description = input('description');
+    if (description) { description.autocapitalize = isLink ? 'off' : 'sentences'; description.spellcheck = !isLink; }
+    if (isSetting && item?.slug === 'link-google-maps' && description) {
+      description.rows = 3;
+      description.placeholder = 'https://www.google.com/maps/place/.../@-7.xxxx,112.xxxx,17z';
+      const field = form.querySelector('[data-content-field="description"]');
+      field?.insertAdjacentHTML('beforeend', '<small class="field-hint slot-hint">Tempel link Google Maps yang dibagikan atau disalin dari browser. Untuk memindahkan titik peta secara akurat, gunakan link lengkap yang memuat koordinat (mis. /@-7.xxxx,112.xxxx). Link pendek tetap tersedia pada tombol Buka Google Maps, sedangkan peta memakai alamat kantor bila koordinat tidak dapat dibaca.</small>');
+    } else if (isSetting && item?.slug === 'alamat-kantor') {
+      const field = form.querySelector('[data-content-field="description"]');
+      field?.insertAdjacentHTML('beforeend', '<small class="field-hint slot-hint">Alamat ini menjadi informasi lokasi dan titik pencarian awal pada peta website.</small>');
+    } else if (isSetting && item?.slug === 'telepon-kantor') {
+      const field = form.querySelector('[data-content-field="description"]');
+      field?.insertAdjacentHTML('beforeend', '<small class="field-hint slot-hint">Nomor ini ditampilkan sebagai kontak kantor dan dapat ditekan pengunjung untuk menelepon.</small>');
+    }
+
+    const removeImage = form.querySelector('[data-content-field="remove_image"]');
+    if (removeImage) removeImage.hidden = isPage ? !(slotFields.image && item?.image_url) : (isCertification ? !Boolean(item?.image_url) : isSetting ? true : false);
+    const imageInput = input('image');
+    if (imageInput) imageInput.required = isCertification && !item;
+    const imageLabel = form.querySelector('[data-content-field="image"]');
+    if (imageLabel) imageLabel.title = isCertification ? 'Gunakan logo dengan latar transparan atau putih agar tampil jelas di footer.' : '';
+
+    if (isPage) {
+      Object.entries(slotFields).forEach(([key, def]) => {
+        const field = form.querySelector(`[data-content-field="${key}"]`);
+        if (!field) return;
+        const parts = [def.hint];
+        if (key === 'image') parts.push(item?.image_url ? 'Saat ini memakai foto unggahan.' : 'Saat ini memakai foto bawaan website. Unggah JPG, PNG, atau WebP (maks. 5 MB) untuk menggantinya.');
+        const text = parts.filter(Boolean).join(' ');
+        if (text) field.insertAdjacentHTML('beforeend', `<small class="field-hint slot-hint">${esc(text)}</small>`);
+      });
+    }
+  }
+
   async function showContentPage(type) {
     if (!contentLabels[type]) return;
     currentContentType = type;
+    const isPage = type === 'pages';
     const [intro, description] = contentDescriptions[type];
     $('#contentPageTitle').textContent = contentLabels[type];
     $('#contentPageDesc').textContent = description;
     $('#contentIntroTitle').textContent = intro;
     $('#contentIntroDesc').textContent = `${description} ${apiMode ? 'Konten yang disimpan akan diterapkan pada website publik.' : 'Pratinjau ini tidak mengubah website publik.'}`;
     $('#contentSearch').value = '';
-    $('#addContent').hidden = type === 'pages';
-    const article = type === 'articles';
-    const limits = { title: article ? 160 : 180, slug: article ? 180 : 200, category: article ? 60 : 120, description: article ? 300 : 500 };
-    Object.entries(limits).forEach(([name, max]) => { const field = $('#contentForm').elements.namedItem(name); if (field) field.maxLength = max; });
-    const slugField = $('#contentForm').elements.namedItem('slug');
-    if (slugField) slugField.readOnly = type === 'pages';
+    const searchBox = $('#contentSearch').closest('.search-box');
+    if (searchBox) searchBox.hidden = isPage;
+    const note = $('#contentSourceNote');
+    if (note) {
+      if (contentNoteDefault === null) contentNoteDefault = note.textContent;
+      note.textContent = isPage && apiMode ? 'Perubahan langsung tampil di website setelah disimpan.' : contentNoteDefault;
+    }
+    configureContentForm(type);
+    $('#addContent').hidden = isPage || type === 'settings';
+    const addContentLabel = $('#addContent').querySelector('span');
+    if (addContentLabel) addContentLabel.textContent = type === 'certifications' ? 'Tambah Sertifikasi' : 'Tambah Konten';
     try {
       if (apiMode) {
         const response = await apiRequest(`/content/${type}`);
@@ -1777,13 +2051,16 @@
     } catch (error) { showError(error.message); }
   }
   function addContent() {
-    if (currentContentType === 'pages') { showWarning('Bagian halaman utama telah ditetapkan. Pilih bagian yang tersedia untuk diperbarui.'); return; }
+    if (currentContentType === 'pages' || currentContentType === 'settings') { showWarning(currentContentType === 'settings' ? 'Pengaturan website telah disediakan. Edit salah satu pengaturan yang tersedia.' : 'Bagian halaman utama telah ditetapkan. Pilih bagian yang tersedia untuk diperbarui.'); return; }
     editingContentId = null;
     $('#contentForm').reset();
+    configureContentForm(currentContentType);
     const addHint = $('#contentHint'); if (addHint) { addHint.textContent = ''; addHint.hidden = true; }
     $('#contentForm').elements.sort_order.value = '0';
     $('#contentForm').elements.status.value = 'Aktif';
     $('#contentModalTitle').textContent = `Tambah ${contentLabels[currentContentType]}`;
+    const modalDescription = $('#contentModalTitle').parentElement?.querySelector('p');
+    if (modalDescription) modalDescription.textContent = 'Lengkapi informasi konten website.';
     $('#contentForm').querySelector('[name="image"]').value = '';
     showModal('contentModal');
   }
@@ -1791,15 +2068,28 @@
     const item = (contentData[currentContentType] || []).find((entry) => String(entry.id) === String(id));
     if (!item) return;
     editingContentId = id;
+    const isPage = currentContentType === 'pages';
     const form = $('#contentForm');
-    ['title', 'slug', 'category', 'description', 'body', 'keywords', 'sort_order', 'icon', 'image_alt', 'status'].forEach((key) => {
+    configureContentForm(currentContentType, item);
+    ['title', 'slug', 'category', 'description', 'body', 'keywords', 'sort_order', 'icon', 'image_alt', 'cta', 'status'].forEach((key) => {
       if (form.elements.namedItem(key)) form.elements.namedItem(key).value = item[key] ?? (key === 'sort_order' ? '0' : '');
     });
-    const editHint = $('#contentHint'); if (editHint) { editHint.textContent = item.hint ? `Petunjuk pengisian: ${item.hint}` : ''; editHint.hidden = !item.hint; }
+    const editHint = $('#contentHint');
+    if (editHint) {
+      const hintText = isPage ? (item.slot?.where || '') : (item.hint ? `Petunjuk pengisian: ${item.hint}` : '');
+      editHint.classList.remove('is-tiktok-hint');
+      editHint.textContent = hintText;
+      editHint.hidden = !hintText;
+    }
     form.elements.remove_image.checked = false;
     form.elements.image.value = '';
-    form.elements.slug.readOnly = currentContentType === 'pages';
-    $('#contentModalTitle').textContent = `Edit ${contentLabels[currentContentType]}`;
+    $('#contentModalTitle').textContent = isPage ? `${item.slot?.section || 'Halaman'} · ${item.slot?.label || item.title}` : `Edit ${contentLabels[currentContentType]}`;
+    const modalDescription = $('#contentModalTitle').parentElement?.querySelector('p');
+    if (modalDescription) modalDescription.textContent = isPage
+      ? 'Perubahan langsung tampil di website setelah disimpan.'
+      : (currentContentType === 'settings' && item.slug === 'link-google-maps'
+        ? 'Tempel link Google Maps kantor. Peta pada website akan mengikuti titik dari link tersebut setelah disimpan.'
+        : 'Lengkapi informasi konten website.');
     showModal('contentModal');
   }
   // Perkecil foto besar di browser (maks. 1600 px, WebP) agar tidak terkena batas upload PHP/server.
@@ -1828,6 +2118,12 @@
     submit.disabled = true; submit.textContent = 'Menyimpan…';
     try {
       const formData = new FormData(form);
+      if (currentContentType === 'pages') {
+        // Halaman utama: kirim hanya kolom milik bagian yang sedang diedit.
+        const current = (contentData.pages || []).find((entry) => String(entry.id) === String(editingContentId));
+        const allowed = Object.keys(current?.slot?.fields || {});
+        [...new Set(formData.keys())].forEach((key) => { if (!allowed.includes(key) && key !== 'remove_image') formData.delete(key); });
+      }
       if (!form.elements.remove_image.checked) formData.delete('remove_image');
       const picked = formData.get('image');
       if (picked instanceof File && picked.size) {

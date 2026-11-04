@@ -29,9 +29,10 @@ final class JaspestMedia
             $path = substr($path, 8);
         }
 
-        // Rute khusus /jaspest-media (bukan /storage) agar tidak bergantung pada symlink public/storage
-        // dan tidak bentrok dengan rute /storage bawaan Laravel.
-        return url('jaspest-media/'.implode('/', array_map('rawurlencode', explode('/', $path))));
+        // Gunakan URL root-relative, bukan url(): APP_URL dapat berbeda dari host/port
+        // yang sedang dibuka pengguna (contoh localhost vs 127.0.0.1).
+        // Endpoint khusus ini juga tidak bergantung pada symlink public/storage.
+        return '/jaspest-media/'.implode('/', array_map('rawurlencode', explode('/', $path)));
     }
 
     /**

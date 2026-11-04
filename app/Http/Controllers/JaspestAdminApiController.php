@@ -15,6 +15,7 @@ use App\Models\JaspestTechnician;
 use App\Models\JaspestWhatsappNotification;
 use App\Services\JaspestFonnteService;
 use App\Support\JaspestTikTok;
+use App\Support\JaspestMap;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\QueryException;
@@ -30,7 +31,70 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class JaspestAdminApiController extends Controller
 {
-    private const CONTENT_TYPES = ['pages', 'services', 'pests', 'methods', 'articles', 'gallery', 'faqs', 'settings'];
+    private const CONTENT_TYPES = ['pages', 'services', 'pests', 'methods', 'articles', 'gallery', 'faqs', 'certifications', 'settings'];
+
+    /**
+     * Bagian halaman utama website yang dapat diubah dari "Konten Halaman".
+     * Urutan sama dengan urutan tampil di website (atas ke bawah). Setiap bagian hanya
+     * memuat kolom yang benar-benar dipakai website, sehingga admin dan website selalu sama.
+     */
+    private const PAGE_SLOTS = [
+        'beranda-hero' => [
+            'section' => 'Beranda',
+            'label' => 'Bagian utama',
+            'where' => 'Tampil di bagian paling atas halaman utama website.',
+            'icon' => 'house',
+            'default_image' => 'assets/hero-pest-control.webp',
+            'defaults' => ['title' => 'Rumah nyaman. Bisnis tetap jalan.', 'description' => 'Jaga ruang yang berarti bagi Anda. Konsultasikan kebutuhan pengendalian hama rumah dan bisnis bersama JASPEST.', 'body' => null, 'status' => 'active', 'sort_order' => 1],
+            'fields' => [
+                'title' => ['label' => 'Judul besar', 'max' => 100, 'required' => true],
+                'description' => ['label' => 'Paragraf di bawah judul', 'max' => 300, 'rows' => 3, 'required' => true],
+                'image' => ['label' => 'Foto utama (sisi kanan)', 'remove_label' => 'Hapus foto unggahan dan pakai foto bawaan website'],
+                'image_alt' => ['label' => 'Deskripsi foto', 'max' => 180, 'hint' => 'Dibaca oleh pembaca layar dan tampil bila foto gagal dimuat.'],
+            ],
+        ],
+        'tentang-jaspest' => [
+            'section' => 'Tentang Kami',
+            'label' => 'Judul, isi, foto, label foto, dan tombol',
+            'where' => 'Tampil pada bagian Tentang Kami: judul dan paragraf di sisi kanan, foto di sisi kiri beserta label biru di bagian bawah foto, dan tombol di bawah paragraf.',
+            'icon' => 'file',
+            'default_image' => 'assets/residential-inspection.webp',
+            'defaults' => ['title' => 'CV. JAYA ABADI SOLUSI', 'category' => 'JASPEST', 'description' => 'Sejak 2008 di Sidoarjo', 'body' => "JASPEST adalah perusahaan yang sudah berpengalaman lebih dari 15 tahun di bidang Jasa Pest Control (pengendalian hama).\n\nJASPEST berdiri di Sidoarjo sejak tahun 2008. Kami hadir sebagai mitra terpercaya bagi sektor residensial (rumah tinggal) maupun komersial (bisnis/industri).\n\nKami menerapkan Sistem IPM (Integrated Pest Management) dalam pengendalian hama yang ramah lingkungan, aman, dan efektif. Bagi kami, mewujudkan kepuasan pelanggan adalah prioritas utama dalam setiap layanan yang kami berikan.", 'status' => 'active', 'sort_order' => 2, 'data' => ['cta' => 'Mari bicarakan kebutuhan Anda']],
+            'fields' => [
+                'title' => ['label' => 'Judul', 'max' => 80, 'required' => true],
+                'body' => ['label' => 'Isi Tentang Kami', 'max' => 3000, 'rows' => 9, 'required' => true, 'hint' => 'Pisahkan antar paragraf dengan satu baris kosong. Paragraf pertama tampil lebih tebal.'],
+                'image' => ['label' => 'Foto (sisi kiri)', 'remove_label' => 'Hapus foto unggahan dan pakai foto bawaan website'],
+                'image_alt' => ['label' => 'Deskripsi foto', 'max' => 180, 'hint' => 'Dibaca oleh pembaca layar dan tampil bila foto gagal dimuat.'],
+                'category' => ['label' => 'Label pada foto: baris atas', 'max' => 30, 'required' => true, 'hint' => 'Label biru di bagian bawah foto.'],
+                'description' => ['label' => 'Label pada foto: baris tebal di bawahnya', 'max' => 60, 'required' => true],
+                'cta' => ['label' => 'Teks tombol', 'max' => 40, 'required' => true, 'hint' => 'Tombol di bawah paragraf; mengarah ke formulir konsultasi.'],
+            ],
+        ],
+        'video-tiktok' => [
+            'section' => 'Video',
+            'label' => 'Pemutar TikTok',
+            'where' => 'Pemutar video pada bagian "Lebih dekat dengan kegiatan kami". Video tampil bila status Aktif dan link valid.',
+            'icon' => 'camera',
+            'defaults' => ['title' => 'Video kegiatan JASPEST', 'description' => null, 'body' => null, 'status' => 'draft', 'sort_order' => 3],
+            'fields' => [
+                'description' => ['label' => 'Link video TikTok', 'max' => 500, 'rows' => 2, 'kind' => 'url', 'placeholder' => 'https://www.tiktok.com/@akun/video/1234567890123456789', 'hint' => 'Tempel link video lengkap. Link pendek vm.tiktok.com juga dapat dicoba.'],
+                'title' => ['label' => 'Judul pada sampul video', 'max' => 80, 'required' => true],
+                'category' => ['label' => 'Nama akun sumber (opsional)', 'max' => 120, 'placeholder' => '@jaspest', 'hint' => 'Kosongkan bila ingin diambil otomatis dari link.'],
+                'status' => ['label' => 'Status video', 'required' => true, 'hint' => 'Aktif: video tampil di website. Draft: video disembunyikan.'],
+            ],
+        ],
+        'kontak-konsultasi' => [
+            'section' => 'Formulir Konsultasi',
+            'label' => 'Judul dan pengantar',
+            'where' => 'Teks di samping formulir pengajuan pada bagian paling bawah halaman utama.',
+            'icon' => 'chat',
+            'defaults' => ['title' => 'Mulai dari kebutuhan Anda', 'description' => 'Isi pengajuan agar tim JASPEST dapat memahami kebutuhan dan menghubungi Anda.', 'body' => null, 'status' => 'active', 'sort_order' => 4],
+            'fields' => [
+                'title' => ['label' => 'Judul', 'max' => 100, 'required' => true],
+                'description' => ['label' => 'Kalimat pengantar', 'max' => 300, 'rows' => 3, 'required' => true],
+            ],
+        ],
+    ];
     private const STATUSES = ['new', 'followup', 'converted', 'lost'];
     private const STATUS_ACTIONS = ['converted', 'lost'];
     private const DIVISION_ROLES = ['direksi', 'finance', 'logistik', 'marketing'];
@@ -1649,6 +1713,8 @@ class JaspestAdminApiController extends Controller
         ])->header('Cache-Control', 'no-store, private');
     }
 
+    public const INVENTORY_UNITS = ['Pcs', 'Unit', 'Set', 'Pack', 'Box', 'Botol', 'Sak', 'Roll', 'Meter', 'Liter', 'Mililiter', 'Kg', 'Gram'];
+
     public function storeInventoryItem(Request $request): JsonResponse
     {
         $data = $request->validate([
@@ -1656,7 +1722,7 @@ class JaspestAdminApiController extends Controller
             'category' => ['required', 'string', 'min:2', 'max:80'],
             'brand' => ['nullable', 'string', 'max:120'],
             'specification' => ['nullable', 'string', 'max:3000'],
-            'unit' => ['required', 'string', 'max:24'],
+            'unit' => ['required', 'string', Rule::in(self::INVENTORY_UNITS)],
             'stock_on_hand' => ['required', 'numeric', 'min:0', 'max:999999999'],
             'damaged_quantity' => ['nullable', 'numeric', 'min:0', 'max:999999999'],
             'condition_status' => ['required', Rule::in(['normal', 'needs_repair', 'damaged'])],
@@ -1685,7 +1751,7 @@ class JaspestAdminApiController extends Controller
             'category' => ['required', 'string', 'min:2', 'max:80'],
             'brand' => ['nullable', 'string', 'max:120'],
             'specification' => ['nullable', 'string', 'max:3000'],
-            'unit' => ['required', 'string', 'max:24'],
+            'unit' => ['required', 'string', 'max:24', Rule::in(array_merge(self::INVENTORY_UNITS, [(string) $item->unit]))],
             'stock_on_hand' => ['required', 'numeric', 'min:0', 'max:999999999'],
             'damaged_quantity' => ['nullable', 'numeric', 'min:0', 'max:999999999'],
             'condition_status' => ['required', Rule::in(['normal', 'needs_repair', 'damaged'])],
@@ -1989,8 +2055,15 @@ class JaspestAdminApiController extends Controller
                 'status' => $post->status === 'published' ? 'Aktif' : 'Draft',
                 'updated_at' => $post->updated_at?->toIso8601String(),
             ]);
+        } elseif ($type === 'pages') {
+            $this->ensurePageSlots();
+            $order = array_keys(self::PAGE_SLOTS);
+            $items = JaspestContentItem::where('type', 'pages')->whereIn('slug', $order)->get()
+                ->sortBy(fn (JaspestContentItem $item): int => (int) array_search($item->slug, $order, true))
+                ->map(fn (JaspestContentItem $item): array => $this->pageResource($item));
         } else {
-            $items = JaspestContentItem::where('type', $type)->orderBy('sort_order')->orderByDesc('updated_at')->get()
+            $items = JaspestContentItem::where('type', $type)
+                ->orderBy('sort_order')->orderByDesc('updated_at')->get()
                 ->map(fn (JaspestContentItem $item): array => $this->contentResource($item));
         }
 
@@ -2002,6 +2075,9 @@ class JaspestAdminApiController extends Controller
         $this->assertType($type);
         if ($type === 'pages') {
             throw ValidationException::withMessages(['title' => 'Slot halaman bawaan tidak dapat ditambah. Edit salah satu slot yang tersedia.']);
+        }
+        if ($type === 'certifications' && ! $request->hasFile('image')) {
+            throw ValidationException::withMessages(['image' => 'Logo wajib diunggah untuk sertifikasi atau keanggotaan baru.']);
         }
         $data = $this->validatedContent($request, $type);
 
@@ -2017,6 +2093,11 @@ class JaspestAdminApiController extends Controller
     public function updateContent(Request $request, string $type, int $id): JsonResponse
     {
         $this->assertType($type);
+
+        if ($type === 'pages') {
+            return $this->updatePage($request, JaspestContentItem::where('type', 'pages')->findOrFail($id));
+        }
+
         $data = $this->validatedContent($request, $type);
 
         if ($type === 'articles') {
@@ -2035,9 +2116,6 @@ class JaspestAdminApiController extends Controller
         }
 
         $item = JaspestContentItem::where('type', $type)->findOrFail($id);
-        if ($type === 'pages' && $item->slug === 'video-tiktok') {
-            $data = $this->normalizeVideoSlot($data);
-        }
         $oldPath = $item->image_path;
         $payload = $this->contentPayload($data, $request, $type, $item);
         $item->update($payload);
@@ -2074,15 +2152,133 @@ class JaspestAdminApiController extends Controller
         return response()->json(['message' => 'Konten berhasil dihapus.']);
     }
 
+    /**
+     * Pastikan setiap bagian halaman utama punya satu baris data. Isi awalnya sama dengan
+     * teks yang tampil di website, jadi bagian yang hilang dapat diedit kembali di admin.
+     */
+    private function ensurePageSlots(): void
+    {
+        foreach (self::PAGE_SLOTS as $slug => $slot) {
+            JaspestContentItem::firstOrCreate(
+                ['type' => 'pages', 'slug' => $slug],
+                $slot['defaults'] + ['type' => 'pages', 'slug' => $slug]
+            );
+        }
+    }
+
+    private function pageResource(JaspestContentItem $item): array
+    {
+        $slot = self::PAGE_SLOTS[$item->slug];
+        $resource = $this->contentResource($item);
+
+        if (isset($slot['fields']['cta'])) {
+            $resource['cta'] = (string) ($item->data['cta'] ?? $slot['defaults']['data']['cta'] ?? '');
+        }
+
+        // Hanya bagian video yang punya status; bagian lain selalu tampil di website.
+        if (! isset($slot['fields']['status'])) {
+            $resource['status'] = 'Aktif';
+        }
+
+        $resource['hint'] = '';
+        $resource['default_image_url'] = ! empty($slot['default_image']) ? asset('jaspest/'.$slot['default_image']) : null;
+        $resource['slot'] = [
+            'section' => $slot['section'],
+            'label' => $slot['label'],
+            'where' => $slot['where'],
+            'icon' => $slot['icon'],
+            'fields' => $slot['fields'],
+        ];
+
+        return $resource;
+    }
+
+    /**
+     * Simpan satu bagian halaman utama. Hanya kolom milik bagian tersebut yang dibaca dan
+     * diubah; kolom lain tidak tersentuh, sehingga data yang tidak dipakai website tidak ikut berubah.
+     */
+    private function updatePage(Request $request, JaspestContentItem $item): JsonResponse
+    {
+        $slot = self::PAGE_SLOTS[$item->slug] ?? null;
+        if ($slot === null) {
+            throw ValidationException::withMessages(['title' => 'Bagian ini tidak ada pada halaman utama website.']);
+        }
+
+        $fields = $slot['fields'];
+        $rules = [];
+        $attributes = [];
+        foreach ($fields as $key => $field) {
+            $attributes[$key] = $field['label'];
+            $presence = ! empty($field['required']) ? 'required' : 'nullable';
+            $rules[$key] = match ($key) {
+                'title', 'cta' => [$presence, 'string', 'min:2', 'max:'.$field['max']],
+                'description', 'body', 'category', 'image_alt' => [$presence, 'string', 'max:'.$field['max']],
+                'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120', 'dimensions:max_width=6000,max_height=6000'],
+                'status' => ['required', Rule::in(['Aktif', 'Draft', 'active', 'draft'])],
+            };
+        }
+        if (isset($fields['image'])) {
+            $rules['remove_image'] = ['nullable', 'boolean'];
+        }
+
+        $data = $request->validate($rules, [], $attributes);
+
+        if ($item->slug === 'video-tiktok') {
+            $data = $this->normalizeVideoSlot($data);
+        }
+
+        $changes = [];
+        foreach (['title', 'description', 'body', 'category', 'image_alt'] as $column) {
+            if (isset($fields[$column])) {
+                $changes[$column] = $data[$column] ?? null;
+            }
+        }
+
+        if ($item->slug === 'tentang-jaspest') {
+            $text = preg_replace('/\R/u', "\n", (string) $data['body']);
+            $text = preg_replace("/\n[ \t]*\n(?:[ \t]*\n)*/", "\n\n", trim($text));
+            $changes['body'] = $text;
+        }
+
+        if (isset($fields['cta'])) {
+            $extra = is_array($item->data) ? $item->data : [];
+            $extra['cta'] = trim((string) ($data['cta'] ?? ''));
+            $changes['data'] = $extra;
+        }
+
+        $changes['status'] = isset($fields['status'])
+            ? (in_array($data['status'], ['Aktif', 'active'], true) ? 'active' : 'draft')
+            : 'active';
+
+        $disk = config('jaspest_admin.content_disk', 'public');
+        $oldPath = $item->image_path;
+        if (isset($fields['image']) && $request->hasFile('image')) {
+            $changes['image_path'] = $request->file('image')->store('jaspest-content', $disk);
+        }
+
+        $item->update($changes);
+
+        if (! empty($changes['image_path']) && $oldPath && $oldPath !== $changes['image_path']) {
+            Storage::disk($disk)->delete($oldPath);
+        }
+        if (isset($fields['image']) && $request->boolean('remove_image') && ! $request->hasFile('image') && $oldPath) {
+            Storage::disk($disk)->delete($oldPath);
+            $item->update(['image_path' => null]);
+        }
+
+        return response()->json($this->pageResource($item->fresh()));
+    }
+
     private function validatedContent(Request $request, string $type): array
     {
         $article = $type === 'articles';
 
-        return $request->validate([
+        $isMapLink = $type === 'settings' && $request->input('slug') === 'link-google-maps';
+        $data = $request->validate([
             'title' => ['required', 'string', 'min:2', 'max:'.($article ? 160 : 180)],
             'slug' => ['nullable', 'string', 'max:'.($article ? 180 : 200), 'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/'],
             'category' => ['nullable', 'string', 'max:'.($article ? 60 : 120)],
-            'description' => ['nullable', 'string', 'max:'.($article ? 300 : 500)],
+            'description' => ['nullable', 'string', 'max:'.($isMapLink ? 3000 : ($article ? 300 : 500))],
             'body' => ['nullable', 'string', 'max:100000'],
             'status' => ['required', Rule::in(['Aktif', 'Draft', 'active', 'draft'])],
             'sort_order' => ['nullable', 'integer', 'min:0', 'max:100000'],
@@ -2092,6 +2288,15 @@ class JaspestAdminApiController extends Controller
             'icon' => ['nullable', 'string', 'max:40'],
             'keywords' => ['nullable', 'string', 'max:1000'],
         ]);
+
+        if ($isMapLink && filled($data['description'] ?? null)
+            && ! JaspestMap::isGoogleMapsUrl((string) $data['description'])) {
+            throw ValidationException::withMessages([
+                'description' => 'Masukkan link HTTPS resmi dari Google Maps, misalnya link yang disalin melalui tombol Bagikan di Google Maps.',
+            ]);
+        }
+
+        return $data;
     }
 
     /**

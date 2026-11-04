@@ -6,6 +6,7 @@ use App\Models\BlogPost;
 use App\Models\JaspestContentItem;
 use App\Support\JaspestMedia;
 use App\Support\JaspestTikTok;
+use App\Support\JaspestMap;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\View;
@@ -105,14 +106,25 @@ class JaspestAdminServiceProvider extends ServiceProvider
                 'title' => trim((string) $videoPage->title) ?: 'Video kegiatan JASPEST',
                 'sourceLabel' => trim((string) $videoPage->category) ?: null,
                 'isTest' => false,
-                'cover' => JaspestMedia::url($videoPage->image_path) ?: asset('jaspest/assets/commercial-inspection.webp'),
+                'cover' => asset('jaspest/assets/commercial-inspection.webp'),
             ]];
 
-            $pageItems = ($items['pages'] ?? collect())->keyBy(fn (JaspestContentItem $item) => $item->slug ?: (string) $item->id);
+            // Teks dan foto halaman utama selalu mengikuti isi di admin. Hanya video TikTok yang punya status.
+            $pageItems = JaspestContentItem::query()->where('type', 'pages')->get()
+                ->keyBy(fn (JaspestContentItem $item) => $item->slug ?: (string) $item->id);
             $settings = ($items['settings'] ?? collect())->keyBy(fn (JaspestContentItem $item) => $item->slug ?: (string) $item->id);
             $companyName = trim((string) ($settings->get('nama-perusahaan')?->description ?? ''));
             $companyName = preg_replace('/^(?:PT|CV)\.?\s*/iu', '', $companyName) ?: 'Jaya Abadi Solusi';
             $companyName = trim($companyName) ?: 'Jaya Abadi Solusi';
+
+            $certifications = ($items['certifications'] ?? collect())->map(fn (JaspestContentItem $item): array => [
+                'title' => $item->title,
+                'category' => $item->category ?? '',
+                'description' => $item->description ?? '',
+                'logo' => JaspestMedia::url($item->image_path)
+                    ?? (! empty($item->data['default_image']) ? asset('jaspest/'.$item->data['default_image']) : null),
+                'image_alt' => $item->image_alt ?: $item->title,
+            ])->filter(fn (array $item): bool => filled($item['logo']))->values();
 
             $content['brand'] = [
                 'name' => $settings->get('nama-website')?->description ?: 'JASPEST',
@@ -120,9 +132,27 @@ class JaspestAdminServiceProvider extends ServiceProvider
                 'tagline' => $settings->get('tagline-website')?->description ?: 'Solusi pengendalian hama untuk rumah dan bisnis.',
             ];
             $config['whatsappNumber'] = $settings->get('nomor-whatsapp')?->description ?: ($config['whatsappNumber'] ?? null);
+
+            $officeAddress = trim((string) ($settings->get('alamat-kantor')?->description
+                ?: 'Jl. Taruna Kav.IX No.126 Blk N - O, Sritanjung, Wage, Kec. Taman, Kabupaten Sidoarjo, Jawa Timur 61257'));
+            $officePhone = trim((string) ($settings->get('telepon-kantor')?->description ?: '(031) 85582382'));
+            $officePhoneDigits = preg_replace('/\D+/', '', $officePhone) ?: '';
+            if (str_starts_with($officePhoneDigits, '0')) {
+                $officePhoneDigits = '62'.substr($officePhoneDigits, 1);
+            }
+            $officeMapLink = trim((string) ($settings->get('link-google-maps')?->description ?? ''));
+            $content['office'] = [
+                'address' => $officeAddress,
+                'phone' => $officePhone,
+                'phoneHref' => $officePhoneDigits !== '' ? 'tel:+'.$officePhoneDigits : null,
+                'mapEmbedUrl' => JaspestMap::embedUrl($officeMapLink, $officeAddress),
+                'mapLink' => JaspestMap::externalUrl($officeMapLink, $officeAddress),
+            ];
+
             $view->with('jaspestConfig', $config);
             $view->with('jaspestPageContent', $pageItems);
             $view->with('jaspestDynamicContent', $content);
+            $view->with('jaspestCertifications', $certifications);
             $view->with('jaspestAdminAvailable', true);
         });
     }

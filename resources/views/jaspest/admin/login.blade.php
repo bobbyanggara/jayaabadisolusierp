@@ -237,6 +237,7 @@
       *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; }
     }
   </style>
+  <link rel="stylesheet" href="{{ asset('jaspest/admin/admin-login-responsive.css') }}?v=20261104-01">
 </head>
 <body>
   <div class="login-shell">
@@ -281,7 +282,7 @@
 
     <main class="login-main">
       <section class="login-card" aria-labelledby="login-title">
-        <p class="login-eyebrow">Admin Panel</p>
+        <p class="login-eyebrow">CV Jaya Abadi Solusi</p>
         <h1 id="login-title">Masuk ke Dashboard</h1>
 
         @if (session('status'))

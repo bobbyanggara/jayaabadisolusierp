@@ -35,7 +35,11 @@ class BlogPost extends Model
 
     public function coverUrl(): string
     {
-        return asset($this->cover_path ?: 'jaspest/assets/hero-pest-control.webp');
+        // Semua gambar artikel memakai resolver media yang sama dengan preview admin.
+        // Resolver menghasilkan URL root-relative agar tidak terpengaruh APP_URL,
+        // perbedaan localhost/127.0.0.1, port, maupun symlink public/storage.
+        return \App\Support\JaspestMedia::url($this->cover_path)
+            ?? asset('jaspest/assets/hero-pest-control.webp');
     }
 
     public function schema(): array

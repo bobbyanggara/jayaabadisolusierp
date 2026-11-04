@@ -88,16 +88,16 @@ Route::middleware('web')->group(function (): void {
                 });
 
                 Route::get('/content/{type}', [JaspestAdminApiController::class, 'contentIndex'])
-                    ->whereIn('type', ['pages', 'services', 'pests', 'methods', 'articles', 'gallery', 'faqs', 'settings'])
+                    ->whereIn('type', ['pages', 'services', 'pests', 'methods', 'articles', 'gallery', 'faqs', 'certifications', 'settings'])
                     ->name('content.index');
                 Route::post('/content/{type}', [JaspestAdminApiController::class, 'storeContent'])
-                    ->whereIn('type', ['pages', 'services', 'pests', 'methods', 'articles', 'gallery', 'faqs', 'settings'])
+                    ->whereIn('type', ['pages', 'services', 'pests', 'methods', 'articles', 'gallery', 'faqs', 'certifications', 'settings'])
                     ->middleware('throttle:30,1')->name('content.store');
                 Route::put('/content/{type}/{id}', [JaspestAdminApiController::class, 'updateContent'])
-                    ->whereIn('type', ['pages', 'services', 'pests', 'methods', 'articles', 'gallery', 'faqs', 'settings'])
+                    ->whereIn('type', ['pages', 'services', 'pests', 'methods', 'articles', 'gallery', 'faqs', 'certifications', 'settings'])
                     ->whereNumber('id')->middleware('throttle:30,1')->name('content.update');
                 Route::delete('/content/{type}/{id}', [JaspestAdminApiController::class, 'deleteContent'])
-                    ->whereIn('type', ['pages', 'services', 'pests', 'methods', 'articles', 'gallery', 'faqs', 'settings'])
+                    ->whereIn('type', ['pages', 'services', 'pests', 'methods', 'articles', 'gallery', 'faqs', 'certifications', 'settings'])
                     ->whereNumber('id')->middleware('throttle:30,1')->name('content.delete');
             });
         });

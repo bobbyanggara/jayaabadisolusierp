@@ -1,0 +1,172 @@
+/* Login — refinements responsive only; desktop composition tetap persis seperti semula. */
+@media (max-width: 900px) {
+  .login-shell {
+    min-height: 100dvh;
+  }
+
+  .login-hero {
+    min-height: 0;
+    padding: 26px 22px 28px;
+  }
+
+  .hero-body {
+    max-width: 680px;
+    padding-top: 22px;
+  }
+
+  .hero-body h2 {
+    max-width: 17ch;
+    font-size: clamp(27px, 5vw, 34px);
+    line-height: 1.12;
+  }
+
+  .hero-lead {
+    max-width: 60ch;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  .login-main {
+    width: 100%;
+    min-width: 0;
+    padding: 32px 22px calc(24px + env(safe-area-inset-bottom));
+  }
+
+  .login-card {
+    width: 100%;
+    max-width: 440px;
+  }
+}
+
+@media (max-width: 600px) {
+  .login-hero {
+    padding: 22px 18px 24px;
+    background-position: 58% center;
+  }
+
+  .hero-brand {
+    gap: 12px;
+  }
+
+  .hero-brand-tile {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+  }
+
+  .hero-brand-tile img {
+    width: 38px;
+  }
+
+  .hero-brand-name {
+    font-size: 18px;
+  }
+
+  .hero-brand-sub {
+    font-size: 12px;
+  }
+
+  .hero-body {
+    padding-top: 20px;
+  }
+
+  .hero-body h2 {
+    max-width: 16ch;
+    font-size: clamp(25px, 7.2vw, 31px);
+  }
+
+  .hero-lead {
+    margin-top: 10px;
+    font-size: 13px;
+    line-height: 1.55;
+  }
+
+  .login-main {
+    padding: 26px 17px calc(22px + env(safe-area-inset-bottom));
+  }
+
+  .login-card {
+    max-width: 460px;
+  }
+
+  .login-eyebrow {
+    font-size: 11px;
+  }
+
+  .login-card h1 {
+    margin-bottom: 22px;
+    font-size: 24px;
+  }
+
+  .field-group + .field-group {
+    margin-top: 17px;
+  }
+
+  .field {
+    height: 52px;
+    font-size: 16px;
+  }
+
+  .remember {
+    min-height: 42px;
+    margin-top: 13px;
+    font-size: 13px;
+  }
+
+  .remember input {
+    width: 18px;
+    height: 18px;
+  }
+
+  .submit {
+    height: 50px;
+    margin-top: 18px;
+  }
+
+  .login-copy {
+    margin-top: 22px;
+    font-size: 11px;
+    line-height: 1.5;
+  }
+}
+
+@media (max-width: 380px) {
+  .login-hero {
+    padding: 18px 15px 21px;
+  }
+
+  .hero-brand-tile {
+    width: 44px;
+    height: 44px;
+  }
+
+  .hero-brand-tile img {
+    width: 35px;
+  }
+
+  .hero-brand-name {
+    font-size: 17px;
+  }
+
+  .hero-brand-sub {
+    font-size: 11px;
+  }
+
+  .hero-body h2 {
+    font-size: 25px;
+  }
+
+  .login-main {
+    padding-right: 14px;
+    padding-left: 14px;
+  }
+
+  .login-card h1 {
+    font-size: 23px;
+  }
+
+  .login-copy {
+    gap: 5px 8px;
+    font-size: 10px;
+  }
+}

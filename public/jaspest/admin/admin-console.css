@@ -1187,3 +1187,57 @@ html[data-theme=dark] .inventory-condition-badge.is-damaged{color:#ffd5d8;backgr
 /* Petunjuk pengisian slot konten halaman */
 #contentHint{display:block;margin:0 0 6px;padding:10px 12px;border-left:3px solid #ed3548;border-radius:0 8px 8px 0;background:rgba(16,77,193,.07);font-size:12.5px;line-height:1.55}
 #contentHint[hidden]{display:none}
+
+/* ===== Grafik permintaan layanan: garis area halus + ringkasan ===== */
+.chart-area.is-modern{height:auto;margin-top:14px}
+.chart-modern{display:flex;flex-direction:column;gap:12px}
+.cm-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.cm-kpi{padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:var(--sunken);min-width:0}
+.cm-kpi small{display:block;color:var(--muted);font-size:12px;line-height:16px}
+.cm-kpi strong{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;font-size:21px;line-height:26px;color:var(--ink)}
+.cm-kpi strong em{font-style:normal;font-size:12px;font-weight:400;color:var(--muted)}
+.cm-kpi strong em.is-up{color:var(--green)}
+.cm-kpi strong em.is-down{color:var(--red)}
+.cm-kpi.is-today{border-color:var(--red);background:var(--red-soft)}
+.cm-kpi.is-today strong{color:var(--red)}
+.cm-svg{display:block;width:100%;height:auto;overflow:visible}
+.cm-grid{stroke:var(--line);stroke-width:1;stroke-dasharray:3 5}
+.cm-axis{fill:var(--faint);font-size:12px}
+.cm-fill-top{stop-color:var(--brand-vivid);stop-opacity:.38}
+.cm-fill-bottom{stop-color:var(--brand-vivid);stop-opacity:0}
+.cm-area{fill:url(#cmFill)}
+.cm-line{fill:none;stroke:var(--brand-vivid);stroke-width:3.5;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 4px 6px rgba(18,160,230,.28))}
+.cm-point{outline:none}
+.cm-hit{fill:transparent;cursor:pointer}
+.cm-guide{stroke:var(--brand-vivid);stroke-width:1.5;stroke-dasharray:4 4;opacity:0;transition:opacity .15s}
+.cm-dot{fill:var(--surface);stroke:var(--brand-vivid);stroke-width:3;transition:r .15s}
+.cm-value{fill:var(--ink);font-size:14px;font-weight:700}
+.cm-label{fill:var(--muted);font-size:13px}
+.cm-point:hover .cm-guide,.cm-point:focus .cm-guide{opacity:.7}
+.cm-point:hover .cm-dot,.cm-point:focus .cm-dot{r:7}
+.cm-point.is-today .cm-dot{fill:var(--red);stroke:var(--surface);stroke-width:2.5}
+.cm-point.is-today .cm-value,.cm-point.is-today .cm-label{fill:var(--red);font-weight:700}
+.cm-point.is-today .cm-guide{stroke:var(--red);opacity:.45}
+.cm-pulse{fill:var(--red);opacity:.28;transform-box:fill-box;transform-origin:center;animation:cm-pulse 2s ease-out infinite}
+@keyframes cm-pulse{0%{transform:scale(.8);opacity:.45}100%{transform:scale(2.6);opacity:0}}
+@media (prefers-reduced-motion:reduce){.cm-pulse{animation:none}}
+@media (max-width:640px){.cm-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.cm-kpi strong{font-size:18px}}
+.cm-hint{display:block;margin-top:2px;color:var(--faint);font-size:11.5px;line-height:15px}
+.cm-kpi.is-today .cm-hint{color:var(--red);opacity:.85}
+.cm-notes{border:1px solid var(--line);border-radius:10px;background:var(--sunken);font-size:13px;color:var(--muted)}
+.cm-notes summary{cursor:pointer;padding:9px 12px;font-weight:700;color:var(--ink);list-style:none;display:flex;align-items:center;gap:8px}
+.cm-notes summary::-webkit-details-marker{display:none}
+.cm-notes summary::before{content:"ⓘ";color:var(--brand-text);font-weight:400}
+.cm-notes summary::after{content:"▾";margin-left:auto;transition:transform .15s}
+.cm-notes[open] summary::after{transform:rotate(180deg)}
+.cm-notes ul{margin:0;padding:2px 14px 12px 30px;display:grid;gap:5px;line-height:19px}
+.cm-notes b{color:var(--ink)}
+
+
+/* Penanda konteks konten halaman dan petunjuk khusus tautan TikTok. */
+body.jas-admin .content-row-copy .content-row-kicker{display:block;margin:0 0 3px;color:var(--brand-text);font-size:10px;font-weight:750;letter-spacing:.055em;line-height:1.35}
+body.jas-admin .content-row.has-context .content-row-copy strong{display:block}
+body.jas-admin #contentHint.is-tiktok-hint{margin:0 0 13px;padding:12px 14px;border:1px solid color-mix(in srgb,var(--brand) 28%,var(--line));border-left:4px solid var(--brand);border-radius:8px;background:var(--brand-soft);color:var(--ink);font-size:13px;font-weight:650;line-height:1.55}
+body.jas-admin .tiktok-link-field-hint{display:block;margin-top:7px;line-height:1.55}
+body.jas-admin .tiktok-link-field-hint[hidden]{display:none}
+@media(max-width:640px){body.jas-admin .content-row-kicker{font-size:9px}}
