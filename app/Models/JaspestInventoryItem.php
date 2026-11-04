@@ -10,33 +10,21 @@ class JaspestInventoryItem extends Model
     protected $table = 'jaspest_inventory_items';
 
     protected $fillable = [
-        'sku', 'name', 'category', 'item_type', 'brand', 'specification', 'unit',
-        'minimum_stock', 'stock_on_hand', 'track_expiry', 'is_active',
+        'name', 'category', 'brand', 'specification', 'unit',
+        'stock_on_hand', 'damaged_quantity', 'condition_status',
     ];
 
     protected function casts(): array
     {
         return [
-            'minimum_stock' => 'decimal:3',
             'stock_on_hand' => 'decimal:3',
-            'is_active' => 'boolean',
-            'track_expiry' => 'boolean',
+            'damaged_quantity' => 'decimal:3',
         ];
-    }
-
-    public function batches(): HasMany
-    {
-        return $this->hasMany(JaspestInventoryBatch::class, 'item_id');
     }
 
     public function movements(): HasMany
     {
         return $this->hasMany(JaspestInventoryMovement::class, 'item_id');
-    }
-
-    public function technicianStocks(): HasMany
-    {
-        return $this->hasMany(JaspestInventoryTechnicianStock::class, 'item_id');
     }
 
     public function maintenance(): HasMany

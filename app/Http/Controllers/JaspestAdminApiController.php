@@ -8,15 +8,13 @@ use App\Models\JaspestClient;
 use App\Models\JaspestClientEnquiryLink;
 use App\Models\JaspestEnquiry;
 use App\Models\JaspestEnquiryEvent;
-use App\Models\JaspestInventoryBatch;
 use App\Models\JaspestInventoryItem;
 use App\Models\JaspestInventoryMaintenance;
 use App\Models\JaspestInventoryMovement;
-use App\Models\JaspestInventoryTechnicianStock;
-use App\Models\JaspestInventoryTechnicianBatch;
 use App\Models\JaspestTechnician;
 use App\Models\JaspestWhatsappNotification;
 use App\Services\JaspestFonnteService;
+use App\Support\JaspestTikTok;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\QueryException;
@@ -157,9 +155,9 @@ class JaspestAdminApiController extends Controller
 
         $items = $query->get();
         $headers = [
-            'No.', 'No. Referensi', 'Nama Klien', 'Nomor WhatsApp', 'Alamat',
-            'Luas (m²)', 'Kebutuhan Layanan', 'Jenis Lokasi', 'Nama Perusahaan',
-            'Keterangan', 'Tanggal Masuk', 'Jam Masuk (WIB)', 'Status', 'Persetujuan Kontak',
+            'No.', 'Nomor Referensi', 'Nama Klien', 'Nomor WhatsApp', 'Alamat',
+            'Perkiraan Luas (m²)', 'Layanan', 'Tipe Lokasi', 'Nama Perusahaan',
+            'Keterangan', 'Tanggal Diterima', 'Waktu Diterima (WIB)', 'Status', 'Persetujuan Kontak',
         ];
 
         $rows = [];
@@ -195,7 +193,7 @@ class JaspestAdminApiController extends Controller
             .' | Tanggal: '.$this->dateRangeLabel($validated);
 
         $xlsx = $this->buildBookingsXlsx($headers, $rows, $exportedAt, $filterText);
-        $filename = 'JASPEST-Data-Booking-'.now('Asia/Jakarta')->format('Y-m-d').'.xlsx';
+        $filename = 'JASPEST-Manajemen-Order-'.now('Asia/Jakarta')->format('Y-m-d').'.xlsx';
 
         return response()->streamDownload(
             static function () use ($xlsx): void { echo $xlsx; },
@@ -259,8 +257,8 @@ class JaspestAdminApiController extends Controller
         };
 
         $sheetRows = [];
-        $sheetRows[] = '<row r="1" ht="32" customHeight="1">'.$cell('A1', 'JASPEST | DATA BOOKING PELANGGAN', 1).'</row>';
-        $sheetRows[] = '<row r="2" ht="22" customHeight="1">'.$cell('A2', 'Laporan pengajuan layanan — diekspor '.$exportedAt.' WIB', 2).'</row>';
+        $sheetRows[] = '<row r="1" ht="32" customHeight="1">'.$cell('A1', 'JASPEST | MANAJEMEN ORDER', 1).'</row>';
+        $sheetRows[] = '<row r="2" ht="22" customHeight="1">'.$cell('A2', 'Laporan order layanan — diekspor '.$exportedAt.' WIB', 2).'</row>';
         $sheetRows[] = '<row r="3" ht="22" customHeight="1">'.$cell('A3', 'Filter: '.$filterText.' | Total data: '.count($rows), 2).'</row>';
 
         $headerCells = '';
@@ -322,13 +320,13 @@ class JaspestAdminApiController extends Controller
             '_rels/.rels' => '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
                 .'<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/></Relationships>',
             'xl/workbook.xml' => '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
-                .'<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Data Booking" sheetId="1" r:id="rId1"/></sheets></workbook>',
+                .'<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Manajemen Order" sheetId="1" r:id="rId1"/></sheets></workbook>',
             'xl/_rels/workbook.xml.rels' => '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
                 .'<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>',
             'xl/styles.xml' => $styles,
             'xl/worksheets/sheet1.xml' => $sheet,
             'docProps/core.xml' => '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
-                .'<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:creator>JASPEST</dc:creator><dc:title>Data Booking JASPEST</dc:title></cp:coreProperties>',
+                .'<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:creator>JASPEST</dc:creator><dc:title>Manajemen Order JASPEST</dc:title></cp:coreProperties>',
         ];
 
         return $this->makeZipArchive($files);
@@ -398,7 +396,7 @@ class JaspestAdminApiController extends Controller
             'from_status' => $event->from_status,
             'to_status' => $event->to_status,
             'note' => $event->event === 'whatsapp_opened'
-                ? 'Pesan tindak lanjut disiapkan dari data pengajuan dan percakapan pelanggan dibuka untuk ditinjau.'
+                ? 'Pesan tindak lanjut disiapkan dari informasi permintaan layanan dan percakapan pelanggan dibuka untuk ditinjau.'
                 : $event->note,
             'author' => $event->user_id ? ($authors[$event->user_id] ?? null) : null,
             'created_at' => $event->created_at?->copy()->timezone('Asia/Jakarta')->toIso8601String(),
@@ -588,7 +586,7 @@ class JaspestAdminApiController extends Controller
             ]);
 
             return response()->json([
-                'message' => 'Server tidak dapat menyiapkan foto untuk ditampilkan. Coba lagi.',
+                'message' => 'Foto belum dapat ditampilkan. Silakan coba kembali.',
                 'code' => 'JASPEST_PHOTO_TEMP_FAILED',
             ], 500);
         }
@@ -604,7 +602,7 @@ class JaspestAdminApiController extends Controller
             ]);
 
             return response()->json([
-                'message' => 'Foto tidak berhasil disiapkan secara utuh oleh server. Coba muat ulang.',
+                'message' => 'Foto belum dapat dimuat dengan lengkap. Silakan muat ulang halaman.',
                 'code' => 'JASPEST_PHOTO_TEMP_INCOMPLETE',
             ], 500);
         }
@@ -621,7 +619,7 @@ class JaspestAdminApiController extends Controller
             ]);
 
             return response()->json([
-                'message' => 'Ukuran foto hasil persiapan server tidak konsisten. Coba muat ulang.',
+                'message' => 'Foto belum dapat diproses. Silakan muat ulang halaman.',
                 'code' => 'JASPEST_PHOTO_TEMP_SIZE_MISMATCH',
             ], 500);
         }
@@ -714,7 +712,7 @@ class JaspestAdminApiController extends Controller
         } catch (QueryException $exception) {
             report($exception);
             throw ValidationException::withMessages([
-                'note' => 'Catatan belum dapat disimpan: kolom "event" di database menolak jenis aktivitas "note_added". Lihat BACA_INI.txt.',
+                'note' => 'Catatan belum dapat disimpan. Silakan coba kembali atau hubungi administrator.',
             ]);
         }
 
@@ -743,7 +741,7 @@ class JaspestAdminApiController extends Controller
             'property_type' => ['required', Rule::in(['rumah', 'bisnis'])],
             'company_name' => ['required_if:property_type,bisnis', 'nullable', 'string', 'max:200'],
             'need' => ['required', 'string', 'max:100', function (string $attribute, mixed $value, \Closure $fail): void {
-                if ($value !== 'konsultasi' && ! JaspestContentItem::query()
+                if (! JaspestContentItem::query()
                     ->where('type', 'services')->where('status', 'active')->where('slug', $value)->exists()) {
                     $fail('Pilih layanan yang masih tersedia.');
                 }
@@ -840,7 +838,7 @@ class JaspestAdminApiController extends Controller
                 'event' => 'manual_order_created',
                 'from_status' => null,
                 'to_status' => 'converted',
-                'note' => 'Deal Order dicatat langsung melalui halaman Data Booking.',
+                'note' => 'Order manual dicatat melalui Manajemen Order.',
                 'metadata' => [
                     'source' => 'admin_manual',
                     'order_price' => $price,
@@ -896,7 +894,7 @@ class JaspestAdminApiController extends Controller
         $resource['whatsapp_notification'] = $notification
             ? $this->whatsappNotificationResource($notification)
             : null;
-        $resource['message'] = 'Deal Order berhasil ditambahkan.';
+        $resource['message'] = 'Order Manual berhasil dibuat.';
 
         return response()->json($resource, 201);
     }
@@ -918,8 +916,8 @@ class JaspestAdminApiController extends Controller
         ], [
             'order_price.required_if' => 'Harga kesepakatan wajib diisi untuk mengonfirmasi order.',
             'order_price.min' => 'Harga kesepakatan harus lebih dari Rp0.',
-            'order_area.required_if' => 'Luasan final wajib diisi untuk mengonfirmasi order.',
-            'order_area.gt' => 'Luasan final harus lebih dari 0 m².',
+            'order_area.required_if' => 'Luas pekerjaan wajib diisi untuk mengonfirmasi order.',
+            'order_area.gt' => 'Luas pekerjaan harus lebih dari 0 m².',
             'scheduled_date.required_if' => 'Tanggal pelaksanaan wajib dipilih.',
             'assigned_technician_id.required_if' => 'Pilih teknisi yang akan ditugaskan.',
             'assigned_technician_id.exists' => 'Teknisi yang dipilih sudah tidak tersedia. Muat ulang daftar dan pilih teknisi lain.',
@@ -934,7 +932,7 @@ class JaspestAdminApiController extends Controller
                 /** @var JaspestEnquiry $lockedEnquiry */
                 $lockedEnquiry = JaspestEnquiry::query()->lockForUpdate()->findOrFail($enquiry->id);
                 if ($lockedEnquiry->status === 'converted') {
-                    abort(422, 'Booking ini sudah berstatus Deal Order. Data order tidak dapat dikonversi ulang.');
+                    abort(422, 'Order ini sudah berstatus Deal Order. Data tidak dapat dikonfirmasi ulang.');
                 }
 
                 /** @var JaspestTechnician $technician */
@@ -971,7 +969,7 @@ class JaspestAdminApiController extends Controller
                     'event' => 'order_confirmed',
                     'from_status' => $before,
                     'to_status' => 'converted',
-                    'note' => 'Deal Order dikonfirmasi. Harga: Rp'.number_format($price, 0, ',', '.').'; luasan: '.number_format($area, 2, ',', '.').' m²; tanggal pelaksanaan: '.$scheduledDate.'; teknisi: '.$technician->full_name.'.',
+                    'note' => 'Order dikonfirmasi. Harga: Rp'.number_format($price, 0, ',', '.').'; luasan: '.number_format($area, 2, ',', '.').' m²; tanggal pelaksanaan: '.$scheduledDate.'; teknisi: '.$technician->full_name.'.',
                     'metadata' => [
                         'order_price' => $price,
                         'order_area' => $area,
@@ -1026,7 +1024,7 @@ class JaspestAdminApiController extends Controller
             }
         } else {
             if ($enquiry->status === 'converted') {
-                abort(422, 'Booking berstatus Deal Order tidak dapat dikembalikan melalui dashboard ini.');
+                abort(422, 'Order berstatus Deal Order tidak dapat dikembalikan melalui halaman ini.');
             }
 
             $before = $enquiry->status;
@@ -1059,11 +1057,11 @@ class JaspestAdminApiController extends Controller
         JaspestEnquiry $enquiry,
         JaspestFonnteService $fonnte,
     ): JsonResponse {
-        abort_unless($enquiry->status === 'converted', 409, 'Notifikasi konfirmasi hanya tersedia untuk booking berstatus Deal Order.');
+        abort_unless($enquiry->status === 'converted', 409, 'Notifikasi konfirmasi hanya tersedia untuk order berstatus Deal Order.');
 
         /** @var JaspestWhatsappNotification|null $notification */
         $notification = $enquiry->whatsappNotification()->first();
-        abort_if(! $notification, 404, 'Riwayat notifikasi Deal Order belum tersedia.');
+        abort_if(! $notification, 404, 'Riwayat konfirmasi order belum tersedia.');
 
         if (! in_array($notification->status, ['failed', 'not_configured'], true)) {
             abort(409, 'Notifikasi ini tidak dapat dikirim ulang dari status saat ini.');
@@ -1245,7 +1243,6 @@ class JaspestAdminApiController extends Controller
         $search = trim((string) ($validated['search'] ?? ''));
         $clientQuery = JaspestClient::query()
             ->withCount('enquiries')
-            ->withSum('enquiries as lifetime_value', 'order_price')
             ->orderBy('full_name')->orderBy('id');
 
         if ($search !== '') {
@@ -1333,7 +1330,7 @@ class JaspestAdminApiController extends Controller
             $normalized = $this->normalizeClientWhatsapp((string) $lockedEnquiry->whatsapp);
             if (! preg_match('/^628[1-9][0-9]{7,11}$/', $normalized)) {
                 throw ValidationException::withMessages([
-                    'whatsapp' => 'Deal Order '.$lockedEnquiry->reference.' belum dapat disinkronkan: nomor WhatsApp tidak valid.',
+                    'whatsapp' => 'Order '.$lockedEnquiry->reference.' belum dapat disinkronkan: nomor WhatsApp tidak valid.',
                 ]);
             }
 
@@ -1346,7 +1343,6 @@ class JaspestAdminApiController extends Controller
                     'full_name' => $lockedEnquiry->full_name,
                     'company_name' => $lockedEnquiry->company_name,
                     'whatsapp' => $lockedEnquiry->whatsapp,
-                    'email' => null,
                     'address' => $lockedEnquiry->address,
                     'status' => 'active',
                 ]
@@ -1373,7 +1369,7 @@ class JaspestAdminApiController extends Controller
                     'event' => 'client_linked',
                     'from_status' => 'converted',
                     'to_status' => 'converted',
-                    'note' => 'Data klien otomatis disinkronkan dari Deal Order: '.$client->client_code.' — '.$client->full_name.'.',
+                    'note' => 'Data klien otomatis disinkronkan dari order terkonfirmasi: '.$client->client_code.' — '.$client->full_name.'.',
                     'metadata' => [
                         'client_id' => $client->id,
                         'client_code' => $client->client_code,
@@ -1397,7 +1393,6 @@ class JaspestAdminApiController extends Controller
             'full_name' => ['required', 'string', 'min:2', 'max:150'],
             'company_name' => ['nullable', 'string', 'max:200'],
             'whatsapp' => ['required', 'string', 'max:24', 'regex:/^\\+?[0-9]{8,15}$/'],
-            'email' => ['nullable', 'email', 'max:150'],
             'address' => ['nullable', 'string', 'max:3000'],
             'status' => ['required', Rule::in(['active', 'inactive'])],
             'notes' => ['nullable', 'string', 'max:3000'],
@@ -1420,7 +1415,7 @@ class JaspestAdminApiController extends Controller
 
         return response()->json([
             'message' => 'Data klien berhasil diperbarui.',
-            'data' => $this->clientResource($client->fresh()->loadCount('enquiries')->loadSum('enquiries as lifetime_value', 'order_price')),
+            'data' => $this->clientResource($client->fresh()->loadCount('enquiries')),
         ]);
     }
 
@@ -1496,9 +1491,11 @@ class JaspestAdminApiController extends Controller
     public function storeTechnician(Request $request): JsonResponse
     {
         $data = $this->validatedTechnician($request);
-        $data['technician_code'] = filled($data['technician_code'] ?? null)
-            ? $data['technician_code']
-            : 'TKN-'.Str::upper(Str::random(8));
+        // ID teknisi selalu dibuat otomatis oleh sistem dan tidak dapat diinput manual.
+        do {
+            $code = 'TKN-'.Str::upper(Str::random(8));
+        } while (JaspestTechnician::query()->where('technician_code', $code)->exists());
+        $data['technician_code'] = $code;
         $technician = JaspestTechnician::create($data);
 
         return response()->json($this->technicianResource($technician), 201);
@@ -1507,18 +1504,9 @@ class JaspestAdminApiController extends Controller
     public function updateTechnician(Request $request, JaspestTechnician $technician): JsonResponse
     {
         $data = $this->validatedTechnician($request, $technician);
-        if (blank($data['technician_code'] ?? null)) {
-            unset($data['technician_code']);
-        }
+        unset($data['technician_code']); // ID teknisi tidak dapat diubah dari form.
         $updatedTechnician = DB::transaction(function () use ($data, $technician): JaspestTechnician {
             $lockedTechnician = JaspestTechnician::query()->whereKey($technician->id)->lockForUpdate()->firstOrFail();
-            if ($data['operational_status'] === 'off_duty'
-                && $lockedTechnician->operational_status !== 'off_duty'
-                && JaspestInventoryTechnicianStock::query()->where('technician_id', $lockedTechnician->id)->where('quantity', '>', 0)->exists()) {
-                throw ValidationException::withMessages([
-                    'operational_status' => 'Saldo inventaris teknisi masih ada. Catat pengembalian barang ke gudang sebelum mengubah status menjadi di luar tugas.',
-                ]);
-            }
             $lockedTechnician->update($data);
             return $lockedTechnician->fresh();
         }, 3);
@@ -1530,17 +1518,17 @@ class JaspestAdminApiController extends Controller
     {
         $deleted = DB::transaction(function () use ($technician): bool {
             $lockedTechnician = JaspestTechnician::query()->whereKey($technician->id)->lockForUpdate()->firstOrFail();
-            $hasInventoryHistory = JaspestInventoryMovement::query()->where('technician_id', $lockedTechnician->id)->exists()
-                || JaspestInventoryMaintenance::query()->where('technician_id', $lockedTechnician->id)->exists()
-                || JaspestInventoryTechnicianStock::query()->where('technician_id', $lockedTechnician->id)->where('quantity', '>', 0)->exists();
-            if ($hasInventoryHistory) return false;
+            // Keep technicians referenced by past orders or maintenance records so operational history remains intact.
+            $hasOperationalHistory = JaspestInventoryMaintenance::query()->where('technician_id', $lockedTechnician->id)->exists()
+                || JaspestEnquiry::query()->where('assigned_technician_id', $lockedTechnician->id)->exists();
+            if ($hasOperationalHistory) return false;
             $lockedTechnician->delete();
             return true;
         }, 3);
 
         if (! $deleted) {
             return response()->json([
-                'message' => 'Teknisi memiliki riwayat inventaris atau jadwal pemeliharaan. Ubah status menjadi Di luar tugas agar histori dan saldo tetap aman.',
+                'message' => 'Teknisi masih tercatat pada riwayat order atau pemeliharaan. Ubah status operasionalnya menjadi Di luar tugas agar histori tetap terjaga.',
             ], 409);
         }
         return response()->json(['message' => 'Data teknisi berhasil dihapus.']);
@@ -1556,7 +1544,6 @@ class JaspestAdminApiController extends Controller
             'full_name' => ['required', 'string', 'min:2', 'max:150'],
             'email' => ['required', 'string', 'email', 'max:150'],
             'address' => ['nullable', 'string', 'max:2000'],
-            'technician_code' => ['nullable', 'string', 'max:30', Rule::unique('jaspest_technicians', 'technician_code')->ignore($technician?->id)],
             'specialization' => ['required', 'string', 'min:2', 'max:120'],
             'service_area' => ['nullable', 'string', 'max:180'],
             'certification' => ['nullable', 'string', 'max:180'],
@@ -1569,64 +1556,37 @@ class JaspestAdminApiController extends Controller
         ]);
     }
 
-    /** Inventory dashboard data, including low-stock and expiry alerts. */
+    /** Ringkasan inventaris berdasarkan kondisi barang dan satuan masing-masing item. */
     public function inventorySummary(): JsonResponse
     {
-        $today = now('Asia/Jakarta')->toDateString();
-        $expiryLimit = now('Asia/Jakarta')->addDays(30)->toDateString();
-        $items = JaspestInventoryItem::query()->where('is_active', true);
-        $lowStock = (clone $items)->where('minimum_stock', '>', 0)
-            ->whereColumn('stock_on_hand', '<=', 'minimum_stock')
-            ->orderByRaw('CASE WHEN stock_on_hand = 0 THEN 0 ELSE 1 END')
-            ->orderBy('stock_on_hand')->limit(8)->get();
+        $items = JaspestInventoryItem::query();
+        $damaged = (clone $items)->where('damaged_quantity', '>', 0);
+        $repair = (clone $items)->where('condition_status', 'needs_repair');
+        $normal = (clone $items)->where('condition_status', 'normal');
+        $maintenanceLimit = now('Asia/Jakarta')->addDays(30)->toDateString();
 
-        $expiryQuery = fn () => JaspestInventoryBatch::query()
-            ->whereNotNull('expires_at')
-            ->where(function ($query): void {
-                $query->where('quantity_remaining', '>', 0)
-                    ->orWhereHas('technicianStocks', fn ($stocks) => $stocks->where('quantity', '>', 0));
-            });
-        $expiring = $expiryQuery()->with('item:id,sku,name,unit')
-            ->withSum('technicianStocks as technician_quantity', 'quantity')
-            ->whereDate('expires_at', '<=', $expiryLimit)
-            ->orderBy('expires_at')->limit(8)->get();
-
-        $stockValue = (float) JaspestInventoryBatch::query()
-            ->selectRaw('COALESCE(SUM(quantity_remaining * unit_cost), 0) as total_value')
-            ->value('total_value');
+        $mapConditionItem = static fn (JaspestInventoryItem $item): array => [
+            'id' => $item->id,
+            'name' => $item->name,
+            'unit' => $item->unit,
+            'stock_on_hand' => (float) $item->stock_on_hand,
+            'damaged_quantity' => (float) $item->damaged_quantity,
+            'condition_status' => $item->condition_status,
+        ];
 
         return response()->json([
             'summary' => [
                 'items' => (clone $items)->count(),
-                // Do not sum unlike units (liter, pcs, kg, unit) into one misleading total.
+                // Count item records with stock; quantities of different units are never added together.
                 'stocked_items' => (clone $items)->where('stock_on_hand', '>', 0)->count(),
-                'low_stock' => (clone $items)->where('minimum_stock', '>', 0)
-                    ->whereColumn('stock_on_hand', '<=', 'minimum_stock')->count(),
-                'expiring_batches' => (clone $expiryQuery())->whereDate('expires_at', '<=', $expiryLimit)->count(),
-                'expired_batches' => (clone $expiryQuery())->whereDate('expires_at', '<', $today)->count(),
-                'stock_value' => $stockValue,
-                'technician_stock_units' => (float) JaspestInventoryTechnicianStock::query()->sum('quantity'),
+                'damaged_items' => (clone $damaged)->count(),
+                'repair_items' => (clone $repair)->count(),
+                'normal_items' => (clone $normal)->count(),
                 'maintenance_due' => JaspestInventoryMaintenance::query()->where('status', 'planned')
-                    ->whereDate('scheduled_date', '<=', $expiryLimit)->count(),
+                    ->whereDate('scheduled_date', '<=', $maintenanceLimit)->count(),
             ],
-            'low_stock_items' => $lowStock->map(fn (JaspestInventoryItem $item): array => [
-                'id' => $item->id, 'sku' => $item->sku, 'name' => $item->name,
-                'stock_on_hand' => (float) $item->stock_on_hand, 'minimum_stock' => (float) $item->minimum_stock,
-                'unit' => $item->unit,
-            ])->values(),
-            'expiring_items' => $expiring->map(function (JaspestInventoryBatch $batch): array {
-                $warehouseQuantity = (float) $batch->quantity_remaining;
-                $technicianQuantity = (float) ($batch->technician_quantity ?? 0);
-                return [
-                    'id' => $batch->id, 'item_id' => $batch->item_id,
-                    'sku' => $batch->item?->sku, 'name' => $batch->item?->name,
-                    'batch_number' => $batch->batch_number, 'expires_at' => $batch->expires_at?->format('Y-m-d'),
-                    'quantity_remaining' => round($warehouseQuantity + $technicianQuantity, 3),
-                    'warehouse_quantity' => $warehouseQuantity,
-                    'technician_quantity' => $technicianQuantity,
-                    'unit' => $batch->item?->unit,
-                ];
-            })->values(),
+            'needs_repair_items' => (clone $repair)->orderBy('name')->limit(8)->get()->map($mapConditionItem)->values(),
+            'damaged_item_rows' => (clone $damaged)->orderByDesc('damaged_quantity')->orderBy('name')->limit(8)->get()->map($mapConditionItem)->values(),
         ])->header('Cache-Control', 'no-store, private');
     }
 
@@ -1634,23 +1594,24 @@ class JaspestAdminApiController extends Controller
     {
         $validated = $request->validate([
             'search' => ['nullable', 'string', 'max:100'],
-            'type' => ['nullable', Rule::in(['all', 'asset', 'consumable'])],
-            'status' => ['nullable', Rule::in(['all', 'active', 'inactive'])],
+            'condition' => ['nullable', Rule::in(['all', 'normal', 'needs_repair', 'damaged'])],
             'page' => ['nullable', 'integer', 'min:1'],
         ]);
 
         $query = JaspestInventoryItem::query()->orderBy('name');
         if (filled($validated['search'] ?? null)) {
             $term = '%'.addcslashes(trim($validated['search']), '%_\\').'%';
-            $query->where(fn ($builder) => $builder->where('sku', 'like', $term)
-                ->orWhere('name', 'like', $term)->orWhere('category', 'like', $term)
-                ->orWhere('brand', 'like', $term)->orWhere('specification', 'like', $term));
+            $query->where(fn ($builder) => $builder->where('name', 'like', $term)
+                ->orWhere('category', 'like', $term)->orWhere('brand', 'like', $term)
+                ->orWhere('specification', 'like', $term));
         }
-        if (($validated['type'] ?? 'all') !== 'all') {
-            $query->where('item_type', $validated['type']);
-        }
-        if (($validated['status'] ?? 'all') !== 'all') {
-            $query->where('is_active', $validated['status'] === 'active');
+        if (($validated['condition'] ?? 'all') !== 'all') {
+            $condition = $validated['condition'];
+            if ($condition === 'damaged') {
+                $query->where('condition_status', 'damaged')->where('damaged_quantity', '>', 0);
+            } else {
+                $query->where('condition_status', $condition);
+            }
         }
 
         $paginator = $query->paginate(15)->withQueryString();
@@ -1662,19 +1623,16 @@ class JaspestAdminApiController extends Controller
 
     public function inventoryOptions(): JsonResponse
     {
+        $items = JaspestInventoryItem::query()->orderBy('name')->limit(500)->get(['id', 'name', 'unit', 'stock_on_hand']);
         return response()->json([
-            'items' => JaspestInventoryItem::query()->where('is_active', true)->orderBy('name')->limit(500)
-                ->get(['id', 'sku', 'name', 'unit', 'item_type', 'stock_on_hand', 'track_expiry'])
-                ->map(fn (JaspestInventoryItem $item): array => [
-                    'id' => $item->id, 'sku' => $item->sku, 'name' => $item->name,
-                    'unit' => $item->unit, 'item_type' => $item->item_type, 'stock_on_hand' => (float) $item->stock_on_hand,
-                    'track_expiry' => (bool) $item->track_expiry,
-                ])->values(),
-            'assets' => JaspestInventoryItem::query()->where('is_active', true)->where('item_type', 'asset')
-                ->orderBy('name')->limit(500)->get(['id', 'sku', 'name', 'unit'])
-                ->map(fn (JaspestInventoryItem $item): array => [
-                    'id' => $item->id, 'sku' => $item->sku, 'name' => $item->name, 'unit' => $item->unit,
-                ])->values(),
+            'items' => $items->map(fn (JaspestInventoryItem $item): array => [
+                'id' => $item->id, 'name' => $item->name, 'unit' => $item->unit,
+                'stock_on_hand' => (float) $item->stock_on_hand,
+            ])->values(),
+            // Any registered inventory item can have a maintenance record; no separate item type is required.
+            'assets' => $items->map(fn (JaspestInventoryItem $item): array => [
+                'id' => $item->id, 'name' => $item->name, 'unit' => $item->unit,
+            ])->values(),
             'technicians' => JaspestTechnician::query()->where('operational_status', '!=', 'off_duty')
                 ->orderBy('full_name')->get(['id', 'technician_code', 'full_name', 'operational_status'])
                 ->map(fn (JaspestTechnician $technician): array => [
@@ -1693,81 +1651,122 @@ class JaspestAdminApiController extends Controller
 
     public function storeInventoryItem(Request $request): JsonResponse
     {
-        if (filled($request->input('sku'))) $request->merge(['sku' => strtoupper(trim((string) $request->input('sku')))]);
         $data = $request->validate([
-            'sku' => ['nullable', 'string', 'max:40', Rule::unique('jaspest_inventory_items', 'sku')],
             'name' => ['required', 'string', 'min:2', 'max:180'],
             'category' => ['required', 'string', 'min:2', 'max:80'],
-            'item_type' => ['required', Rule::in(['asset', 'consumable'])],
             'brand' => ['nullable', 'string', 'max:120'],
             'specification' => ['nullable', 'string', 'max:3000'],
             'unit' => ['required', 'string', 'max:24'],
-            'minimum_stock' => ['required', 'numeric', 'min:0', 'max:999999999'],
-            'track_expiry' => ['required', 'boolean'],
-            'is_active' => ['required', 'boolean'],
+            'stock_on_hand' => ['required', 'numeric', 'min:0', 'max:999999999'],
+            'damaged_quantity' => ['nullable', 'numeric', 'min:0', 'max:999999999'],
+            'condition_status' => ['required', Rule::in(['normal', 'needs_repair', 'damaged'])],
         ]);
-        $data['sku'] = filled($data['sku'] ?? null) ? strtoupper(trim($data['sku'])) : $this->generateInventorySku();
-        $item = JaspestInventoryItem::create($data);
+        $data['damaged_quantity'] = (float) ($data['damaged_quantity'] ?? 0);
+        $data['stock_on_hand'] = round((float) $data['stock_on_hand'], 3);
+        $data['damaged_quantity'] = round($data['damaged_quantity'], 3);
+        $this->validateInventoryCondition($data['condition_status'], $data['damaged_quantity'], $data['stock_on_hand']);
+
+        $item = DB::transaction(function () use ($data): JaspestInventoryItem {
+            $item = JaspestInventoryItem::create($data);
+            if ($item->stock_on_hand > 0) {
+                $this->createInventoryMovement($item, 'stock_in', (float) $item->stock_on_hand, 0, 0,
+                    (float) $item->stock_on_hand, 'Stok awal saat barang didaftarkan.');
+            }
+            return $item->fresh();
+        }, 3);
+
         return response()->json($this->inventoryItemResource($item), 201);
     }
 
     public function updateInventoryItem(Request $request, JaspestInventoryItem $item): JsonResponse
     {
-        if (filled($request->input('sku'))) $request->merge(['sku' => strtoupper(trim((string) $request->input('sku')))]);
         $data = $request->validate([
-            'sku' => ['required', 'string', 'max:40', Rule::unique('jaspest_inventory_items', 'sku')->ignore($item->id)],
             'name' => ['required', 'string', 'min:2', 'max:180'],
             'category' => ['required', 'string', 'min:2', 'max:80'],
-            'item_type' => ['required', Rule::in(['asset', 'consumable'])],
             'brand' => ['nullable', 'string', 'max:120'],
             'specification' => ['nullable', 'string', 'max:3000'],
             'unit' => ['required', 'string', 'max:24'],
-            'minimum_stock' => ['required', 'numeric', 'min:0', 'max:999999999'],
-            'track_expiry' => ['required', 'boolean'],
-            'is_active' => ['required', 'boolean'],
+            'stock_on_hand' => ['required', 'numeric', 'min:0', 'max:999999999'],
+            'damaged_quantity' => ['nullable', 'numeric', 'min:0', 'max:999999999'],
+            'condition_status' => ['required', Rule::in(['normal', 'needs_repair', 'damaged'])],
         ]);
+        $data['stock_on_hand'] = round((float) $data['stock_on_hand'], 3);
+        $data['damaged_quantity'] = round((float) ($data['damaged_quantity'] ?? 0), 3);
+        $this->validateInventoryCondition($data['condition_status'], $data['damaged_quantity'], $data['stock_on_hand']);
+
         $updatedItem = DB::transaction(function () use ($data, $item): JaspestInventoryItem {
-            $lockedItem = JaspestInventoryItem::query()->whereKey($item->id)->lockForUpdate()->firstOrFail();
-            $hasMovements = $lockedItem->movements()->exists();
-            if ($lockedItem->item_type !== $data['item_type'] && $hasMovements) {
-                throw ValidationException::withMessages(['item_type' => 'Jenis barang tidak dapat diubah setelah memiliki riwayat mutasi.']);
+            $locked = JaspestInventoryItem::query()->whereKey($item->id)->lockForUpdate()->firstOrFail();
+            if ($locked->unit !== $data['unit'] && $locked->movements()->exists()) {
+                throw ValidationException::withMessages(['unit' => 'Satuan tidak dapat diubah karena barang sudah memiliki riwayat transaksi.']);
             }
-            if ((bool) $lockedItem->track_expiry !== (bool) $data['track_expiry'] && $hasMovements) {
-                throw ValidationException::withMessages(['track_expiry' => 'Pengaturan pelacakan kedaluwarsa tidak dapat diubah setelah barang memiliki riwayat mutasi.']);
+            $before = round((float) $locked->stock_on_hand, 3);
+            $after = $data['stock_on_hand'];
+            $locked->update($data);
+            $difference = round($after - $before, 3);
+            if (abs($difference) >= 0.001) {
+                $type = $difference > 0 ? 'adjustment_in' : 'adjustment_out';
+                $this->createInventoryMovement($locked, $type, abs($difference), 0, $before, $after,
+                    'Penyesuaian stok melalui pembaruan data barang.');
             }
-            if ($lockedItem->unit !== $data['unit'] && $hasMovements) {
-                throw ValidationException::withMessages(['unit' => 'Satuan barang tidak dapat diubah setelah memiliki riwayat mutasi agar histori dan saldo tetap konsisten.']);
-            }
-            if ($lockedItem->is_active && ! (bool) $data['is_active']) {
-                $hasStock = (float) $lockedItem->stock_on_hand > 0
-                    || $lockedItem->technicianStocks()->where('quantity', '>', 0)->exists();
-                $hasPlannedMaintenance = $lockedItem->maintenance()->where('status', 'planned')->exists();
-                if ($hasStock || $hasPlannedMaintenance) {
-                    throw ValidationException::withMessages([
-                        'is_active' => 'Barang masih memiliki stok di gudang/teknisi atau jadwal pemeliharaan aktif. Selesaikan mutasi dan jadwal terlebih dahulu sebelum menonaktifkan.',
-                    ]);
-                }
-            }
-            $lockedItem->update($data);
-            return $lockedItem->fresh();
+            return $locked->fresh();
         }, 3);
+
         return response()->json($this->inventoryItemResource($updatedItem));
+    }
+
+    private function validateInventoryCondition(string $condition, float $damagedQuantity, float $stock): void
+    {
+        if ($damagedQuantity > $stock + 0.0005) {
+            throw ValidationException::withMessages(['damaged_quantity' => 'Jumlah barang rusak tidak boleh melebihi stok.']);
+        }
+        if ($condition === 'damaged' && $damagedQuantity <= 0) {
+            throw ValidationException::withMessages(['damaged_quantity' => 'Isi jumlah barang rusak untuk kondisi Rusak.']);
+        }
+        if ($condition === 'normal' && $damagedQuantity > 0) {
+            throw ValidationException::withMessages(['condition_status' => 'Pilih Perlu Perbaikan atau Rusak jika masih ada barang rusak.']);
+        }
+    }
+
+    private function createInventoryMovement(
+        JaspestInventoryItem $item,
+        string $type,
+        float $quantity,
+        float $unitCost,
+        float $before,
+        float $after,
+        string $notes,
+        ?int $enquiryId = null,
+        ?string $supplierName = null,
+        ?string $invoiceNumber = null,
+    ): JaspestInventoryMovement {
+        return JaspestInventoryMovement::create([
+            'movement_code' => 'INV-'.now('Asia/Jakarta')->format('ymd').'-'.Str::upper(Str::random(8)),
+            'item_id' => $item->id,
+            'movement_type' => $type,
+            'quantity' => round($quantity, 3),
+            'unit_cost' => round($unitCost, 2),
+            'warehouse_before' => round($before, 3),
+            'warehouse_after' => round($after, 3),
+            'enquiry_id' => $enquiryId,
+            'supplier_name' => $supplierName,
+            'invoice_number' => $invoiceNumber,
+            'notes' => $notes,
+            'created_by' => auth()->id(),
+        ]);
     }
 
     public function deleteInventoryItem(JaspestInventoryItem $item): JsonResponse
     {
         $deleted = DB::transaction(function () use ($item): bool {
-            $lockedItem = JaspestInventoryItem::query()->whereKey($item->id)->lockForUpdate()->firstOrFail();
-            if ((float) $lockedItem->stock_on_hand > 0 || $lockedItem->movements()->exists()
-                || $lockedItem->technicianStocks()->where('quantity', '>', 0)->exists()
-                || $lockedItem->maintenance()->exists()) {
+            $locked = JaspestInventoryItem::query()->whereKey($item->id)->lockForUpdate()->firstOrFail();
+            if ((float) $locked->stock_on_hand > 0 || $locked->movements()->exists() || $locked->maintenance()->exists()) {
                 return false;
             }
-            $lockedItem->delete();
+            $locked->delete();
             return true;
         }, 3);
         if (! $deleted) {
-            return response()->json(['message' => 'Barang memiliki saldo atau riwayat. Nonaktifkan barang agar histori tetap aman.'], 409);
+            return response()->json(['message' => 'Barang memiliki stok atau riwayat. Data tidak dapat dihapus agar histori tetap aman.'], 409);
         }
         return response()->json(['message' => 'Barang berhasil dihapus.']);
     }
@@ -1776,18 +1775,17 @@ class JaspestAdminApiController extends Controller
     {
         $validated = $request->validate([
             'search' => ['nullable', 'string', 'max:100'],
-            'type' => ['nullable', Rule::in(['all', 'stock_in', 'stock_out', 'distribution', 'usage', 'return', 'adjustment_in', 'adjustment_out', 'write_off'])],
+            'type' => ['nullable', Rule::in(['all', 'stock_in', 'stock_out', 'usage', 'adjustment_in', 'adjustment_out', 'write_off'])],
             'page' => ['nullable', 'integer', 'min:1'],
         ]);
-        $query = JaspestInventoryMovement::query()->with(['item:id,sku,name,unit', 'technician:id,full_name,technician_code', 'enquiry:id,reference,full_name'])
-            ->latest();
+        $query = JaspestInventoryMovement::query()->with(['item:id,name,unit', 'enquiry:id,reference,full_name'])->latest();
         if (($validated['type'] ?? 'all') !== 'all') $query->where('movement_type', $validated['type']);
         if (filled($validated['search'] ?? null)) {
             $term = '%'.addcslashes(trim($validated['search']), '%_\\').'%';
             $query->where(function ($builder) use ($term): void {
-                $builder->where('movement_code', 'like', $term)->orWhere('batch_number', 'like', $term)
-                    ->orWhere('supplier_name', 'like', $term)->orWhereHas('item', fn ($item) => $item->where('name', 'like', $term)->orWhere('sku', 'like', $term))
-                    ->orWhereHas('technician', fn ($technician) => $technician->where('full_name', 'like', $term))
+                $builder->where('movement_code', 'like', $term)
+                    ->orWhere('supplier_name', 'like', $term)
+                    ->orWhereHas('item', fn ($item) => $item->where('name', 'like', $term))
                     ->orWhereHas('enquiry', fn ($enquiry) => $enquiry->where('reference', 'like', $term)->orWhere('full_name', 'like', $term));
             });
         }
@@ -1801,294 +1799,71 @@ class JaspestAdminApiController extends Controller
     public function storeInventoryMovement(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'movement_type' => ['required', Rule::in(['stock_in', 'stock_out', 'distribution', 'usage', 'return', 'adjustment_in', 'adjustment_out', 'write_off'])],
+            'movement_type' => ['required', Rule::in(['stock_in', 'stock_out', 'usage', 'adjustment_in', 'adjustment_out', 'write_off'])],
             'item_id' => ['required', 'integer', 'exists:jaspest_inventory_items,id'],
             'quantity' => ['required', 'numeric', 'min:0.001', 'max:999999999'],
-            'technician_id' => ['nullable', 'integer', 'required_if:movement_type,distribution,usage,return', 'exists:jaspest_technicians,id'],
             'enquiry_id' => ['nullable', 'integer', 'required_if:movement_type,usage', 'exists:jaspest_enquiries,id'],
             'unit_cost' => ['nullable', 'numeric', 'min:0', 'max:99999999999'],
-            'batch_number' => ['nullable', 'string', 'max:80'],
-            'expires_at' => ['nullable', 'date_format:Y-m-d'],
             'supplier_name' => ['nullable', 'string', 'max:180'],
             'invoice_number' => ['nullable', 'string', 'max:100'],
-            'notes' => ['nullable', 'string', 'max:3000', 'required_if:movement_type,stock_out,adjustment_in,adjustment_out,write_off'],
+            'notes' => ['nullable', 'string', 'max:3000', 'required_if:movement_type,stock_out,adjustment_out,write_off'],
         ]);
 
         $movement = DB::transaction(function () use ($data): JaspestInventoryMovement {
-            /** @var JaspestInventoryItem $item */
             $item = JaspestInventoryItem::query()->whereKey($data['item_id'])->lockForUpdate()->firstOrFail();
-            if (! $item->is_active) {
-                throw ValidationException::withMessages(['item_id' => 'Barang ini sudah nonaktif dan tidak dapat dimutasi.']);
-            }
-
             $type = $data['movement_type'];
-            if ($type === 'usage' && $item->item_type !== 'consumable') {
-                throw ValidationException::withMessages(['item_id' => 'Pemakaian pekerjaan hanya dapat dicatat untuk bahan habis pakai. Aset/peralatan dicatat melalui distribusi dan pengembalian.']);
-            }
-            if (in_array($type, ['stock_in', 'adjustment_in'], true)) {
-                $expiryDate = $data['expires_at'] ?? null;
-                if ($item->track_expiry && blank($expiryDate)) {
-                    throw ValidationException::withMessages(['expires_at' => 'Tanggal kedaluwarsa wajib diisi untuk barang yang melacak kedaluwarsa.']);
-                }
-                if (filled($expiryDate) && $expiryDate < now('Asia/Jakarta')->toDateString()) {
-                    throw ValidationException::withMessages(['expires_at' => 'Tanggal kedaluwarsa tidak boleh sudah lewat saat stok diterima.']);
-                }
-            }
-
             $quantity = round((float) $data['quantity'], 3);
-            if ($quantity <= 0) {
-                throw ValidationException::withMessages(['quantity' => 'Jumlah minimal adalah 0,001.']);
-            }
             $before = round((float) $item->stock_on_hand, 3);
-            $after = $before;
-            $batchAllocations = [];
-            $movementBatchNumber = filled($data['batch_number'] ?? null) ? trim($data['batch_number']) : null;
-            $technician = null;
-            $enquiry = null;
+            $damaged = round((float) $item->damaged_quantity, 3);
             $unitCost = round((float) ($data['unit_cost'] ?? 0), 2);
-
-            if (in_array($type, ['distribution', 'usage', 'return'], true)) {
-                $technician = JaspestTechnician::query()->whereKey($data['technician_id'])
-                    ->lockForUpdate()->firstOrFail();
-                if ($technician->operational_status === 'off_duty' && $type !== 'return') {
-                    throw ValidationException::withMessages(['technician_id' => 'Teknisi sedang di luar tugas dan tidak dapat menerima distribusi atau pemakaian barang.']);
-                }
-            }
-            if ($type === 'usage') {
-                $enquiry = JaspestEnquiry::query()->whereKey($data['enquiry_id'])
-                    ->where('status', 'converted')->lockForUpdate()->first();
-                if (! $enquiry) {
-                    throw ValidationException::withMessages(['enquiry_id' => 'Pemakaian barang harus dikaitkan dengan booking berstatus Deal Order.']);
-                }
-            }
-
-            $makeBatch = function (string $prefix = 'BATCH') use ($item, $data, $quantity, $unitCost): JaspestInventoryBatch {
-                return JaspestInventoryBatch::create([
-                    'item_id' => $item->id,
-                    'batch_number' => filled($data['batch_number'] ?? null) ? trim($data['batch_number']) : $prefix.'-'.now('Asia/Jakarta')->format('ymd').'-'.Str::upper(Str::random(5)),
-                    'expires_at' => $data['expires_at'] ?? null,
-                    'quantity_received' => $quantity,
-                    'quantity_remaining' => $quantity,
-                    'unit_cost' => $unitCost,
-                    'supplier_name' => $data['supplier_name'] ?? null,
-                    'invoice_number' => $data['invoice_number'] ?? null,
-                    'received_at' => now('Asia/Jakarta')->toDateString(),
-                ]);
-            };
-
-            $consumeWarehouse = function (bool $includeExpired = false) use ($item, $quantity): array {
-                $remaining = $quantity;
-                $allocations = [];
-                $batchesQuery = JaspestInventoryBatch::query()->where('item_id', $item->id)->where('quantity_remaining', '>', 0);
-                if (! $includeExpired) {
-                    $batchesQuery->where(function ($query): void {
-                        $query->whereNull('expires_at')->orWhereDate('expires_at', '>=', now('Asia/Jakarta')->toDateString());
-                    });
-                }
-                $batches = $batchesQuery->orderByRaw('CASE WHEN expires_at IS NULL THEN 1 ELSE 0 END')
-                    ->orderBy('expires_at')->orderBy('id')->lockForUpdate()->get();
-                foreach ($batches as $batch) {
-                    if ($remaining <= 0.0005) break;
-                    $available = round((float) $batch->quantity_remaining, 3);
-                    $taken = min($available, $remaining);
-                    if ($taken <= 0) continue;
-                    $batch->quantity_remaining = round($available - $taken, 3);
-                    $batch->save();
-                    $allocations[] = [
-                        'batch_id' => $batch->id, 'batch_number' => $batch->batch_number,
-                        'quantity' => round($taken, 3), 'expires_at' => $batch->expires_at?->format('Y-m-d'),
-                        'unit_cost' => (float) $batch->unit_cost,
-                    ];
-                    $remaining = round($remaining - $taken, 3);
-                }
-                if ($remaining > 0.0005) {
-                    throw ValidationException::withMessages(['quantity' => 'Stok layak pakai di gudang tidak mencukupi. Periksa stok tersedia dan batch kedaluwarsa.']);
-                }
-                return $allocations;
-            };
-
-            $consumeTechnicianBatches = function (bool $includeExpired = false) use ($item, $technician, $quantity): array {
-                $today = now('Asia/Jakarta')->toDateString();
-                $balancesQuery = JaspestInventoryTechnicianBatch::query()
-                    ->join('jaspest_inventory_batches as inventory_batches', 'inventory_batches.id', '=', 'jaspest_inventory_technician_batches.batch_id')
-                    ->where('jaspest_inventory_technician_batches.item_id', $item->id)
-                    ->where('jaspest_inventory_technician_batches.technician_id', $technician->id)
-                    ->where('jaspest_inventory_technician_batches.quantity', '>', 0);
-                if (! $includeExpired) {
-                    $balancesQuery->where(function ($query) use ($today): void {
-                        $query->whereNull('inventory_batches.expires_at')->orWhereDate('inventory_batches.expires_at', '>=', $today);
-                    });
-                }
-                $balances = $balancesQuery
-                    ->orderByRaw('CASE WHEN inventory_batches.expires_at IS NULL THEN 1 ELSE 0 END')
-                    ->orderBy('inventory_batches.expires_at')->orderBy('inventory_batches.id')
-                    ->select('jaspest_inventory_technician_batches.*')->lockForUpdate()->get();
-                $remaining = $quantity;
-                $allocations = [];
-                foreach ($balances as $balance) {
-                    if ($remaining <= 0.0005) break;
-                    $batch = JaspestInventoryBatch::query()->whereKey($balance->batch_id)->lockForUpdate()->firstOrFail();
-                    $available = round((float) $balance->quantity, 3);
-                    $taken = min($available, $remaining);
-                    if ($taken <= 0) continue;
-                    $balance->quantity = round($available - $taken, 3);
-                    $balance->save();
-                    $allocations[] = [
-                        'batch_id' => $batch->id, 'batch_number' => $batch->batch_number,
-                        'quantity' => round($taken, 3), 'expires_at' => $batch->expires_at?->format('Y-m-d'),
-                        'unit_cost' => (float) $batch->unit_cost,
-                    ];
-                    $remaining = round($remaining - $taken, 3);
-                }
-                if ($remaining > 0.0005) {
-                    $message = $includeExpired
-                        ? 'Saldo barang pada teknisi tidak mencukupi untuk pengembalian.'
-                        : 'Saldo barang layak pakai pada teknisi tidak mencukupi. Batch kedaluwarsa tidak dapat digunakan.';
-                    throw ValidationException::withMessages(['quantity' => $message]);
-                }
-                return $allocations;
-            };
-
-            $weightedUnitCost = function (array $allocations) use ($quantity): float {
-                if ($allocations === []) return 0.0;
-                $total = array_reduce($allocations, fn (float $sum, array $allocation): float => $sum + ((float) $allocation['quantity'] * (float) $allocation['unit_cost']), 0.0);
-                return round($total / $quantity, 2);
-            };
+            $after = $before;
 
             if (in_array($type, ['stock_in', 'adjustment_in'], true)) {
-                $receivedBatch = $makeBatch($type === 'stock_in' ? 'BATCH' : 'ADJ');
-                $movementBatchNumber = $receivedBatch->batch_number;
                 $after = round($before + $quantity, 3);
-            } elseif (in_array($type, ['stock_out', 'adjustment_out', 'distribution', 'write_off'], true)) {
-                if ($before + 0.0005 < $quantity) {
-                    throw ValidationException::withMessages(['quantity' => 'Jumlah melebihi stok gudang yang tersedia.']);
+            } elseif ($type === 'write_off') {
+                if ($quantity > $damaged + 0.0005) {
+                    throw ValidationException::withMessages(['quantity' => 'Jumlah penghapusan melebihi jumlah barang rusak yang tercatat.']);
                 }
-                $batchAllocations = $consumeWarehouse($type === 'write_off');
-                $unitCost = $weightedUnitCost($batchAllocations);
                 $after = round($before - $quantity, 3);
-                if ($type === 'distribution') {
-                    foreach ($batchAllocations as $allocation) {
-                        $techBatch = JaspestInventoryTechnicianBatch::query()->firstOrCreate(
-                            ['item_id' => $item->id, 'technician_id' => $technician->id, 'batch_id' => $allocation['batch_id']],
-                            ['quantity' => 0]
-                        );
-                        $techBatch = JaspestInventoryTechnicianBatch::query()->whereKey($techBatch->id)->lockForUpdate()->firstOrFail();
-                        $techBatch->quantity = round((float) $techBatch->quantity + (float) $allocation['quantity'], 3);
-                        $techBatch->save();
+                $item->damaged_quantity = round($damaged - $quantity, 3);
+                if ((float) $item->damaged_quantity <= 0.0005) {
+                    $item->damaged_quantity = 0;
+                    if ($item->condition_status === 'damaged') {
+                        $item->condition_status = 'normal';
                     }
-                    $aggregate = JaspestInventoryTechnicianStock::query()->firstOrCreate(
-                        ['item_id' => $item->id, 'technician_id' => $technician->id], ['quantity' => 0]
-                    );
-                    $aggregate = JaspestInventoryTechnicianStock::query()->whereKey($aggregate->id)->lockForUpdate()->firstOrFail();
-                    $aggregate->quantity = round((float) $aggregate->quantity + $quantity, 3);
-                    $aggregate->save();
                 }
-            } elseif (in_array($type, ['usage', 'return'], true)) {
-                $aggregate = JaspestInventoryTechnicianStock::query()->where('item_id', $item->id)
-                    ->where('technician_id', $technician->id)->lockForUpdate()->first();
-                $allocatedQuantity = (float) JaspestInventoryTechnicianBatch::query()
-                    ->where('item_id', $item->id)->where('technician_id', $technician->id)->sum('quantity');
-                if (! $aggregate || abs($allocatedQuantity - (float) $aggregate->quantity) > 0.0005) {
-                    throw ValidationException::withMessages([
-                        'quantity' => 'Saldo batch teknisi tidak sinkron dengan saldo total. Hubungi administrator untuk rekonsiliasi sebelum melanjutkan.',
-                    ]);
+            } else {
+                $usableStock = round($before - $damaged, 3);
+                if ($quantity > $usableStock + 0.0005) {
+                    throw ValidationException::withMessages(['quantity' => 'Jumlah melebihi stok yang tidak rusak. Gunakan penghapusan khusus untuk barang rusak.']);
                 }
-                if ((float) $aggregate->quantity + 0.0005 < $quantity) {
-                    throw ValidationException::withMessages(['quantity' => 'Jumlah melebihi saldo barang teknisi.']);
-                }
-                $batchAllocations = $consumeTechnicianBatches($type === 'return');
-                $unitCost = $weightedUnitCost($batchAllocations);
-                $aggregate->quantity = round((float) $aggregate->quantity - $quantity, 3);
-                $aggregate->save();
-
-                if ($type === 'return') {
-                    foreach ($batchAllocations as $allocation) {
-                        $batch = JaspestInventoryBatch::query()->whereKey($allocation['batch_id'])->lockForUpdate()->firstOrFail();
-                        $batch->quantity_remaining = round((float) $batch->quantity_remaining + (float) $allocation['quantity'], 3);
-                        $batch->save();
+                if ($type === 'usage') {
+                    $order = JaspestEnquiry::query()->whereKey($data['enquiry_id'])->lockForUpdate()->firstOrFail();
+                    if ($order->status !== 'converted') {
+                        throw ValidationException::withMessages(['enquiry_id' => 'Pemakaian hanya dapat dicatat untuk order berstatus Deal Order.']);
                     }
-                    $after = round($before + $quantity, 3);
                 }
+                $after = round($before - $quantity, 3);
             }
 
             $item->stock_on_hand = $after;
             $item->save();
-
-            $movementCode = 'INV-'.now('Asia/Jakarta')->format('ymd').'-'.Str::upper(Str::random(8));
-            return JaspestInventoryMovement::create([
-                'movement_code' => $movementCode,
-                'item_id' => $item->id,
-                'movement_type' => $type,
-                'quantity' => $quantity,
-                'unit_cost' => $unitCost,
-                'warehouse_before' => $before,
-                'warehouse_after' => $after,
-                'technician_id' => $technician?->id,
-                'enquiry_id' => $enquiry?->id,
-                'supplier_name' => $data['supplier_name'] ?? null,
-                'invoice_number' => $data['invoice_number'] ?? null,
-                'batch_number' => $movementBatchNumber,
-                'expires_at' => $data['expires_at'] ?? null,
-                'batch_allocations' => $batchAllocations ?: null,
-                'notes' => $data['notes'] ?? null,
-                'created_by' => auth()->id(),
-            ]);
+            $labels = [
+                'stock_in' => 'Stok masuk', 'stock_out' => 'Stok keluar', 'usage' => 'Pemakaian pekerjaan',
+                'adjustment_in' => 'Penyesuaian masuk', 'adjustment_out' => 'Penyesuaian keluar', 'write_off' => 'Penghapusan barang rusak',
+            ];
+            $notes = trim((string) ($data['notes'] ?? ''));
+            if ($type === 'write_off' && $notes === '') $notes = 'Penghapusan jumlah barang rusak.';
+            return $this->createInventoryMovement(
+                $item, $type, $quantity, $unitCost, $before, $after,
+                $notes !== '' ? $notes : ($labels[$type] ?? 'Transaksi stok'),
+                isset($data['enquiry_id']) ? (int) $data['enquiry_id'] : null,
+                $data['supplier_name'] ?? null,
+                $data['invoice_number'] ?? null,
+            );
         }, 3);
 
-        return response()->json($this->inventoryMovementResource($movement->load(['item', 'technician', 'enquiry'])), 201);
-    }
-
-    public function inventoryTechnicianStocks(Request $request): JsonResponse
-    {
-        $validated = $request->validate([
-            'search' => ['nullable', 'string', 'max:100'],
-            'page' => ['nullable', 'integer', 'min:1'],
-        ]);
-        $query = JaspestInventoryTechnicianStock::query()->with([
-            'item:id,sku,name,unit', 'technician:id,full_name,technician_code,operational_status',
-        ])->where('quantity', '>', 0)->latest('updated_at');
-        if (filled($validated['search'] ?? null)) {
-            $term = '%'.addcslashes(trim($validated['search']), '%_\\').'%';
-            $query->where(fn ($builder) => $builder
-                ->whereHas('item', fn ($item) => $item->where('name', 'like', $term)->orWhere('sku', 'like', $term))
-                ->orWhereHas('technician', fn ($technician) => $technician->where('full_name', 'like', $term)->orWhere('technician_code', 'like', $term)));
-        }
-        $paginator = $query->paginate(20)->withQueryString();
-        $stockRows = $paginator->getCollection();
-        $batchBalances = collect();
-        if ($stockRows->isNotEmpty()) {
-            $batchBalances = JaspestInventoryTechnicianBatch::query()
-                ->with('batch:id,batch_number,expires_at')
-                ->where('quantity', '>', 0)
-                ->where(function ($builder) use ($stockRows): void {
-                    foreach ($stockRows as $stockRow) {
-                        $builder->orWhere(fn ($pair) => $pair->where('item_id', $stockRow->item_id)
-                            ->where('technician_id', $stockRow->technician_id));
-                    }
-                })
-                ->orderBy('batch_id')->get()
-                ->groupBy(fn (JaspestInventoryTechnicianBatch $balance): string => $balance->item_id.':'.$balance->technician_id);
-        }
-        return response()->json([
-            'data' => $stockRows->map(function (JaspestInventoryTechnicianStock $stock) use ($batchBalances): array {
-                $key = $stock->item_id.':'.$stock->technician_id;
-                $batches = ($batchBalances->get($key) ?? collect())->map(fn (JaspestInventoryTechnicianBatch $balance): array => [
-                    'batch_number' => $balance->batch?->batch_number,
-                    'expires_at' => $balance->batch?->expires_at?->format('Y-m-d'),
-                    'quantity' => (float) $balance->quantity,
-                ])->values();
-                return [
-                    'id' => $stock->id, 'item_id' => $stock->item_id, 'item_name' => $stock->item?->name,
-                    'sku' => $stock->item?->sku, 'unit' => $stock->item?->unit,
-                    'technician_id' => $stock->technician_id, 'technician_name' => $stock->technician?->full_name,
-                    'technician_code' => $stock->technician?->technician_code,
-                    'technician_status' => $stock->technician?->operational_status,
-                    'quantity' => (float) $stock->quantity, 'batches' => $batches,
-                    'updated_at' => $stock->updated_at?->copy()->timezone('Asia/Jakarta')->toIso8601String(),
-                ];
-            })->values(),
-            'meta' => ['current_page' => $paginator->currentPage(), 'last_page' => $paginator->lastPage(), 'total' => $paginator->total()],
-        ])->header('Cache-Control', 'no-store, private');
+        return response()->json($this->inventoryMovementResource($movement->load(['item', 'enquiry'])), 201);
     }
 
     public function inventoryMaintenance(Request $request): JsonResponse
@@ -2097,7 +1872,7 @@ class JaspestAdminApiController extends Controller
             'status' => ['nullable', Rule::in(['all', 'planned', 'completed', 'cancelled'])],
             'page' => ['nullable', 'integer', 'min:1'],
         ]);
-        $query = JaspestInventoryMaintenance::query()->with(['item:id,sku,name,unit', 'technician:id,full_name,technician_code'])->orderByDesc('scheduled_date')->latest('id');
+        $query = JaspestInventoryMaintenance::query()->with(['item:id,name,unit', 'technician:id,full_name,technician_code'])->orderByDesc('scheduled_date')->latest('id');
         if (($validated['status'] ?? 'all') !== 'all') $query->where('status', $validated['status']);
         $paginator = $query->paginate(20)->withQueryString();
         return response()->json([
@@ -2117,10 +1892,7 @@ class JaspestAdminApiController extends Controller
             'notes' => ['nullable', 'string', 'max:3000'],
         ]);
         $maintenance = DB::transaction(function () use ($data): JaspestInventoryMaintenance {
-            $item = JaspestInventoryItem::query()->whereKey($data['item_id'])->lockForUpdate()->firstOrFail();
-            if ($item->item_type !== 'asset' || ! $item->is_active) {
-                throw ValidationException::withMessages(['item_id' => 'Pemeliharaan hanya tersedia untuk aset aktif.']);
-            }
+            JaspestInventoryItem::query()->whereKey($data['item_id'])->lockForUpdate()->firstOrFail();
             if (! empty($data['technician_id'])) {
                 $technician = JaspestTechnician::query()->whereKey($data['technician_id'])->lockForUpdate()->firstOrFail();
                 if ($technician->operational_status === 'off_duty') {
@@ -2128,10 +1900,7 @@ class JaspestAdminApiController extends Controller
                 }
             }
             return JaspestInventoryMaintenance::create([
-                ...$data,
-                'cost' => $data['cost'] ?? 0,
-                'status' => 'planned',
-                'created_by' => auth()->id(),
+                ...$data, 'cost' => $data['cost'] ?? 0, 'status' => 'planned', 'created_by' => auth()->id(),
             ])->load(['item', 'technician']);
         }, 3);
         return response()->json($this->inventoryMaintenanceResource($maintenance), 201);
@@ -2149,27 +1918,16 @@ class JaspestAdminApiController extends Controller
         return response()->json($this->inventoryMaintenanceResource($maintenance->fresh(['item', 'technician'])));
     }
 
-    private function generateInventorySku(): string
-    {
-        do {
-            $sku = 'JAS-'.Str::upper(Str::random(8));
-        } while (JaspestInventoryItem::query()->where('sku', $sku)->exists());
-        return $sku;
-    }
-
     private function inventoryItemResource(JaspestInventoryItem $item): array
     {
-        $technicianStock = (float) JaspestInventoryTechnicianStock::query()->where('item_id', $item->id)->sum('quantity');
+        $conditionLabels = ['normal' => 'Tidak Ada Kendala', 'needs_repair' => 'Perlu Perbaikan', 'damaged' => 'Rusak'];
         return [
-            'id' => $item->id, 'sku' => $item->sku, 'name' => $item->name,
-            'category' => $item->category, 'item_type' => $item->item_type,
-            'brand' => $item->brand, 'specification' => $item->specification,
-            'unit' => $item->unit, 'minimum_stock' => (float) $item->minimum_stock,
+            'id' => $item->id, 'name' => $item->name, 'category' => $item->category,
+            'brand' => $item->brand, 'specification' => $item->specification, 'unit' => $item->unit,
             'stock_on_hand' => (float) $item->stock_on_hand,
-            'technician_stock' => $technicianStock,
-            'track_expiry' => (bool) $item->track_expiry,
-            'is_active' => (bool) $item->is_active,
-            'stock_state' => (float) $item->minimum_stock > 0 && (float) $item->stock_on_hand <= (float) $item->minimum_stock ? 'low' : 'normal',
+            'damaged_quantity' => (float) $item->damaged_quantity,
+            'condition_status' => $item->condition_status,
+            'condition_label' => $conditionLabels[$item->condition_status] ?? 'Tidak Ada Kendala',
             'created_at' => $item->created_at?->toIso8601String(),
         ];
     }
@@ -2177,22 +1935,21 @@ class JaspestAdminApiController extends Controller
     private function inventoryMovementResource(JaspestInventoryMovement $movement): array
     {
         $labels = [
-            'stock_in' => 'Stok masuk', 'stock_out' => 'Stok keluar', 'distribution' => 'Distribusi teknisi',
-            'usage' => 'Pemakaian pekerjaan', 'return' => 'Pengembalian',
-            'adjustment_in' => 'Penyesuaian masuk', 'adjustment_out' => 'Penyesuaian keluar', 'write_off' => 'Pemusnahan / barang kedaluwarsa',
+            'stock_in' => 'Stok masuk', 'stock_out' => 'Stok keluar', 'usage' => 'Pemakaian pekerjaan',
+            'adjustment_in' => 'Penyesuaian masuk', 'adjustment_out' => 'Penyesuaian keluar',
+            'write_off' => 'Penghapusan barang rusak', 'distribution' => 'Distribusi (riwayat lama)',
+            'return' => 'Pengembalian (riwayat lama)',
         ];
         return [
             'id' => $movement->id, 'movement_code' => $movement->movement_code,
             'movement_type' => $movement->movement_type, 'movement_label' => $labels[$movement->movement_type] ?? $movement->movement_type,
             'item_id' => $movement->item_id, 'item_name' => $movement->item?->name,
-            'sku' => $movement->item?->sku, 'unit' => $movement->item?->unit,
+            'unit' => $movement->item?->unit,
             'quantity' => (float) $movement->quantity, 'unit_cost' => (float) $movement->unit_cost,
             'warehouse_before' => (float) $movement->warehouse_before, 'warehouse_after' => (float) $movement->warehouse_after,
-            'technician_id' => $movement->technician_id, 'technician_name' => $movement->technician?->full_name,
             'order_reference' => $movement->enquiry?->reference, 'client_name' => $movement->enquiry?->full_name,
             'supplier_name' => $movement->supplier_name, 'invoice_number' => $movement->invoice_number,
-            'batch_number' => $movement->batch_number, 'expires_at' => $movement->expires_at?->format('Y-m-d'),
-            'batch_allocations' => $movement->batch_allocations, 'notes' => $movement->notes,
+            'notes' => $movement->notes,
             'created_at' => $movement->created_at?->copy()->timezone('Asia/Jakarta')->toIso8601String(),
         ];
     }
@@ -2205,7 +1962,7 @@ class JaspestAdminApiController extends Controller
         ];
         return [
             'id' => $maintenance->id, 'item_id' => $maintenance->item_id,
-            'item_name' => $maintenance->item?->name, 'sku' => $maintenance->item?->sku,
+            'item_name' => $maintenance->item?->name,
             'technician_id' => $maintenance->technician_id, 'technician_name' => $maintenance->technician?->full_name,
             'maintenance_type' => $maintenance->maintenance_type,
             'maintenance_label' => $labels[$maintenance->maintenance_type] ?? $maintenance->maintenance_type,
@@ -2278,6 +2035,9 @@ class JaspestAdminApiController extends Controller
         }
 
         $item = JaspestContentItem::where('type', $type)->findOrFail($id);
+        if ($type === 'pages' && $item->slug === 'video-tiktok') {
+            $data = $this->normalizeVideoSlot($data);
+        }
         $oldPath = $item->image_path;
         $payload = $this->contentPayload($data, $request, $type, $item);
         $item->update($payload);
@@ -2332,6 +2092,40 @@ class JaspestAdminApiController extends Controller
             'icon' => ['nullable', 'string', 'max:40'],
             'keywords' => ['nullable', 'string', 'max:1000'],
         ]);
+    }
+
+    /**
+     * Slot "Video TikTok": kolom Deskripsi berisi link video. Link divalidasi dan
+     * disimpan dalam bentuk baku agar pemutar di website selalu bisa memakainya.
+     */
+    private function normalizeVideoSlot(array $data): array
+    {
+        $link = trim((string) ($data['description'] ?? ''));
+        $active = in_array($data['status'], ['Aktif', 'active'], true);
+
+        if ($link === '') {
+            if ($active) {
+                throw ValidationException::withMessages([
+                    'description' => 'Isi link video TikTok, atau ubah status menjadi Draft untuk menyembunyikan video.',
+                ]);
+            }
+
+            $data['description'] = null;
+
+            return $data;
+        }
+
+        $canonical = JaspestTikTok::resolve($link);
+
+        if ($canonical === null) {
+            throw ValidationException::withMessages([
+                'description' => 'Link TikTok tidak dikenali. Gunakan link video lengkap, contoh: https://www.tiktok.com/@akun/video/1234567890123456789. Jika memakai link pendek gagal, buka videonya di browser lalu salin link dari address bar.',
+            ]);
+        }
+
+        $data['description'] = $canonical;
+
+        return $data;
     }
 
     private function contentPayload(array $data, Request $request, string $type, ?JaspestContentItem $existing = null): array
@@ -2418,6 +2212,7 @@ class JaspestAdminApiController extends Controller
             'image_alt' => $item->image_alt ?? '',
             'icon' => $item->data['icon'] ?? '',
             'keywords' => implode(', ', $item->data['keywords'] ?? []),
+            'hint' => (string) ($item->data['hint'] ?? ''),
             'status' => $item->status === 'active' ? 'Aktif' : 'Draft',
             'sort_order' => $item->sort_order,
             'updated_at' => $item->updated_at?->toIso8601String(),
@@ -2464,12 +2259,10 @@ class JaspestAdminApiController extends Controller
             'full_name' => $client->full_name,
             'company_name' => $client->company_name,
             'whatsapp' => $client->whatsapp,
-            'email' => $client->email,
             'address' => $client->address,
             'status' => $client->status,
             'notes' => $client->notes,
             'order_count' => (int) ($client->enquiries_count ?? $client->enquiries()->count()),
-            'lifetime_value' => (string) ($client->lifetime_value ?? $client->enquiries()->sum('order_price') ?? 0),
             'created_at' => $client->created_at?->toIso8601String(),
             'updated_at' => $client->updated_at?->toIso8601String(),
         ];

@@ -12,7 +12,7 @@ class EnsureJaspestBlogEditor
     public function handle(Request $request, Closure $next): Response
     {
         if (! $request->user()) {
-            return redirect()->guest(config('jaspest_blog.login_path', '/admin/login'));
+            return redirect()->guest(config('jaspest_blog.login_path', '/admin'));
         }
 
         abort_unless(Gate::allows('manage-blog'), 403);

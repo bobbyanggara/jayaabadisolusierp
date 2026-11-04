@@ -8,17 +8,17 @@
   // Pesan bawaan Laravel/browser (Inggris) diterjemahkan di sini sebagai jaring pengaman,
   // walaupun locale server belum diubah ke "id".
   const FIELD_LABELS = {
-    'username': 'Username', 'password': 'Password', 'name': 'Nama', 'full name': 'Nama lengkap',
+    'username': 'Username', 'password': 'Password', 'name': 'Nama', 'full name': 'Nama Lengkap',
     'phone': 'Nomor telepon', 'whatsapp': 'Nomor WhatsApp', 'email': 'Email', 'role': 'Divisi',
     'status': 'Status', 'title': 'Judul', 'description': 'Deskripsi', 'address': 'Alamat',
-    'note': 'Catatan', 'notes': 'Catatan', 'body': 'Isi', 'excerpt': 'Ringkasan', 'category': 'Kategori',
+    'note': 'Catatan', 'notes': 'Catatan', 'body': 'Isi', 'excerpt': 'Dashboard', 'category': 'Kategori',
     'slug': 'Slug', 'icon': 'Ikon', 'image': 'Gambar', 'image alt': 'Teks alternatif gambar',
     'cover': 'Gambar sampul', 'cover alt': 'Teks alternatif sampul', 'photos': 'Foto', 'photos.*': 'Foto',
     'author name': 'Nama penulis', 'company name': 'Nama perusahaan', 'property type': 'Jenis properti',
-    'need': 'Kebutuhan', 'estimated area': 'Estimasi luas', 'order area': 'Luas order',
-    'order price': 'Harga order', 'scheduled date': 'Tanggal jadwal', 'operational status': 'Status operasional',
-    'specialization': 'Spesialisasi', 'service area': 'Wilayah layanan', 'certification': 'Sertifikasi',
-    'technician code': 'Kode teknisi', 'date from': 'Tanggal mulai', 'date to': 'Tanggal akhir',
+    'need': 'Layanan', 'estimated area': 'Perkiraan Luas', 'order area': 'Luas Pekerjaan',
+    'order price': 'Nilai Order', 'scheduled date': 'Tanggal Pelaksanaan', 'operational status': 'Status Operasional',
+    'specialization': 'Spesialisasi', 'service area': 'Wilayah Layanan', 'certification': 'Sertifikasi',
+    'technician code': 'ID Teknisi', 'date from': 'Tanggal mulai', 'date to': 'Tanggal akhir',
     'sort order': 'Urutan', 'is active': 'Status aktif', 'published at': 'Tanggal terbit',
     'meta title': 'Judul meta', 'meta description': 'Deskripsi meta', 'keywords': 'Kata kunci',
     'search': 'Kata pencarian', 'page': 'Halaman', 'type': 'Jenis',
@@ -30,7 +30,7 @@
   }
   const MESSAGE_RULES = [
     [/failed to fetch|networkerror|load failed|network request failed|network error/i, () => 'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.'],
-    [/failed to upload/i, () => 'Gambar gagal diunggah. Ukuran file melebihi batas server; coba gambar yang lebih kecil.'],
+    [/failed to upload/i, () => 'Gambar gagal diunggah karena ukuran file terlalu besar. Gunakan gambar berukuran lebih kecil.'],
     [/^the (.+?) field is required when .+$/i, (m) => `${fieldLabel(m[1])} wajib diisi sesuai pilihan Anda.`],
     [/^the (.+?) field is required\.?$/i, (m) => `${fieldLabel(m[1])} wajib diisi.`],
     [/^the (.+?)(?: field)? must be at least (\d+) characters\.?$/i, (m) => `${fieldLabel(m[1])} minimal ${m[2]} karakter.`],
@@ -51,10 +51,10 @@
     [/^the given data was invalid\.?$/i, () => 'Periksa kembali isian Anda.'],
     [/unauthenticated/i, () => 'Sesi login berakhir. Silakan masuk kembali.'],
     [/this action is unauthorized|^forbidden\.?$/i, () => 'Akun Anda tidak memiliki izin untuk tindakan ini.'],
-    [/csrf token mismatch|page expired/i, () => 'Sesi halaman kedaluwarsa. Muat ulang halaman lalu coba lagi.'],
+    [/csrf token mismatch|page expired/i, () => 'Sesi Anda telah berakhir. Muat ulang halaman dan coba kembali.'],
     [/too many (?:attempts|requests)/i, () => 'Terlalu banyak permintaan. Tunggu sebentar lalu coba lagi.'],
     [/^not found\.?$|no query results/i, () => 'Data tidak ditemukan.'],
-    [/^server error\.?$|internal server error|service unavailable/i, () => 'Terjadi kesalahan pada server. Silakan coba kembali.'],
+    [/^server error\.?$|internal server error|service unavailable/i, () => 'Terjadi kesalahan saat memproses permintaan. Silakan coba kembali.'],
   ];
   // Kata-kata yang hampir pasti menandakan kalimat Inggris yang belum diterjemahkan.
   const ENGLISH_HINT = /\b(the|is|are|was|were|of|to|and|failed|cannot|can't|unexpected|undefined|invalid|field|must|should|network|fetch|reading|property|properties|has|have|been|not|already|taken|required|found|error|bad|request|payload|please|try|again|unable|could|couldn't|denied|timeout|timed|out|exception|null|illegal|missing)\b/i;
@@ -239,9 +239,9 @@
     const onBookings = document.getElementById('page-bookings')?.classList.contains('active');
     return toast(message, {
       type: 'info',
-      title: 'Pengajuan baru',
+      title: 'Permintaan Layanan Baru',
       key: 'new-booking',   // polling & realtime memakai kunci sama → satu kartu, bukan dua
-      action: onBookings ? null : { label: 'Lihat data booking', onClick: () => navigate('bookings') },
+      action: onBookings ? null : { label: 'Lihat Manajemen Order', onClick: () => navigate('bookings') },
     });
   }
   // Tab tersembunyi: jeda hitung mundur agar notifikasi tidak kedaluwarsa tanpa terbaca.
@@ -274,14 +274,14 @@
     faqs: 'FAQ', settings: 'Pengaturan Website'
   };
   const contentDescriptions = {
-    pages: ['Atur konten halaman utama.', 'Kelola bagian hero, profil, dan informasi penting perusahaan.'],
-    services: ['Atur layanan JASPEST.', 'Konten layanan aktif dapat digunakan pada pilihan kebutuhan formulir.'],
-    pests: ['Kelola informasi jenis hama.', 'Tambahkan nama, ciri, foto, dan informasi identifikasi hama.'],
-    methods: ['Kelola metode penanganan.', 'Jelaskan metode, kegunaan, dan prosedur keselamatan.'],
-    articles: ['Kelola artikel edukasi.', 'Artikel disimpan pada modul Blog Laravel dan dapat diterbitkan atau dijadikan draf.'],
-    gallery: ['Kelola dokumentasi galeri.', 'Foto yang aktif dapat ditampilkan pada galeri website publik.'],
-    faqs: ['Kelola pertanyaan umum.', 'Pertanyaan dan jawaban aktif menjadi sumber informasi chatbot FAQ.'],
-    settings: ['Kelola pengaturan website.', 'Kelola informasi kontak, identitas, dan pengaturan umum.']
+    pages: ['Kelola Konten Halaman.', 'Perbarui bagian utama, profil, dan informasi penting perusahaan.'],
+    services: ['Kelola Layanan JASPEST.', 'Layanan aktif tersedia pada formulir permintaan layanan.'],
+    pests: ['Kelola Informasi Jenis Hama.', 'Tambahkan nama, ciri, foto, dan informasi identifikasi hama.'],
+    methods: ['Kelola Metode Penanganan.', 'Jelaskan metode, kegunaan, dan prosedur keselamatan.'],
+    articles: ['Kelola Artikel Edukasi.', 'Artikel dapat diterbitkan atau disimpan sebagai draf.'],
+    gallery: ['Kelola Dokumentasi Galeri.', 'Foto yang aktif dapat ditampilkan pada galeri website publik.'],
+    faqs: ['Kelola Pertanyaan Umum.', 'Pertanyaan dan jawaban aktif ditampilkan pada bagian informasi bantuan website.'],
+    settings: ['Kelola Pengaturan Website.', 'Atur informasi kontak, identitas perusahaan, dan preferensi website.']
   };
   const seedBookings = [];
   const contentSeed = { pages: [], services: [], pests: [], methods: [], articles: [], gallery: [], faqs: [], settings: [] };
@@ -292,9 +292,9 @@
   let recentBookings = [];
   let bookingMeta = { current_page: 1, last_page: 1, total: bookings.length };
   let bookingPage = 1;
-  let knownTotal = null;   // total pengajuan terakhir yang diketahui (untuk deteksi pengajuan baru)
+  let knownTotal = null;   // total permintaan layanan terakhir yang diketahui (untuk deteksi pengajuan baru)
   let pollBusy = false;
-  const POLL_MS = 60000;   // cek pengajuan baru tiap 60 detik
+  const POLL_MS = 60000;   // cek permintaan layanan baru tiap 60 detik
   let currentBooking = null;
   let currentContentType = 'pages';
   let editingContentId = null;
@@ -315,19 +315,16 @@
   let clientSearchTimer = null;
   let inventoryItems = [];
   let inventoryMovements = [];
-  let inventoryTechnicianStocks = [];
   let inventoryMaintenanceRows = [];
   let inventoryOptions = { items: [], assets: [], technicians: [], orders: [] };
   let inventoryItemMeta = { current_page: 1, last_page: 1, total: 0 };
   let inventoryMovementMeta = { current_page: 1, last_page: 1, total: 0 };
-  let inventoryTechStockMeta = { current_page: 1, last_page: 1, total: 0 };
   let inventoryMaintenanceMeta = { current_page: 1, last_page: 1, total: 0 };
   let inventoryItemPage = 1;
   let inventoryMovementPage = 1;
-  let inventoryTechStockPage = 1;
   let inventoryMaintenancePage = 1;
   let inventoryItemEditingId = null;
-  let inventorySearchTimers = { items: null, movements: null, technicians: null };
+  let inventorySearchTimers = { items: null, movements: null };
   let inventoryTab = 'items';
   // Read-only Data Master catalog: independent pagination and filters, shared inventory API.
   let stockCatalogItems = [];
@@ -347,12 +344,18 @@
     }).format(date);
   }
   function inventoryMovementLabel(type) {
-    return ({ stock_in: 'Stok masuk', stock_out: 'Stok keluar', distribution: 'Distribusi teknisi', usage: 'Pemakaian pekerjaan', return: 'Pengembalian', adjustment_in: 'Penyesuaian masuk', adjustment_out: 'Penyesuaian keluar', write_off: 'Pemusnahan / barang kedaluwarsa' })[type] || type;
+    return ({ stock_in: 'Stok Masuk', stock_out: 'Stok Keluar', usage: 'Pemakaian untuk Order', adjustment_in: 'Penyesuaian Stok Masuk', adjustment_out: 'Penyesuaian Stok Keluar', write_off: 'Penghapusan Barang Rusak', distribution: 'Distribusi Teknisi (Transaksi Terdahulu)', return: 'Pengembalian Teknisi (Transaksi Terdahulu)' })[type] || type;
   }
   function inventoryMovementTone(type) {
     if (['stock_in', 'adjustment_in', 'return'].includes(type)) return 'in';
     if (['stock_out', 'adjustment_out', 'write_off'].includes(type)) return 'out';
     return 'neutral';
+  }
+  function inventoryConditionLabel(condition) {
+    return ({ normal: 'Tidak Ada Kendala', needs_repair: 'Perlu Perbaikan', damaged: 'Rusak' })[condition] || 'Tidak Ada Kendala';
+  }
+  function inventoryConditionClass(condition) {
+    return ({ normal: 'is-normal', needs_repair: 'is-needs-repair', damaged: 'is-damaged' })[condition] || 'is-normal';
   }
   function inventoryStatusLabel(status) {
     return ({ planned: 'Terjadwal', completed: 'Selesai', cancelled: 'Dibatalkan' })[status] || status;
@@ -364,11 +367,10 @@
       technicians: response.technicians || [], orders: response.orders || []
     };
     const options = (items, placeholder, render) => `<option value="">${esc(placeholder)}</option>${items.map(render).join('')}`;
-    $('#inventoryMovementItem').innerHTML = options(inventoryOptions.items, 'Pilih barang', (item) => `<option value="${esc(item.id)}">${esc(item.name)} · ${esc(item.sku)} · Gudang ${inventoryQuantity(item.stock_on_hand)} ${esc(item.unit)}</option>`);
-    $('#inventoryMovementTechnician').innerHTML = options(inventoryOptions.technicians, 'Pilih teknisi', (tech) => `<option value="${esc(tech.id)}">${esc(tech.name)} · ${esc(tech.code)}${tech.status === 'assigned' ? ' · Sedang bertugas' : ''}</option>`);
-    $('#inventoryMovementOrder').innerHTML = options(inventoryOptions.orders, 'Pilih Deal Order', (order) => `<option value="${esc(order.id)}">${esc(order.reference)} · ${esc(order.name)}</option>`);
-    $('#inventoryMaintenanceItem').innerHTML = options(inventoryOptions.assets, 'Pilih aset', (item) => `<option value="${esc(item.id)}">${esc(item.name)} · ${esc(item.sku)}</option>`);
-    $('#inventoryMaintenanceTechnician').innerHTML = options(inventoryOptions.technicians, 'Belum ditentukan', (tech) => `<option value="${esc(tech.id)}">${esc(tech.name)} · ${esc(tech.code)}</option>`);
+    $('#inventoryMovementItem').innerHTML = options(inventoryOptions.items, 'Pilih barang', (item) => `<option value="${esc(item.id)}">${esc(item.name)} · Stok ${inventoryQuantity(item.stock_on_hand)} ${esc(item.unit)}</option>`);
+    $('#inventoryMovementOrder').innerHTML = options(inventoryOptions.orders, 'Pilih Order', (order) => `<option value="${esc(order.id)}">${esc(order.reference)} · ${esc(order.name)}</option>`);
+    $('#inventoryMaintenanceItem').innerHTML = options(inventoryOptions.assets, 'Pilih barang / peralatan', (item) => `<option value="${esc(item.id)}">${esc(item.name)} · ${esc(item.unit)}</option>`);
+    $('#inventoryMaintenanceTechnician').innerHTML = options(inventoryOptions.technicians, 'Belum Ditentukan', (tech) => `<option value="${esc(tech.id)}">${esc(tech.name)} · ${esc(tech.code)}</option>`);
     syncInventoryMovementFields();
   }
   async function refreshInventorySummary() {
@@ -376,31 +378,31 @@
     const summary = response.summary || {};
     $('#inventoryStatItems').textContent = inventoryQuantity(summary.items || 0);
     $('#inventoryStatStockedItems').textContent = inventoryQuantity(summary.stocked_items || 0);
-    $('#inventoryStatLow').textContent = inventoryQuantity(summary.low_stock || 0);
-    $('#inventoryStatValue').textContent = formatRupiah(summary.stock_value || 0);
-    $('#inventoryStatExpiry').textContent = inventoryQuantity(summary.expiring_batches || 0);
+    $('#inventoryStatDamaged').textContent = inventoryQuantity(summary.damaged_items || 0);
+    $('#inventoryStatRepair').textContent = inventoryQuantity(summary.repair_items || 0);
+    $('#inventoryStatNormal').textContent = inventoryQuantity(summary.normal_items || 0);
     $('#inventoryStatMaintenance').textContent = inventoryQuantity(summary.maintenance_due || 0);
-    const low = response.low_stock_items || [];
-    $('#inventoryLowStockList').innerHTML = low.length ? low.map((item) => `
-      <div class="inventory-alert-row"><span><strong>${esc(item.name)}</strong><small>${esc(item.sku)} · Minimum ${inventoryQuantity(item.minimum_stock)} ${esc(item.unit)}</small></span><span class="inventory-alert-value">${inventoryQuantity(item.stock_on_hand)} ${esc(item.unit)}</span></div>`).join('')
-      : '<p class="inventory-empty-inline">Tidak ada stok yang berada di bawah batas minimum.</p>';
-    const expiring = response.expiring_items || [];
-    const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Jakarta' });
-    $('#inventoryExpiryList').innerHTML = expiring.length ? expiring.map((batch) => {
-      const expiryDate = batch.expires_at ? new Date(`${batch.expires_at}T00:00:00+07:00`) : null;
-      const expired = expiryDate && batch.expires_at < today;
-      return `<div class="inventory-alert-row"><span><strong>${esc(batch.name || 'Barang tidak tersedia')}</strong><small>${esc(batch.batch_number || 'Tanpa nomor batch')} · Total ${inventoryQuantity(batch.quantity_remaining)} ${esc(batch.unit || '')} · Gudang ${inventoryQuantity(batch.warehouse_quantity)} · Teknisi ${inventoryQuantity(batch.technician_quantity)}</small></span><span class="inventory-alert-value ${expired ? 'is-expired' : ''}">${expired ? 'Kedaluwarsa' : formatDateLong(batch.expires_at)}</span></div>`;
-    }).join('') : '<p class="inventory-empty-inline">Tidak ada batch yang mendekati tanggal kedaluwarsa.</p>';
+    const repair = response.needs_repair_items || [];
+    const damaged = response.damaged_item_rows || [];
+    const emptyRow = (text) => `<p class="inventory-empty-inline"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7"/></svg><span>${text}</span></p>`;
+    $('#inventoryRepairCount').textContent = inventoryQuantity(repair.length);
+    $('#inventoryDamagedCount').textContent = inventoryQuantity(damaged.length);
+    $('#inventoryAttentionTotal').textContent = (repair.length + damaged.length) ? `${inventoryQuantity(repair.length + damaged.length)} barang perlu ditinjau` : 'Semua barang dalam kondisi baik';
+    $('#inventoryRepairList').innerHTML = repair.length ? repair.map((item) => `
+      <div class="inventory-alert-row"><span><strong>${esc(item.name)}</strong><small>Stok ${inventoryQuantity(item.stock_on_hand)} ${esc(item.unit)}</small></span><span class="inventory-condition-badge is-needs-repair">Perlu Perbaikan</span></div>`).join('')
+      : emptyRow('Tidak ada barang yang perlu diperbaiki');
+    $('#inventoryDamagedList').innerHTML = damaged.length ? damaged.map((item) => `
+      <div class="inventory-alert-row"><span><strong>${esc(item.name)}</strong><small>Stok ${inventoryQuantity(item.stock_on_hand)} ${esc(item.unit)}</small></span><span class="inventory-condition-badge is-damaged">${inventoryQuantity(item.damaged_quantity)} ${esc(item.unit)} rusak</span></div>`).join('')
+      : emptyRow('Tidak ada barang rusak');
   }
   function renderInventoryItems() {
     $('#inventoryItemRows').innerHTML = inventoryItems.map((item) => `
       <tr>
-        <td><div class="inventory-item-name"><strong>${esc(item.name)}</strong><small>${esc(item.sku)}${item.brand ? ` · ${esc(item.brand)}` : ''}</small></div></td>
+        <td><div class="inventory-item-name"><strong>${esc(item.name)}</strong><small>${esc(item.brand || item.category || '')}</small></div></td>
         <td>${esc(item.category)}</td>
-        <td><span class="inventory-type-tag ${item.item_type === 'asset' ? 'asset' : 'consumable'}">${item.item_type === 'asset' ? 'Aset' : 'Bahan habis pakai'}</span>${item.track_expiry ? '<small class="inventory-secondary" style="display:block">Lacak kedaluwarsa</small>' : ''}</td>
-        <td><div class="inventory-stock-value"><strong class="${item.stock_state === 'low' ? 'inventory-stock-low' : 'inventory-stock-normal'}">${inventoryQuantity(item.stock_on_hand)} ${esc(item.unit)}</strong><small>Minimum ${inventoryQuantity(item.minimum_stock)}</small></div></td>
-        <td><div class="inventory-stock-value"><strong>${inventoryQuantity(item.technician_stock)} ${esc(item.unit)}</strong><small>Di seluruh teknisi</small></div></td>
-        <td><span class="inventory-status-badge ${item.is_active ? 'completed' : 'cancelled'}">${item.is_active ? 'Aktif' : 'Nonaktif'}</span></td>
+        <td><div class="inventory-stock-value"><strong>${inventoryQuantity(item.stock_on_hand)} ${esc(item.unit)}</strong></div></td>
+        <td><div class="inventory-stock-value"><strong>${inventoryQuantity(item.damaged_quantity)} ${esc(item.unit)}</strong><small>Jumlah rusak</small></div></td>
+        <td><span class="inventory-condition-badge ${inventoryConditionClass(item.condition_status)}">${esc(inventoryConditionLabel(item.condition_status))}</span></td>
         <td><div class="inventory-row-actions"><button type="button" class="table-action" data-edit-inventory-item="${esc(item.id)}" aria-label="Edit ${esc(item.name)}">${uiIcon('edit')}<span>Edit</span></button><button type="button" class="table-action delete" data-delete-inventory-item="${esc(item.id)}" aria-label="Hapus ${esc(item.name)}">${uiIcon('trash')}<span>Hapus</span></button></div></td>
       </tr>`).join('');
     $('#inventoryItemsEmpty').hidden = inventoryItems.length > 0;
@@ -413,8 +415,7 @@
   async function refreshInventoryItems() {
     const params = new URLSearchParams({
       search: $('#inventoryItemSearch').value.trim(),
-      type: $('#inventoryItemTypeFilter').value || 'all',
-      status: $('#inventoryItemStatusFilter').value || 'active',
+      condition: $('#inventoryItemConditionFilter').value || 'all',
       page: String(inventoryItemPage),
     });
     const response = await apiRequest(`/inventory/items?${params.toString()}`);
@@ -424,15 +425,13 @@
   }
   function renderInventoryMovements() {
     $('#inventoryMovementRows').innerHTML = inventoryMovements.map((movement) => {
-      const detail = movement.technician_name ? `Teknisi: ${esc(movement.technician_name)}` : '';
-      const order = movement.order_reference ? `Order: ${esc(movement.order_reference)}${movement.client_name ? ` · ${esc(movement.client_name)}` : ''}` : '';
-      const supplier = movement.supplier_name ? `Supplier: ${esc(movement.supplier_name)}` : '';
-      const batch = movement.batch_number ? `Batch: ${esc(movement.batch_number)}` : (movement.batch_allocations?.length ? `Batch ${movement.batch_allocations.length} lot` : '');
-      const context = [detail, order, supplier, batch].filter(Boolean).join(' · ');
+      const order = movement.order_reference ? `Order: ${esc(movement.order_reference)} · ${esc(movement.client_name || '')}` : '';
+      const supplier = movement.supplier_name ? `Pemasok: ${esc(movement.supplier_name)}` : '';
+      const context = [order, supplier].filter(Boolean).join(' · ');
       const movementValue = Number(movement.quantity || 0) * Number(movement.unit_cost || 0);
       return `<tr>
         <td><div class="inventory-item-name"><strong>${inventoryDateTime(movement.created_at)}</strong><small>${esc(movement.movement_code)}</small></div></td>
-        <td><div class="inventory-item-name"><strong>${esc(movement.item_name || '-')}</strong><small>${esc(movement.sku || '')}</small></div></td>
+        <td><div class="inventory-item-name"><strong>${esc(movement.item_name || '-')}</strong></div></td>
         <td><span class="inventory-movement-badge ${inventoryMovementTone(movement.movement_type)}">${esc(movement.movement_label || inventoryMovementLabel(movement.movement_type))}</span></td>
         <td><strong>${inventoryQuantity(movement.quantity)} ${esc(movement.unit || '')}</strong></td>
         <td><div class="inventory-stock-value"><strong>${formatRupiah(movementValue)}</strong><small>${formatRupiah(movement.unit_cost)} / ${esc(movement.unit || 'unit')}</small></div></td>
@@ -441,51 +440,24 @@
       </tr>`;
     }).join('');
     $('#inventoryMovementsEmpty').hidden = inventoryMovements.length > 0;
-    $('#inventoryMovementCount').textContent = `${inventoryMovementMeta.total || 0} mutasi`;
-    $('#inventoryMovementTableCount').textContent = `Menampilkan ${inventoryMovements.length} dari ${inventoryMovementMeta.total || 0} mutasi`;
+    $('#inventoryMovementCount').textContent = `${inventoryMovementMeta.total || 0} transaksi`;
+    $('#inventoryMovementTableCount').textContent = `Menampilkan ${inventoryMovements.length} dari ${inventoryMovementMeta.total || 0} transaksi`;
     $('#inventoryMovementsPageLabel').textContent = `${inventoryMovementMeta.current_page || 1} / ${inventoryMovementMeta.last_page || 1}`;
     $('#inventoryMovementsPrev').disabled = (inventoryMovementMeta.current_page || 1) <= 1;
     $('#inventoryMovementsNext').disabled = (inventoryMovementMeta.current_page || 1) >= (inventoryMovementMeta.last_page || 1);
   }
   async function refreshInventoryMovements() {
-    const params = new URLSearchParams({
-      search: $('#inventoryMovementSearch').value.trim(),
-      type: $('#inventoryMovementTypeFilter').value || 'all',
-      page: String(inventoryMovementPage),
-    });
+    const params = new URLSearchParams({ search: $('#inventoryMovementSearch').value.trim(), type: $('#inventoryMovementTypeFilter').value || 'all', page: String(inventoryMovementPage) });
     const response = await apiRequest(`/inventory/movements?${params.toString()}`);
     inventoryMovements = response.data || [];
     inventoryMovementMeta = response.meta || { current_page: 1, last_page: 1, total: inventoryMovements.length };
     renderInventoryMovements();
   }
-  function renderInventoryTechnicianStocks() {
-    $('#inventoryTechStockRows').innerHTML = inventoryTechnicianStocks.map((stock) => {
-      const batches = (stock.batches || []).map((batch) => `<small class="inventory-secondary inventory-tech-batch"><strong>${esc(batch.batch_number || 'Tanpa nomor batch')}</strong> · ${inventoryQuantity(batch.quantity)} ${esc(stock.unit || '')} · ${batch.expires_at ? `Exp. ${formatDateLong(batch.expires_at)}` : 'Tanpa kedaluwarsa'}</small>`).join('');
-      return `<tr><td><div class="inventory-item-name"><strong>${esc(stock.technician_name || 'Teknisi tidak tersedia')}</strong><small>${esc(stock.technician_code || '')}</small></div></td>
-        <td>${esc(stock.item_name || '-')}</td><td>${esc(stock.sku || '-')}</td><td><strong>${inventoryQuantity(stock.quantity)} ${esc(stock.unit || '')}</strong></td>
-        <td><div class="inventory-tech-batches">${batches || '<small class="inventory-secondary">Detail batch tidak tersedia</small>'}</div></td>
-        <td><span class="inventory-status-badge technician-status-chip ${stock.technician_status === 'assigned' ? 'technician-state-assigned' : stock.technician_status === 'off_duty' ? 'technician-state-off-duty' : 'technician-state-available'}">${stock.technician_status === 'assigned' ? 'Sedang bertugas' : stock.technician_status === 'off_duty' ? 'Di luar tugas' : 'Tersedia'}</span></td>
-        <td>${inventoryDateTime(stock.updated_at)}</td></tr>`;
-    }).join('');
-    $('#inventoryTechStocksEmpty').hidden = inventoryTechnicianStocks.length > 0;
-    $('#inventoryTechStockCount').textContent = `${inventoryTechStockMeta.total || 0} saldo`;
-    $('#inventoryTechStockTableCount').textContent = `Menampilkan ${inventoryTechnicianStocks.length} dari ${inventoryTechStockMeta.total || 0} saldo`;
-    $('#inventoryTechStocksPageLabel').textContent = `${inventoryTechStockMeta.current_page || 1} / ${inventoryTechStockMeta.last_page || 1}`;
-    $('#inventoryTechStocksPrev').disabled = (inventoryTechStockMeta.current_page || 1) <= 1;
-    $('#inventoryTechStocksNext').disabled = (inventoryTechStockMeta.current_page || 1) >= (inventoryTechStockMeta.last_page || 1);
-  }
-  async function refreshInventoryTechnicianStocks() {
-    const params = new URLSearchParams({ search: $('#inventoryTechStockSearch').value.trim(), page: String(inventoryTechStockPage) });
-    const response = await apiRequest(`/inventory/technician-stocks?${params.toString()}`);
-    inventoryTechnicianStocks = response.data || [];
-    inventoryTechStockMeta = response.meta || { current_page: 1, last_page: 1, total: inventoryTechnicianStocks.length };
-    renderInventoryTechnicianStocks();
-  }
   function renderInventoryMaintenance() {
     $('#inventoryMaintenanceRows').innerHTML = inventoryMaintenanceRows.map((row) => `
       <tr><td>${formatDateLong(row.scheduled_date)}</td>
-      <td><div class="inventory-item-name"><strong>${esc(row.item_name || '-')}</strong><small>${esc(row.sku || '')}</small></div></td>
-      <td>${esc(row.maintenance_label || row.maintenance_type)}</td><td>${esc(row.technician_name || 'Belum ditentukan')}</td><td>${formatRupiah(row.cost)}</td>
+      <td><div class="inventory-item-name"><strong>${esc(row.item_name || '-')}</strong></div></td>
+      <td>${esc(row.maintenance_label || row.maintenance_type)}</td><td>${esc(row.technician_name || 'Belum Ditentukan')}</td><td>${formatRupiah(row.cost)}</td>
       <td><span class="inventory-status-badge ${esc(row.status)}">${esc(inventoryStatusLabel(row.status))}</span></td>
       <td><select class="inventory-maintenance-status" data-maintenance-status="${esc(row.id)}" aria-label="Ubah status pemeliharaan ${esc(row.item_name || '')}" ${row.status === 'completed' ? 'disabled' : ''}><option value="planned" ${row.status === 'planned' ? 'selected' : ''}>Terjadwal</option><option value="completed" ${row.status === 'completed' ? 'selected' : ''}>Selesai</option><option value="cancelled" ${row.status === 'cancelled' ? 'selected' : ''}>Dibatalkan</option></select></td></tr>`).join('');
     $('#inventoryMaintenanceEmpty').hidden = inventoryMaintenanceRows.length > 0;
@@ -503,7 +475,7 @@
     renderInventoryMaintenance();
   }
   async function setInventoryTab(tab) {
-    inventoryTab = ['items', 'movements', 'technicians', 'maintenance'].includes(tab) ? tab : 'items';
+    inventoryTab = ['items', 'movements', 'maintenance'].includes(tab) ? tab : 'items';
     $$('[data-inventory-tab]').forEach((button) => {
       const active = button.dataset.inventoryTab === inventoryTab;
       button.classList.toggle('is-active', active);
@@ -517,40 +489,22 @@
     });
     if (inventoryTab === 'items') await refreshInventoryItems();
     if (inventoryTab === 'movements') await refreshInventoryMovements();
-    if (inventoryTab === 'technicians') await refreshInventoryTechnicianStocks();
     if (inventoryTab === 'maintenance') await refreshInventoryMaintenance();
   }
   async function refreshInventory() {
-    if (!apiMode) { showWarning('Inventaris memerlukan koneksi database server.'); return; }
+    if (!apiMode) { showWarning('Inventaris belum dapat dimuat. Silakan coba kembali.'); return; }
     await Promise.all([refreshInventorySummary(), refreshInventoryOptions()]);
     await setInventoryTab(inventoryTab);
   }
-  function stockCatalogCondition(item) {
-    const warehouse = Number(item.stock_on_hand || 0);
-    const minimum = Number(item.minimum_stock || 0);
-    const technician = Number(item.technician_stock || 0);
-    if (minimum > 0 && warehouse <= minimum) {
-      return { label: warehouse <= 0 ? 'Stok kosong' : 'Stok menipis', tone: 'low' };
-    }
-    if (warehouse > 0) return { label: 'Tersedia', tone: 'good' };
-    if (technician > 0) return { label: 'Di teknisi', tone: 'field' };
-    return { label: 'Stok kosong', tone: 'empty' };
-  }
   function renderStockCatalog() {
-    $('#stockCatalogRows').innerHTML = stockCatalogItems.map((item) => {
-      const condition = stockCatalogCondition(item);
-      const kind = item.item_type === 'asset' ? 'Peralatan / aset' : 'Bahan habis pakai';
-      return `<tr>
-        <td><div class="inventory-item-name"><strong>${esc(item.name || '-')}</strong><small>${esc(item.sku || '-')}</small>${item.brand ? `<small>${esc(item.brand)}</small>` : ''}</div></td>
+    $('#stockCatalogRows').innerHTML = stockCatalogItems.map((item) => `
+      <tr>
+        <td><div class="inventory-item-name"><strong>${esc(item.name || '-')}</strong>${item.brand ? `<small>${esc(item.brand)}</small>` : ''}</div></td>
         <td>${esc(item.category || '-')}</td>
-        <td><span class="inventory-type-tag ${item.item_type === 'asset' ? 'asset' : 'consumable'}">${esc(kind)}</span>${item.track_expiry ? '<small class="stock-catalog-secondary">Pelacakan kedaluwarsa</small>' : ''}</td>
-        <td><div class="inventory-stock-value"><strong>${inventoryQuantity(item.stock_on_hand)} ${esc(item.unit || '')}</strong><small>Di gudang</small></div></td>
-        <td><div class="inventory-stock-value"><strong>${inventoryQuantity(item.technician_stock)} ${esc(item.unit || '')}</strong><small>Terdistribusi</small></div></td>
-        <td><div class="inventory-stock-value"><strong>${inventoryQuantity(item.minimum_stock)} ${esc(item.unit || '')}</strong><small>Batas minimum</small></div></td>
-        <td><span class="stock-catalog-condition is-${condition.tone}">${esc(condition.label)}</span></td>
-        <td><span class="inventory-status-badge ${item.is_active ? 'completed' : 'cancelled'}">${item.is_active ? 'Aktif' : 'Nonaktif'}</span></td>
-      </tr>`;
-    }).join('');
+        <td><div class="inventory-stock-value"><strong>${inventoryQuantity(item.stock_on_hand)} ${esc(item.unit || '')}</strong></div></td>
+        <td><div class="inventory-stock-value"><strong>${inventoryQuantity(item.damaged_quantity)} ${esc(item.unit || '')}</strong><small>Jumlah rusak</small></div></td>
+        <td><span class="inventory-condition-badge ${inventoryConditionClass(item.condition_status)}">${esc(inventoryConditionLabel(item.condition_status))}</span></td>
+      </tr>`).join('');
     $('#stockCatalogEmpty').hidden = stockCatalogItems.length > 0;
     $('#stockCatalogCount').textContent = `${stockCatalogMeta.total || 0} barang`;
     $('#stockCatalogTableCount').textContent = `Menampilkan ${stockCatalogItems.length} dari ${stockCatalogMeta.total || 0} barang`;
@@ -563,17 +517,12 @@
     const summary = response.summary || {};
     $('#stockCatalogStatItems').textContent = inventoryQuantity(summary.items || 0);
     $('#stockCatalogStatStocked').textContent = inventoryQuantity(summary.stocked_items || 0);
-    $('#stockCatalogStatLow').textContent = inventoryQuantity(summary.low_stock || 0);
-    $('#stockCatalogStatExpiry').textContent = inventoryQuantity(summary.expiring_batches || 0);
+    $('#stockCatalogStatDamaged').textContent = inventoryQuantity(summary.damaged_items || 0);
+    $('#stockCatalogStatRepair').textContent = inventoryQuantity(summary.repair_items || 0);
   }
   async function refreshStockCatalog() {
-    if (!apiMode) throw new Error('Data stok hanya tersedia saat terhubung ke database server.');
-    const params = new URLSearchParams({
-      search: $('#stockCatalogSearch').value.trim(),
-      type: $('#stockCatalogTypeFilter').value || 'all',
-      status: $('#stockCatalogStatusFilter').value || 'all',
-      page: String(stockCatalogPage),
-    });
+    if (!apiMode) throw new Error('Data Stok & Bahan belum dapat dimuat. Silakan coba kembali.');
+    const params = new URLSearchParams({ search: $('#stockCatalogSearch').value.trim(), condition: $('#stockCatalogConditionFilter').value || 'all', page: String(stockCatalogPage) });
     const response = await apiRequest(`/inventory/items?${params.toString()}`);
     stockCatalogItems = response.data || [];
     stockCatalogMeta = response.meta || { current_page: 1, last_page: 1, total: stockCatalogItems.length };
@@ -582,16 +531,14 @@
   async function refreshStockCatalogPage() {
     await Promise.all([refreshStockCatalogSummary(), refreshStockCatalog()]);
   }
-
   function addInventoryItem() {
     inventoryItemEditingId = null;
     const form = $('#inventoryItemForm');
     form.reset();
-    form.elements.minimum_stock.value = '0';
-    form.elements.track_expiry.checked = false;
-    form.elements.is_active.value = '1';
-    form.elements.item_type.value = 'consumable';
-    $('#inventoryItemModalTitle').textContent = 'Tambah barang';
+    form.elements.stock_on_hand.value = '0';
+    form.elements.damaged_quantity.value = '0';
+    form.elements.condition_status.value = 'normal';
+    $('#inventoryItemModalTitle').textContent = 'Tambah Data Barang';
     showModal('inventoryItemModal');
   }
   function editInventoryItem(id) {
@@ -600,12 +547,11 @@
     inventoryItemEditingId = item.id;
     const form = $('#inventoryItemForm');
     Object.entries({
-      sku: item.sku, name: item.name, category: item.category, item_type: item.item_type,
-      brand: item.brand, specification: item.specification, unit: item.unit,
-      minimum_stock: item.minimum_stock, is_active: item.is_active ? '1' : '0'
+      name: item.name, category: item.category, brand: item.brand, specification: item.specification,
+      unit: item.unit, stock_on_hand: item.stock_on_hand, damaged_quantity: item.damaged_quantity,
+      condition_status: item.condition_status || 'normal'
     }).forEach(([key, value]) => { form.elements.namedItem(key).value = value ?? ''; });
-    form.elements.track_expiry.checked = Boolean(item.track_expiry);
-    $('#inventoryItemModalTitle').textContent = `Edit barang · ${item.sku}`;
+    $('#inventoryItemModalTitle').textContent = `Edit Data Barang · ${item.name}`;
     showModal('inventoryItemModal');
   }
   async function saveInventoryItem(event) {
@@ -616,30 +562,27 @@
     submit.disabled = true; submit.innerHTML = '<span>Menyimpan…</span>';
     try {
       const values = Object.fromEntries(new FormData(form).entries());
-      values.track_expiry = form.elements.track_expiry.checked ? 1 : 0;
-      values.is_active = String(values.is_active) === '1' ? 1 : 0;
+      values.stock_on_hand = Number(values.stock_on_hand || 0);
+      values.damaged_quantity = Number(values.damaged_quantity || 0);
       const path = `/inventory/items${inventoryItemEditingId ? `/${encodeURIComponent(inventoryItemEditingId)}` : ''}`;
       await apiRequest(path, { method: inventoryItemEditingId ? 'PUT' : 'POST', body: values });
       inventoryItemPage = 1;
       closeModal('inventoryItemModal');
       inventoryItemEditingId = null;
       await Promise.all([refreshInventoryItems(), refreshInventorySummary(), refreshInventoryOptions()]);
-      toast('Master barang berhasil disimpan.', 'success');
+      if (!$('#page-stock-catalog').hidden) await refreshStockCatalogPage();
+      toast('Data barang berhasil disimpan.', 'success');
     } catch (error) { showError(error.message); }
     finally { submit.disabled = false; submit.innerHTML = original; }
   }
   async function deleteInventoryItem(id) {
     const item = inventoryItems.find((entry) => String(entry.id) === String(id));
     if (!item) return;
-    if (!(await confirmDialog({
-      title: 'Hapus master barang?',
-      message: `${item.name} (${item.sku}) hanya dapat dihapus jika belum memiliki saldo, mutasi, atau jadwal pemeliharaan. Barang yang sudah memiliki histori harus dinonaktifkan melalui form edit.`,
-      confirmText: 'Hapus barang', danger: true
-    }))) return;
+    if (!(await confirmDialog({ title: 'Hapus data barang?', message: `${item.name} hanya dapat dihapus jika stok nol dan belum memiliki riwayat transaksi atau pemeliharaan.`, confirmText: 'Hapus barang', danger: true }))) return;
     try {
       await apiRequest(`/inventory/items/${encodeURIComponent(id)}`, { method: 'DELETE' });
       await Promise.all([refreshInventoryItems(), refreshInventorySummary(), refreshInventoryOptions()]);
-      toast('Barang berhasil dihapus.', 'success');
+      toast('Data barang berhasil dihapus.', 'success');
     } catch (error) { showError(error.message); }
   }
   async function addInventoryMovement() {
@@ -650,7 +593,7 @@
     form.elements.quantity.value = '';
     form.elements.unit_cost.value = '0';
     syncInventoryMovementFields();
-    $('#inventoryMovementModalTitle').textContent = 'Catat mutasi stok';
+    $('#inventoryMovementModalTitle').textContent = 'Catat Transaksi Stok';
     showModal('inventoryMovementModal');
   }
   function syncInventoryMovementFields() {
@@ -658,44 +601,29 @@
     if (!form) return;
     const type = form.elements.movement_type.value || 'stock_in';
     const inbound = ['stock_in', 'adjustment_in'].includes(type);
-    const technicianRequired = ['distribution', 'usage', 'return'].includes(type);
+    const hasSupplier = type === 'stock_in';
     const hasOrder = type === 'usage';
-    const hasCost = ['stock_in', 'adjustment_in'].includes(type);
-    const hasSupplier = ['stock_in', 'adjustment_in'].includes(type);
-    const needsNote = ['stock_out', 'adjustment_in', 'adjustment_out', 'write_off'].includes(type);
+    const hasCost = inbound;
+    const needsNote = ['stock_out', 'adjustment_out', 'write_off'].includes(type);
     $('#inventoryInboundFields').hidden = !inbound;
-    $('#inventoryBatchNumberField').hidden = false;
     $('#inventorySupplierFields').hidden = !hasSupplier;
-    $('#inventoryTechnicianFields').hidden = !technicianRequired;
     $('#inventoryOrderFields').hidden = !hasOrder;
-    $('#inventoryMovementCostField').hidden = !hasCost;
-    form.elements.technician_id.required = technicianRequired;
-    form.elements.technician_id.disabled = !technicianRequired;
     form.elements.enquiry_id.required = hasOrder;
     form.elements.enquiry_id.disabled = !hasOrder;
     form.elements.unit_cost.disabled = !hasCost;
-    form.elements.batch_number.disabled = !inbound;
-    form.elements.expires_at.disabled = !inbound;
     form.elements.supplier_name.disabled = !hasSupplier;
     form.elements.invoice_number.disabled = !hasSupplier;
     form.elements.notes.required = needsNote;
     const item = inventoryOptions.items.find((entry) => String(entry.id) === String(form.elements.item_id.value));
     if (item) {
-      const warehouseHint = `Stok gudang saat ini: ${inventoryQuantity(item.stock_on_hand)} ${item.unit}.`;
-      $('#inventoryMovementStockHint').textContent = type === 'usage'
-        ? 'Pemakaian akan mengurangi saldo barang pada teknisi yang dipilih, bukan stok gudang langsung.'
-        : type === 'return'
-          ? 'Pengembalian mengambil batch yang sama dari saldo teknisi dan mengembalikannya ke gudang beserta tanggal kedaluwarsa serta harga asal.'
-          : type === 'write_off'
-            ? `${warehouseHint} Pemusnahan dapat mengambil batch kedaluwarsa.`
-            : `${warehouseHint} Batch kedaluwarsa ditahan dari pengeluaran normal.`;
-      const expiry = form.elements.expires_at;
-      expiry.required = Boolean(item.track_expiry && inbound);
-      $('#inventoryExpiryHint').textContent = item.track_expiry ? 'Wajib diisi untuk barang ini. Tanggal akan ikut terlacak saat didistribusikan ke teknisi.' : 'Isi jika barang memiliki tanggal kedaluwarsa.';
+      const stockHint = `Stok saat ini: ${inventoryQuantity(item.stock_on_hand)} ${item.unit}.`;
+      $('#inventoryMovementStockHint').textContent = type === 'write_off'
+        ? `${stockHint} Penghapusan hanya dapat mengambil jumlah barang rusak yang tercatat.`
+        : type === 'usage'
+          ? `${stockHint} Pemakaian akan langsung mengurangi stok dan harus dikaitkan dengan order terkait.`
+          : stockHint;
     } else {
-      $('#inventoryMovementStockHint').textContent = 'Pilih barang untuk melihat saldo gudang.';
-      form.elements.expires_at.required = false;
-      $('#inventoryExpiryHint').textContent = 'Isi jika barang memiliki tanggal kedaluwarsa.';
+      $('#inventoryMovementStockHint').textContent = 'Pilih barang untuk melihat stok.';
     }
   }
   async function saveInventoryMovement(event) {
@@ -710,8 +638,8 @@
       closeModal('inventoryMovementModal');
       await Promise.all([refreshInventorySummary(), refreshInventoryItems(), refreshInventoryOptions()]);
       if (inventoryTab === 'movements') { inventoryMovementPage = 1; await refreshInventoryMovements(); }
-      if (inventoryTab === 'technicians') { inventoryTechStockPage = 1; await refreshInventoryTechnicianStocks(); }
-      toast('Mutasi stok berhasil dicatat dan saldo diperbarui.', 'success');
+      if (!$('#page-stock-catalog').hidden) await refreshStockCatalogPage();
+      toast('Transaksi stok berhasil dicatat.', 'success');
     } catch (error) { showError(error.message); }
     finally { submit.disabled = false; submit.innerHTML = original; }
   }
@@ -838,6 +766,26 @@
     const hour = Number(new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Jakarta', hour: '2-digit', hourCycle: 'h23' }).format(new Date()));
     return hour < 11 ? 'pagi' : hour < 15 ? 'siang' : hour < 18 ? 'sore' : 'malam';
   }
+  // Batas hari (H+N sejak order masuk) sebelum follow-up memakai pesan A.
+  const FOLLOWUP_STALE_DAYS = 60;
+  function daysSinceOrder(booking) {
+    const created = new Date(booking.created_at || booking.createdAt || '');
+    if (Number.isNaN(created.getTime())) return 0;
+    return Math.floor((Date.now() - created.getTime()) / 86400000);
+  }
+  // Pesan A: dipakai bila order sudah H+60 dan belum Deal Order.
+  function buildStaleFollowupMessage(displayName) {
+    return [
+      `Halo Bapak/Ibu *${displayName}*,`,
+      '',
+      'Kami dari *CV Jaya Abadi Solusi (JASPEST)*. Apakah kebutuhan layanan pest control Anda yang sebelumnya diajukan masih ingin dilanjutkan?',
+      '',
+      'Apabila masih, silakan balas pesan ini dan tim kami akan segera membantu. Terima kasih.',
+      '',
+      '*CV JAYA ABADI SOLUSI*',
+      '*JASPEST — Professional Pest Control*'
+    ].join('\n');
+  }
   function buildWhatsAppMessage(booking) {
     const clean = (value, fallback = '-') => {
       const text = String(value ?? '').replace(/[\r\n\t]+/g, ' ').replace(/[\*_~`]/g, '').trim();
@@ -846,6 +794,9 @@
     const company = clean(booking.company, '');
     const name = clean(booking.name);
     const displayName = company || name;
+    if (daysSinceOrder(booking) >= FOLLOWUP_STALE_DAYS && normalizeBookingStatus(booking.status) !== 'converted') {
+      return buildStaleFollowupMessage(displayName);
+    }
     const numericArea = Number(String(booking.area ?? '').replace(',', '.'));
     const area = Number.isFinite(numericArea)
       ? new Intl.NumberFormat('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(numericArea)
@@ -857,8 +808,8 @@
       '',
       'Kami telah menerima permintaan layanan Anda melalui formulir website JASPEST. Berikut ringkasan data yang Anda kirimkan:',
       '',
-      '*DETAIL PENGAJUAN*',
-      `Nomor Pengajuan: *${clean(booking.reference || booking.id)}*`,
+      '*DETAIL PERMINTAAN LAYANAN*',
+      `Nomor Referensi: *${clean(booking.reference || booking.id)}*`,
       `Nama: ${name}`,
     ];
     if (company) lines.push(`Nama Perusahaan: ${company}`);
@@ -913,15 +864,15 @@
       if (response.status === 422) {
         const messages = Object.values(payload?.errors || {}).flat();
         const first = String(messages[0] || payload?.message || '');
-        if (/failed to upload/i.test(first)) throw new Error('Gambar gagal diunggah. Ukuran file melebihi batas server; coba gambar yang lebih kecil.');
+        if (/failed to upload/i.test(first)) throw new Error('Gambar gagal diunggah karena ukuran file terlalu besar. Gunakan gambar berukuran lebih kecil.');
         throw new Error(localizeMessage(first, 'Periksa kembali isian Anda.'));
       }
       if (response.status === 404) throw new Error('Data tidak ditemukan atau sudah dihapus.');
       if (response.status === 429) throw new Error('Terlalu banyak permintaan. Tunggu sebentar lalu coba lagi.');
-      if (response.status >= 500) throw new Error(localizeMessage(payload?.message, 'Terjadi kesalahan pada server. Silakan coba kembali.'));
+      if (response.status >= 500) throw new Error(localizeMessage(payload?.message, 'Terjadi kesalahan saat memproses permintaan. Silakan coba kembali.'));
       throw new Error(localizeMessage(payload?.message, `Permintaan gagal (${response.status}).`));
     }
-    if (!payload) throw new Error('Respons server tidak sesuai format JSON. Periksa rute dan konfigurasi Laravel.');
+    if (!payload) throw new Error('Data yang diterima tidak dapat diproses. Silakan muat ulang halaman.');
     return payload;
   }
 
@@ -940,13 +891,13 @@
     const navBadge = $('#bookingNavCount');
     navBadge.textContent = actionableCount;
     navBadge.hidden = actionableCount === 0;
-    navBadge.title = `${newCount} booking baru, ${followupCount} booking follow-up`;
+    navBadge.title = `${newCount} permintaan baru, ${followupCount} order dalam tindak lanjut`;
     document.title = `${actionableCount > 0 ? `(${actionableCount}) ` : ''}Admin Dashboard | JASPEST`;
     const totalHint = $('#statTotalHint');
     if (totalHint) {
       const totalNow = Number(values.total ?? 0);
       totalHint.textContent = totalNow > 0 && values.converted !== undefined
-        ? `${Math.round((Number(values.converted) / totalNow) * 100)}% dari booking berhasil menjadi Deal Order`
+        ? `${Math.round((Number(values.converted) / totalNow) * 100)}% dari permintaan layanan dikonfirmasi menjadi order`
         : 'Sejak website aktif';
     }
     $('#statNew').textContent = newCount;
@@ -958,7 +909,7 @@
     $('#bookingFollow').textContent = followupCount;
     $('#bookingConverted').textContent = values.converted ?? 0;
     $('#bookingLost').textContent = values.lost ?? 0;
-    $('#attentionFollow').textContent = `${followupCount} klien follow-up`;
+    $('#attentionFollow').textContent = `${followupCount} Permintaan Follow-up`;
     $('#attentionConverted').textContent = `${values.converted ?? 0} Deal Order`;
   }
   function renderChart(series = []) {
@@ -969,8 +920,8 @@
     const maximum = Math.max(1, ...values.map((item) => Number(item.total || 0)));
     $('#chartBars').innerHTML = values.length ? values.map((item) => {
       const height = Math.max(2, (Number(item.total || 0) / maximum) * 100);
-      return `<div class="chart-column" title="${esc(item.label)}: ${Number(item.total || 0)} pengajuan"><b>${Number(item.total || 0)}</b><i style="height:${height}%"></i><small>${esc(item.label)}</small></div>`;
-    }).join('') : '<p class="muted-empty">Belum ada data booking untuk grafik.</p>';
+      return `<div class="chart-column" title="${esc(item.label)}: ${Number(item.total || 0)} permintaan layanan"><b>${Number(item.total || 0)}</b><i style="height:${height}%"></i><small>${esc(item.label)}</small></div>`;
+    }).join('') : '<p class="muted-empty">Belum ada data permintaan layanan untuk grafik.</p>';
   }
   function renderRecent() {
     const rows = (recentBookings.length ? recentBookings : bookings).slice(0, 5);
@@ -980,7 +931,7 @@
         <td>${esc(booking.need)}</td><td>${esc(booking.date)}</td>
         <td><div class="status-cell"><span class="status-pill ${statusClass(booking.status)}">${statusLabel(booking.status)}</span></div></td>
         <td><div class="table-actions"><button class="table-action" data-detail="${esc(booking.id)}" title="Lihat detail" aria-label="Lihat detail ${esc(booking.name)}">${uiIcon('eye')}<span>Detail</span></button><button class="table-action wa" data-wa="${esc(booking.id)}" title="Chat WhatsApp" aria-label="Chat WhatsApp ${esc(booking.name)}">${uiIcon('whatsapp')}<span>WhatsApp</span></button></div></td>
-      </tr>`).join('') || '<tr><td colspan="5">Belum ada data booking.</td></tr>';
+      </tr>`).join('') || '<tr><td colspan="5">Belum ada permintaan layanan.</td></tr>';
   }
   function localDateKey(value) {
     const time = Date.parse(value);
@@ -1069,10 +1020,10 @@
   function renderAttentionHint() {
     const hint = $('#attentionFollowHint');
     if (!hint) return;
-    hint.textContent = 'Pengajuan yang sudah ditindaklanjuti oleh tim.';
+    hint.textContent = 'Permintaan layanan yang telah ditindaklanjuti oleh tim.';
   }
   function eventLabel(event) {
-    return ({ status_changed: 'Status diperbarui', whatsapp_opened: 'Tindak lanjut dimulai', automatic_whatsapp_followup: 'Tindak lanjut WhatsApp', note_added: 'Catatan admin', order_confirmed: 'Order dikonfirmasi', manual_order_created: 'Deal Order ditambahkan', client_linked: 'Klien ditautkan' })[event.event] || 'Pengajuan masuk';
+    return ({ status_changed: 'Status Diperbarui', whatsapp_opened: 'Follow-up Dibuka', automatic_whatsapp_followup: 'Follow-up Dibuka', note_added: 'Catatan Internal', order_confirmed: 'Order Dikonfirmasi', manual_order_created: 'Order Manual Dibuat', client_linked: 'Klien Diperbarui' })[event.event] || 'Permintaan Layanan Diterima';
   }
   function renderEventList(events) {
     if (!events.length) return '<p class="muted-empty">Belum ada riwayat aktivitas.</p>';
@@ -1096,7 +1047,7 @@
       currentBooking.events = [...(currentBooking.events || []), { event: 'note_added', note, created_at: new Date().toISOString() }];
       input.value = '';
       $('#detailEvents').innerHTML = renderEventList(currentBooking.events);
-      toast('Catatan ditambahkan (mode preview).', 'success');
+      toast('Catatan berhasil ditambahkan.', 'success');
       return;
     }
     button.disabled = true;
@@ -1105,7 +1056,7 @@
       currentBooking.events = [...(currentBooking.events || []), created];
       input.value = '';
       $('#detailEvents').innerHTML = renderEventList(currentBooking.events);
-      toast('Catatan disimpan.', 'success');
+      toast('Catatan berhasil disimpan.', 'success');
     } catch (error) { showError(error.message); }
     finally { button.disabled = false; }
   }
@@ -1129,7 +1080,7 @@
       await refreshDashboard();
       const fresh = before === null ? 0 : knownTotal - before;
       if (fresh > 0) {
-        announceNewBooking(fresh === 1 ? '1 pengajuan baru masuk.' : `${fresh} pengajuan baru masuk.`);
+        announceNewBooking(fresh === 1 ? '1 permintaan layanan baru diterima.' : `${fresh} permintaan layanan baru diterima.`);
         if ($('#page-bookings').classList.contains('active')) await refreshBookings();
       }
     } catch (error) { /* polling berjalan diam-diam agar admin tidak terganggu */ }
@@ -1323,21 +1274,21 @@
       $('#detailRef').textContent = `${booking.id} · ${booking.date}`;
       renderDetailStatus(booking);
       const fields = [
-        ['Nama lengkap', booking.name], ['Nomor WhatsApp', formatPhone(booking.whatsapp)],
-        ['Alamat lokasi', booking.address, true], ['Perkiraan luasan', `${booking.area} m²`],
-        ['Kebutuhan layanan', booking.need], ['Jenis lokasi', booking.property === 'bisnis' ? 'Bisnis' : 'Rumah'],
+        ['Nama Pelanggan', booking.name], ['Nomor Kontak', formatPhone(booking.whatsapp)],
+        ['Alamat lokasi', booking.address, true], ['Luas Area', `${booking.area} m²`],
+        ['Layanan', booking.need], ['Tipe lokasi', booking.property === 'bisnis' ? 'Bisnis' : 'Rumah'],
         ...(booking.company ? [['Nama perusahaan', booking.company]] : []),
-        ['Keterangan', booking.description, true], ['Tanggal pengajuan', booking.date],
+        ['Keterangan', booking.description, true], ['Tanggal diterima', booking.date],
         ...(normalizeBookingStatus(booking.status) === 'converted' ? [
-          ['Harga order', formatRupiah(booking.order_price)],
-          ['Luasan final', booking.order_area ? `${booking.order_area} m²` : '-'],
+          ['Nilai order', formatRupiah(booking.order_price)],
+          ['Luas pekerjaan', booking.order_area ? `${booking.order_area} m²` : '-'],
           ['Tanggal pelaksanaan', formatDateLong(booking.scheduled_date)],
-          ['Teknisi ditugaskan', booking.assigned_technician_name || '-']
+          ['Teknisi penanggung jawab', booking.assigned_technician_name || '-']
         ] : [])
       ];
       $('#detailFields').innerHTML = fields.map(([label, value, full]) => `<div class="detail-field ${full ? 'full' : ''}"><small>${esc(label)}</small><strong>${esc(value || '-')}</strong></div>`).join('');
       $('#detailPhotos').innerHTML = booking.photos?.length ? booking.photos.map(renderPhoto).join('') : '<div class="photo-placeholder">Belum ada foto</div>';
-      $('#detailConsent').textContent = booking.consent ? 'Klien menyetujui untuk dihubungi oleh tim JASPEST.' : 'Persetujuan kontak belum tercatat.';
+      $('#detailConsent').textContent = booking.consent ? 'Pelanggan menyetujui untuk dihubungi oleh tim JASPEST.' : 'Persetujuan kontak belum tercatat.';
       renderWhatsappNotification(booking.whatsapp_notification || null);
       $('#detailFollowupWhatsapp').disabled = !booking.consent || ['converted', 'lost'].includes(normalizeBookingStatus(booking.status));
       const events = booking.events || [];
@@ -1348,11 +1299,11 @@
   }
   async function openWhatsApp(id) {
     const booking = (currentBooking?.id === id || currentBooking?.reference === id ? currentBooking : null) || bookings.find((item) => item.id === id || item.reference === id) || recentBookings.find((item) => item.id === id || item.reference === id);
-    if (!booking) { showError('Data booking tidak ditemukan.'); return; }
-    if (!booking.consent) { showWarning('Klien belum menyetujui untuk dihubungi.'); return; }
+    if (!booking) { showError('Data permintaan layanan tidak ditemukan.'); return; }
+    if (!booking.consent) { showWarning('Pelanggan belum memberikan persetujuan untuk dihubungi.'); return; }
 
     const phone = phoneForWhatsApp(booking.whatsapp);
-    if (apiMode && !/^62\d{8,15}$/.test(phone)) { showWarning('Nomor WhatsApp tidak valid. Periksa data klien.'); return; }
+    if (apiMode && !/^62\d{8,15}$/.test(phone)) { showWarning('Nomor kontak pelanggan tidak valid. Periksa kembali data pelanggan.'); return; }
 
     if (!apiMode) {
       // Preview mode mirrors the live status behavior without a server connection.
@@ -1368,7 +1319,7 @@
       updateStats(); renderRecent(); renderBookings();
       $('#whatsappPreviewMessage').textContent = buildWhatsAppMessage(booking);
       showModal('whatsappPreviewModal');
-      toast(['converted', 'lost'].includes(normalizeBookingStatus(booking.status)) ? 'Status akhir booking tetap dipertahankan.' : 'Pratinjau pesan Follow-up siap dibuka di WhatsApp.', 'info');
+      toast(['converted', 'lost'].includes(normalizeBookingStatus(booking.status)) ? 'Status akhir order tetap dipertahankan.' : 'Pesan Follow-up siap dibuka untuk ditinjau.', 'info');
       return;
     }
 
@@ -1406,13 +1357,13 @@
           ? 'Percakapan dibuka. Status Tidak Deal tetap dipertahankan.'
           : 'Pesan tindak lanjut siap ditinjau dan dikirim.', 'success');
     } catch (error) {
-      showError(error.message || 'Status booking belum berhasil diperbarui.');
+      showError(error.message || 'Status order belum berhasil diperbarui.');
     }
   }
   async function openOrderConversion() {
     if (!currentBooking) return;
     if (!apiMode) {
-      showWarning('Konfirmasi order memerlukan koneksi database Laravel.');
+      showWarning('Konfirmasi order belum dapat diproses saat ini. Silakan coba kembali.');
       return;
     }
 
@@ -1434,7 +1385,7 @@
       const response = await apiRequest('/booking-technicians');
       const list = Array.isArray(response.data) ? response.data : [];
       const available = list.filter((item) => item.is_available === true || item.operational_status === 'available');
-      const statusText = { available: 'Tersedia', assigned: 'Sedang bertugas', off_duty: 'Di luar tugas' };
+      const statusText = { available: 'Tersedia', assigned: 'Sedang Bertugas', off_duty: 'Di Luar Tugas' };
       if (list.length === 0) {
         select.innerHTML = '<option value="">Belum ada data teknisi</option>';
         hint.textContent = 'Tambahkan teknisi terlebih dahulu melalui menu Data Teknisi.';
@@ -1475,9 +1426,9 @@
     const technicianLabel = $('#orderTechnicianSelect').selectedOptions[0]?.textContent || 'Teknisi';
     submit.disabled = true;
     const confirmed = await confirmDialog({
-      title: 'Konfirmasi Deal Order?',
-      message: `Booking ${currentBooking.id} akan dikonfirmasi sebagai Deal Order dengan harga ${formatRupiah(values.order_price)}, luasan ${Number(values.order_area).toLocaleString('id-ID')} m², pelaksanaan ${formatDateLong(values.scheduled_date)}, dan teknisi ${technicianLabel}. Tindakan ini tidak dapat dibatalkan dari halaman booking.`,
-      confirmText: 'Konfirmasi Deal Order'
+      title: 'Konfirmasi Order?',
+      message: `Order ${currentBooking.id} akan dikonfirmasi dengan nilai ${formatRupiah(values.order_price)}, luas pekerjaan ${Number(values.order_area).toLocaleString('id-ID')} m², tanggal pelaksanaan ${formatDateLong(values.scheduled_date)}, dan teknisi penanggung jawab ${technicianLabel}. Tindakan ini tidak dapat dibatalkan dari halaman Manajemen Order.`,
+      confirmText: 'Konfirmasi Order'
     });
     if (!confirmed) {
       submit.disabled = false;
@@ -1507,17 +1458,17 @@
       }
       const notice = updated.whatsapp_notification;
       if (notice?.status === 'accepted' || notice?.status === 'sent') {
-        toast('Deal Order berhasil dikonfirmasi. Pesan konfirmasi masuk antrean pengiriman.', 'success');
+        toast('Order berhasil dikonfirmasi. Pemberitahuan pelanggan telah diproses.', 'success');
       } else if (notice?.status === 'not_configured') {
-        showWarning('Deal Order berhasil disimpan, tetapi pesan konfirmasi belum dapat dikirim. Hubungi administrator sistem.');
+        showWarning('Order berhasil disimpan, tetapi pemberitahuan pelanggan belum dapat diproses. Hubungi administrator sistem.');
       } else if (notice?.status === 'failed') {
-        showWarning('Deal Order berhasil disimpan, tetapi pesan konfirmasi belum berhasil dikirim. Buka detail order untuk mencoba kembali.');
+        showWarning('Order berhasil disimpan, tetapi pemberitahuan pelanggan belum berhasil diproses. Buka detail order untuk mencoba kembali.');
       } else if (notice?.status === 'unknown') {
-        showWarning('Deal Order berhasil disimpan, tetapi status pengiriman belum dapat dipastikan. Periksa riwayat pesan sebelum mencoba kembali.');
+        showWarning('Order berhasil disimpan, tetapi status konfirmasi belum dapat dipastikan. Periksa riwayat sebelum mencoba kembali.');
       } else if (notice?.status === 'skipped_consent' || notice?.status === 'skipped_invalid_number') {
-        showWarning('Deal Order berhasil disimpan, tetapi notifikasi tidak dikirim. Periksa persetujuan dan nomor WhatsApp pelanggan.');
+        showWarning('Order berhasil disimpan, tetapi konfirmasi tidak dikirim. Periksa persetujuan dan nomor kontak pelanggan.');
       } else {
-        toast('Deal Order berhasil dikonfirmasi. Teknisi sekarang berstatus Sedang bertugas.', 'success');
+        toast('Order berhasil dikonfirmasi dan penugasan teknisi telah diperbarui.', 'success');
       }
     } catch (error) {
       showError(error.message || 'Order belum berhasil disimpan. Periksa data dan ketersediaan teknisi.');
@@ -1538,7 +1489,7 @@
 
   async function openManualBooking() {
     if (!apiMode) {
-      showWarning('Penambahan Deal Order memerlukan koneksi ke server.');
+      showWarning('Order manual belum dapat ditambahkan saat ini. Periksa koneksi dan coba kembali.');
       return;
     }
 
@@ -1568,12 +1519,11 @@
         .filter((item) => item.status === 'Aktif' && item.slug)
         .map((item) => ({ slug: item.slug, title: item.title }));
       serviceSelect.innerHTML = '<option value="">Pilih layanan</option>'
-        + '<option value="konsultasi">Konsultasi</option>'
         + services.map((service) => `<option value="${esc(service.slug)}">${esc(service.title)}</option>`).join('');
 
       const technicians = Array.isArray(technicianResponse.data) ? technicianResponse.data : [];
       const available = technicians.filter((item) => item.is_available === true || item.operational_status === 'available');
-      const statusText = { available: 'Tersedia', assigned: 'Sedang bertugas', off_duty: 'Di luar tugas' };
+      const statusText = { available: 'Tersedia', assigned: 'Sedang Bertugas', off_duty: 'Di Luar Tugas' };
       technicianSelect.innerHTML = '<option value="">Pilih teknisi</option>' + technicians.map((technician) => {
         const isAvailable = technician.is_available === true || technician.operational_status === 'available';
         const label = `${technician.technician_code || 'TKN'} — ${technician.full_name}`;
@@ -1584,11 +1534,11 @@
       submit.disabled = available.length === 0;
       hint.textContent = available.length
         ? `${available.length} teknisi tersedia.`
-        : 'Belum ada teknisi yang tersedia. Perbarui status teknisi sebelum menambahkan Deal Order.';
+        : 'Belum ada teknisi yang tersedia. Perbarui status teknisi sebelum mencatat Order Manual.';
       hint.classList.toggle('is-warning', available.length === 0);
     } catch (error) {
       closeModal('manualBookingModal');
-      showError(error.message || 'Form Deal Order gagal dimuat.');
+      showError(error.message || 'Form order manual gagal dimuat.');
     }
   }
 
@@ -1617,9 +1567,9 @@
     const technicianLabel = $('#manualTechnicianSelect').selectedOptions[0]?.textContent || 'Teknisi';
     submit.disabled = true;
     const confirmed = await confirmDialog({
-      title: 'Simpan Deal Order?',
-      message: `${customer} akan langsung dicatat sebagai Deal Order dengan nilai ${formatRupiah(price)}, luasan ${area.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} m², pelaksanaan ${formatDateLong(values.scheduled_date)}, dan teknisi ${technicianLabel}.`,
-      confirmText: 'Simpan Deal Order'
+      title: 'Konfirmasi Order Manual?',
+      message: `${customer} akan dicatat sebagai Order Manual dengan nilai ${formatRupiah(price)}, luasan ${area.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} m², pelaksanaan ${formatDateLong(values.scheduled_date)}, dan teknisi ${technicianLabel}.`,
+      confirmText: 'Simpan Order Manual'
     });
     if (!confirmed) {
       submit.disabled = false;
@@ -1640,17 +1590,17 @@
       syncSummaryFilter();
       const refreshResults = await Promise.allSettled([refreshDashboard(), refreshBookings()]);
       if (refreshResults.some((result) => result.status === 'rejected')) {
-        showWarning('Deal Order berhasil disimpan. Sebagian ringkasan belum diperbarui; muat ulang halaman untuk melihat data terbaru.');
+        showWarning('Order berhasil disimpan. Ringkasan belum sepenuhnya diperbarui; muat ulang halaman untuk melihat data terbaru.');
       } else {
         const notice = created.whatsapp_notification;
         if (notice?.status === 'accepted' || notice?.status === 'sent') {
-          toast(`Deal Order ${created.reference || created.id} berhasil ditambahkan. Pesan konfirmasi masuk antrean pengiriman.`, 'success');
+          toast(`Order Manual ${created.reference || created.id} berhasil dibuat. Konfirmasi pelanggan telah diproses.`, 'success');
         } else if (notice?.status === 'not_configured' || notice?.status === 'failed' || notice?.status === 'unknown') {
-          showWarning(`Deal Order ${created.reference || created.id} berhasil ditambahkan, tetapi pesan konfirmasi belum dapat dipastikan terkirim. Periksa detail order.`);
+          showWarning(`Order Manual ${created.reference || created.id} berhasil dibuat, tetapi status konfirmasi belum dapat dipastikan. Periksa detail order.`);
         } else if (notice?.status === 'skipped_consent' || notice?.status === 'skipped_invalid_number') {
-          showWarning('Deal Order berhasil ditambahkan. Periksa persetujuan dan nomor kontak pelanggan.');
+          showWarning('Order Manual berhasil dibuat. Periksa persetujuan dan nomor kontak pelanggan.');
         } else {
-          toast(`Deal Order ${created.reference || created.id} berhasil ditambahkan.`, 'success');
+          toast(`Order Manual ${created.reference || created.id} berhasil dibuat.`, 'success');
         }
       }
       if ($('#page-clients')?.classList.contains('active')) {
@@ -1660,7 +1610,7 @@
         refreshTechnicians().catch((error) => showError(error.message));
       }
     } catch (error) {
-      showError(error.message || 'Deal Order belum berhasil disimpan. Periksa kembali data dan ketersediaan teknisi.');
+      showError(error.message || 'Order manual belum berhasil disimpan. Periksa kembali data dan ketersediaan teknisi.');
     } finally {
       submit.disabled = false;
       submit.innerHTML = original;
@@ -1703,14 +1653,14 @@
       }
       // Setelah tersimpan, semua popup (konfirmasi + detail) langsung ditutup.
       closeAllModals();
-      toast('Status booking berhasil diperbarui.', 'success');
+      toast('Status order berhasil diperbarui.', 'success');
       return true;
     } catch (error) { showError(error.message); return false; }
   }
   async function handleExport() {
     try {
       if (!apiMode) {
-        showWarning('Export Excel memerlukan koneksi database Laravel. Mode preview hanya menyimpan data contoh di browser.');
+        showWarning('Ekspor Excel belum tersedia saat ini. Silakan coba kembali.');
         return;
       }
 
@@ -1738,7 +1688,7 @@
           try { payload = await response.json(); } catch { /* response body unavailable */ }
         }
         if (response.status === 401 || response.status === 419) throw new Error('Sesi login admin berakhir. Silakan login kembali.');
-        if (response.status === 403) throw new Error('Akun ini tidak memiliki izin mengekspor data booking.');
+        if (response.status === 403) throw new Error('Akun ini tidak memiliki izin mengekspor data order.');
         throw new Error(payload?.message || `Export Excel gagal (HTTP ${response.status}).`);
       }
       if (!contentType.includes('spreadsheetml')) {
@@ -1751,7 +1701,7 @@
       const filenameMatch = disposition.match(/filename\*=UTF-8''([^;]+)|filename="?([^";]+)"?/i);
       const filename = filenameMatch
         ? decodeURIComponent(filenameMatch[1] || filenameMatch[2])
-        : `JASPEST-Data-Booking-${new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta' }).format(new Date())}.xlsx`;
+        : `JASPEST-Manajemen-Order-${new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta' }).format(new Date())}.xlsx`;
       const url = URL.createObjectURL(blob);
       const anchor = document.createElement('a');
       anchor.href = url;
@@ -1810,7 +1760,7 @@
     $('#contentPageTitle').textContent = contentLabels[type];
     $('#contentPageDesc').textContent = description;
     $('#contentIntroTitle').textContent = intro;
-    $('#contentIntroDesc').textContent = `${description} ${apiMode ? 'Perubahan disimpan ke database server.' : 'Data preview disimpan lokal di browser.'}`;
+    $('#contentIntroDesc').textContent = `${description} ${apiMode ? 'Konten yang disimpan akan diterapkan pada website publik.' : 'Pratinjau ini tidak mengubah website publik.'}`;
     $('#contentSearch').value = '';
     $('#addContent').hidden = type === 'pages';
     const article = type === 'articles';
@@ -1827,9 +1777,10 @@
     } catch (error) { showError(error.message); }
   }
   function addContent() {
-    if (currentContentType === 'pages') { showWarning('Slot halaman utama sudah ditentukan. Edit slot yang tersedia.'); return; }
+    if (currentContentType === 'pages') { showWarning('Bagian halaman utama telah ditetapkan. Pilih bagian yang tersedia untuk diperbarui.'); return; }
     editingContentId = null;
     $('#contentForm').reset();
+    const addHint = $('#contentHint'); if (addHint) { addHint.textContent = ''; addHint.hidden = true; }
     $('#contentForm').elements.sort_order.value = '0';
     $('#contentForm').elements.status.value = 'Aktif';
     $('#contentModalTitle').textContent = `Tambah ${contentLabels[currentContentType]}`;
@@ -1844,6 +1795,7 @@
     ['title', 'slug', 'category', 'description', 'body', 'keywords', 'sort_order', 'icon', 'image_alt', 'status'].forEach((key) => {
       if (form.elements.namedItem(key)) form.elements.namedItem(key).value = item[key] ?? (key === 'sort_order' ? '0' : '');
     });
+    const editHint = $('#contentHint'); if (editHint) { editHint.textContent = item.hint ? `Petunjuk pengisian: ${item.hint}` : ''; editHint.hidden = !item.hint; }
     form.elements.remove_image.checked = false;
     form.elements.image.value = '';
     form.elements.slug.readOnly = currentContentType === 'pages';
@@ -1905,11 +1857,11 @@
           if (index >= 0) list[index] = { ...list[index], ...item };
         } else list.unshift(item);
         saveLocal('jaspest-admin-content', contentData);
-        if (values.image?.size) toast('Upload gambar baru aktif setelah modul Laravel/MySQL dipasang.', 'warning');
+        if (values.image?.size) toast('Lampiran gambar belum dapat disimpan pada sesi ini. Silakan hubungi administrator.', 'warning');
       }
-      renderContent(); closeModal('contentModal'); toast(apiMode ? 'Konten berhasil disimpan ke database.' : 'Perubahan preview tersimpan di browser.', 'success');
+      renderContent(); closeModal('contentModal'); toast(apiMode ? 'Konten berhasil disimpan.' : 'Perubahan tersimpan pada pratinjau dan belum diterapkan ke website.', 'success');
     } catch (error) { showError(error.message); }
-    finally { submit.disabled = false; submit.textContent = 'Simpan Data'; }
+    finally { submit.disabled = false; submit.textContent = 'Simpan Konten'; }
   }
   async function deleteContent(id) {
     const item = (contentData[currentContentType] || []).find((entry) => String(entry.id) === String(id));
@@ -1929,7 +1881,7 @@
         contentData[currentContentType] = contentData[currentContentType].filter((entry) => String(entry.id) !== String(id));
         saveLocal('jaspest-admin-content', contentData);
       }
-      renderContent(); toast(apiMode ? 'Konten berhasil dihapus.' : 'Konten dihapus dari preview.', 'success');
+      renderContent(); toast(apiMode ? 'Konten berhasil dihapus.' : 'Konten dihapus dari pratinjau.', 'success');
     } catch (error) { showError(error.message); }
   }
   function accountStatusLabel(active) { return active ? 'Aktif' : 'Nonaktif'; }
@@ -1938,10 +1890,10 @@
     return ({ direksi: 'Direksi', finance: 'Finance', logistik: 'Logistik', marketing: 'Marketing' })[role] || 'Tidak diketahui';
   }
   function technicianStatusLabel(status) {
-    return ({ available: 'Tersedia', assigned: 'Sedang bertugas', off_duty: 'Di luar tugas' })[status] || status;
+    return ({ available: 'Tersedia', assigned: 'Sedang Bertugas', off_duty: 'Di Luar Tugas' })[status] || status;
   }
   function technicianStatusClass(status) {
-    return ({ available: 'technician-state-available', assigned: 'technician-state-assigned', off_duty: 'technician-state-off-duty' })[status] || 'technician-state-off-duty';
+    return ({ available: 'status-converted', assigned: 'status-followup', off_duty: 'status-lost' })[status] || 'status-lost';
   }
   function updateAccountSummary(summary = {}) {
     $('#accountTotal').textContent = Number(summary.total || 0);
@@ -1973,7 +1925,7 @@
   }
   async function refreshAccounts() {
     if (!canManageAccounts) return;
-    if (!apiMode) { showWarning('Pengelolaan akun memerlukan koneksi database server.'); return; }
+    if (!apiMode) { showWarning('Pengelolaan akun belum dapat dilakukan saat ini. Silakan coba kembali.'); return; }
     const params = new URLSearchParams({
       search: $('#accountSearch').value.trim(),
       status: $('#accountStatusFilter').value || 'all',
@@ -2000,7 +1952,7 @@
     if (!canManageAccounts) return;
     accountEditingId = null;
     resetAccountForm();
-    $('#accountModalTitle').textContent = 'Buat akun';
+    $('#accountModalTitle').textContent = 'Tambah Akun';
     showModal('accountModal');
   }
   function editAccount(id) {
@@ -2016,7 +1968,7 @@
     form.elements.password.required = false;
     $('#accountPasswordRequired').hidden = true;
     $('#accountPasswordHint').textContent = 'Kosongkan bila tidak ingin mengganti password.';
-    $('#accountModalTitle').textContent = 'Edit akun';
+    $('#accountModalTitle').textContent = 'Edit Akun';
     showModal('accountModal');
   }
   async function saveAccount(event) {
@@ -2048,9 +2000,9 @@
     const account = accounts.find((item) => String(item.id) === String(id));
     if (!account) return;
     if (!(await confirmDialog({
-      title: 'Hapus akun?',
+      title: 'Hapus Akun?',
       message: `Akun ${account.name} (@${account.username}) akan dihapus permanen. Tindakan ini tidak dapat dibatalkan.`,
-      confirmText: 'Hapus akun', danger: true
+      confirmText: 'Hapus Akun', danger: true
     }))) return;
     try {
       await apiRequest(`/accounts/${encodeURIComponent(id)}`, { method: 'DELETE' });
@@ -2074,7 +2026,6 @@
         <td class="master-cell">${esc(client.company_name || 'Perorangan')}</td>
         <td class="master-contact">${esc(formatPhone(client.whatsapp))}</td>
         <td><span class="client-order-count">${Number(client.order_count || 0)} order</span></td>
-        <td class="master-cell"><strong>${esc(formatRupiah(client.lifetime_value || 0))}</strong></td>
         <td><span class="status-pill ${clientStatusClass(client.status)}">${esc(clientStatusLabel(client.status))}</span></td>
         <td class="master-actions"><div class="table-actions"><button type="button" class="table-action" data-edit-client="${esc(client.id)}" title="Edit data klien" aria-label="Edit data klien ${esc(client.full_name)}">${uiIcon('edit')}<span>Edit</span></button></div></td>
       </tr>`).join('');
@@ -2087,7 +2038,7 @@
     $('#clientsNext').disabled = (clientMeta.current_page || 1) >= (clientMeta.last_page || 1);
   }
   async function refreshClients() {
-    if (!apiMode) { showWarning('Data Klien memerlukan koneksi database server.'); return; }
+    if (!apiMode) { showWarning('Data Klien belum dapat dimuat. Silakan coba kembali.'); return; }
     const params = new URLSearchParams({
       search: $('#clientSearch').value.trim(),
       status: $('#clientStatusFilter').value || 'all',
@@ -2099,7 +2050,7 @@
     updateClientSummary(response.summary || {});
     renderClientRows();
     if (Number(response.sync_issues || 0) > 0) {
-      showWarning(`${Number(response.sync_issues)} Deal Order belum dapat disinkronkan karena data identitas perlu diperiksa.`);
+      showWarning(`${Number(response.sync_issues)} order berstatus Deal Order belum dapat disinkronkan karena identitas klien perlu diperiksa.`);
     }
   }
   function editClient(id) {
@@ -2109,10 +2060,10 @@
     const form = $('#clientForm');
     Object.entries({
       full_name: client.full_name, company_name: client.company_name || '', whatsapp: client.whatsapp,
-      email: client.email || '', address: client.address || '', status: client.status || 'active', notes: client.notes || ''
+      address: client.address || '', status: client.status || 'active', notes: client.notes || ''
     }).forEach(([key, value]) => { form.elements.namedItem(key).value = value ?? ''; });
     $('#clientCodeReadonly').textContent = `Kode klien · ${client.client_code}`;
-    $('#clientModalTitle').textContent = 'Edit data klien';
+    $('#clientModalTitle').textContent = 'Edit Data Klien';
     showModal('clientModal');
   }
   async function saveClient(event) {
@@ -2138,13 +2089,12 @@
     $('#technicianRows').innerHTML = technicians.map((technician) => `
       <tr>
         <td><div class="master-person"><span class="client-initial">${esc(initials(technician.full_name))}</span><span><strong>${esc(technician.full_name)}</strong><small>${esc(technician.technician_code)}</small></span></div></td>
-        <td class="master-cell"><strong>${esc(technician.specialization)}</strong><small>${esc(technician.certification || 'Sertifikasi belum dicatat')}</small></td>
-        <td class="master-cell">${esc(technician.service_area || 'Belum ditentukan')}<small>${esc(formatPhone(technician.whatsapp))}</small></td>
-        <td><span class="status-pill technician-status-chip ${technicianStatusClass(technician.operational_status)}">${esc(technicianStatusLabel(technician.operational_status))}</span></td>
+        <td class="master-cell">${esc(technician.email || 'Email Belum Dicatat')}</td><td class="master-cell"><strong>${esc(technician.specialization)}</strong><small>${esc(technician.certification || 'Sertifikasi Belum Dicatat')}</small></td><td class="master-cell">${esc(technician.service_area || 'Belum Ditentukan')}</td>
+        <td><span class="status-pill ${technicianStatusClass(technician.operational_status)}">${esc(technicianStatusLabel(technician.operational_status))}</span></td>
         <td class="master-actions"><div class="table-actions"><button type="button" class="table-action" data-edit-technician="${esc(technician.id)}" title="Edit teknisi" aria-label="Edit ${esc(technician.full_name)}">${uiIcon('edit')}<span>Edit</span></button><button type="button" class="table-action delete" data-delete-technician="${esc(technician.id)}" title="Hapus teknisi" aria-label="Hapus teknisi ${esc(technician.full_name)}">${uiIcon('trash')}<span>Hapus</span></button></div></td>
       </tr>`).join('');
     $('#emptyTechnicians').hidden = technicians.length > 0;
-    $('#technicianCount').textContent = `${technicians.length} data`;
+    $('#technicianCount').textContent = `${technicians.length} teknisi`;
     $('#technicianTableCount').textContent = `Menampilkan ${technicians.length} dari ${technicianMeta.total} teknisi`;
     $('#technicianPageLabel').textContent = `${technicianMeta.current_page || 1} / ${technicianMeta.last_page || 1}`;
     $('#techniciansPrev').disabled = (technicianMeta.current_page || 1) <= 1;
@@ -2152,7 +2102,7 @@
     $$('[data-technician-filter]').forEach((item) => item.setAttribute('aria-pressed', String(item.dataset.technicianFilter === ($('#technicianStatusFilter').value || 'all'))));
   }
   async function refreshTechnicians() {
-    if (!apiMode) { showWarning('Data teknisi memerlukan koneksi database server.'); return; }
+    if (!apiMode) { showWarning('Data Teknisi belum dapat dimuat. Silakan muat ulang halaman dan coba kembali.'); return; }
     const params = new URLSearchParams({
       search: $('#technicianSearch').value.trim(),
       status: $('#technicianStatusFilter').value || 'all',
@@ -2169,7 +2119,7 @@
     const form = $('#technicianForm');
     form.reset();
     form.elements.operational_status.value = 'available';
-    $('#technicianModalTitle').textContent = 'Tambah teknisi';
+    $('#technicianModalTitle').textContent = 'Tambah Teknisi';
     showModal('technicianModal');
   }
   function editTechnician(id) {
@@ -2178,13 +2128,13 @@
     technicianEditingId = technician.id;
     const form = $('#technicianForm');
     Object.entries({
-      full_name: technician.full_name, whatsapp: technician.whatsapp,
-      address: technician.address, technician_code: technician.technician_code,
+      full_name: technician.full_name, email: technician.email,
+      address: technician.address,
       specialization: technician.specialization, service_area: technician.service_area,
       certification: technician.certification, operational_status: technician.operational_status,
       notes: technician.notes
     }).forEach(([key, value]) => { form.elements.namedItem(key).value = value ?? ''; });
-    $('#technicianModalTitle').textContent = 'Edit data teknisi';
+    $('#technicianModalTitle').textContent = 'Edit Data Teknisi';
     showModal('technicianModal');
   }
   async function saveTechnician(event) {
@@ -2201,7 +2151,7 @@
       technicianPage = 1;
       await refreshTechnicians();
       closeModal('technicianModal');
-      toast(technicianEditingId ? 'Data teknisi berhasil diperbarui.' : 'Data teknisi berhasil ditambahkan.', 'success');
+      toast(technicianEditingId ? 'Data Teknisi berhasil diperbarui.' : 'Data Teknisi berhasil ditambahkan.', 'success');
       technicianEditingId = null;
     } catch (error) { showError(error.message); }
     finally { submit.disabled = false; submit.innerHTML = original; }
@@ -2210,9 +2160,9 @@
     const technician = technicians.find((item) => String(item.id) === String(id));
     if (!technician) return;
     if (!(await confirmDialog({
-      title: 'Hapus data teknisi?',
+      title: 'Hapus Data Teknisi?',
       message: `Data teknisi ${technician.full_name} (${technician.technician_code}) akan dihapus permanen.`,
-      confirmText: 'Hapus teknisi', danger: true
+      confirmText: 'Hapus Teknisi', danger: true
     }))) return;
     try {
       await apiRequest(`/technicians/${encodeURIComponent(id)}`, { method: 'DELETE' });
@@ -2227,7 +2177,7 @@
     if (page === 'personnel') page = 'technicians';
     if (page === 'accounts' && !canManageAccounts) {
       page = 'dashboard';
-      showWarning('Anda tidak memiliki akses ke Data Master.');
+      showWarning('Anda tidak memiliki akses ke Master Data.');
     }
     $$('.page-view').forEach((section) => section.classList.remove('active'));
     const target = page === 'content' ? 'content' : page;
@@ -2241,8 +2191,16 @@
       masterNavToggle.setAttribute('aria-expanded', String(masterPageActive));
       masterSubmenu.hidden = !masterPageActive;
     }
-    const pageTitles = { bookings: 'Data Booking', accounts: 'Data Karyawan', technicians: 'Data Teknisi', clients: 'Data Klien', 'stock-catalog': 'Data Stok & Bahan', inventory: 'Inventaris & Gudang' };
-    const label = page === 'content' ? contentLabels[currentContentType] : (pageTitles[page] || 'Ringkasan');
+    const contentNavToggle = $('#contentNavToggle');
+    const contentSubmenu = $('#contentSubmenu');
+    const contentPageActive = page === 'content';
+    if (contentNavToggle && contentSubmenu) {
+      contentNavToggle.classList.toggle('active', contentPageActive);
+      contentNavToggle.setAttribute('aria-expanded', String(contentPageActive));
+      contentSubmenu.hidden = !contentPageActive;
+    }
+    const pageTitles = { bookings: 'Manajemen Order', accounts: 'Data Karyawan', technicians: 'Data Teknisi', clients: 'Data Klien', 'stock-catalog': 'Data Stok & Bahan', inventory: 'Inventaris' };
+    const label = page === 'content' ? contentLabels[currentContentType] : (pageTitles[page] || 'Dashboard');
     $('#breadcrumbCurrent').textContent = label;
     history.replaceState(null, '', `#${page === 'content' ? currentContentType : page}`);
     $('#sidebar').classList.remove('open');
@@ -2276,7 +2234,7 @@
     if (isNew) {
       // Newest bookings are on page one. Keep filters/search as selected by admin.
       bookingPage = 1;
-      realtimeNewReference = payload.reference || 'Pengajuan baru';
+      realtimeNewReference = payload.reference || 'Permintaan layanan baru';
     }
 
     realtimeRefreshRequested = true;
@@ -2302,7 +2260,7 @@
         } while (realtimeRefreshRequested);
 
         if (realtimeNewReference) {
-          announceNewBooking(`Pengajuan baru masuk (${realtimeNewReference}). Semua data dashboard diperbarui.`);
+          announceNewBooking(`Permintaan layanan baru diterima (${realtimeNewReference}). Dashboard telah diperbarui.`);
           realtimeNewReference = null;
         }
       } finally {
@@ -2360,9 +2318,10 @@
         openPhotoLightbox(photoButton.dataset.photoUrl, photoButton.dataset.photoName || 'Foto klien', photoButton);
         return;
       }
-      const navToggle = event.target.closest('[data-nav-toggle="master"]');
+      const navToggle = event.target.closest('[data-nav-toggle]');
       if (navToggle) {
-        const submenu = $('#masterSubmenu');
+        const group = navToggle.dataset.navToggle;
+        const submenu = group === 'master' ? $('#masterSubmenu') : $('#contentSubmenu');
         const expanded = navToggle.getAttribute('aria-expanded') === 'true';
         navToggle.setAttribute('aria-expanded', String(!expanded));
         if (submenu) submenu.hidden = expanded;
@@ -2445,8 +2404,7 @@
       clearTimeout(stockCatalogSearchTimer);
       stockCatalogSearchTimer = setTimeout(() => { stockCatalogPage = 1; refreshStockCatalog().catch((error) => showError(error.message)); }, 320);
     });
-    $('#stockCatalogTypeFilter').addEventListener('change', () => { stockCatalogPage = 1; refreshStockCatalog().catch((error) => showError(error.message)); });
-    $('#stockCatalogStatusFilter').addEventListener('change', () => { stockCatalogPage = 1; refreshStockCatalog().catch((error) => showError(error.message)); });
+    $('#stockCatalogConditionFilter').addEventListener('change', () => { stockCatalogPage = 1; refreshStockCatalog().catch((error) => showError(error.message)); });
     $('#stockCatalogPrev').addEventListener('click', () => { if (stockCatalogPage > 1) { stockCatalogPage -= 1; refreshStockCatalog().catch((error) => showError(error.message)); } });
     $('#stockCatalogNext').addEventListener('click', () => { if (stockCatalogPage < stockCatalogMeta.last_page) { stockCatalogPage += 1; refreshStockCatalog().catch((error) => showError(error.message)); } });
     $('#clientForm').addEventListener('submit', saveClient);
@@ -2469,8 +2427,7 @@
       clearTimeout(inventorySearchTimers.items);
       inventorySearchTimers.items = setTimeout(() => { inventoryItemPage = 1; refreshInventoryItems().catch((error) => showError(error.message)); }, 320);
     });
-    $('#inventoryItemTypeFilter').addEventListener('change', () => { inventoryItemPage = 1; refreshInventoryItems().catch((error) => showError(error.message)); });
-    $('#inventoryItemStatusFilter').addEventListener('change', () => { inventoryItemPage = 1; refreshInventoryItems().catch((error) => showError(error.message)); });
+    $('#inventoryItemConditionFilter').addEventListener('change', () => { inventoryItemPage = 1; refreshInventoryItems().catch((error) => showError(error.message)); });
     $('#inventoryItemsPrev').addEventListener('click', () => { if (inventoryItemPage > 1) { inventoryItemPage -= 1; refreshInventoryItems().catch((error) => showError(error.message)); } });
     $('#inventoryItemsNext').addEventListener('click', () => { if (inventoryItemPage < inventoryItemMeta.last_page) { inventoryItemPage += 1; refreshInventoryItems().catch((error) => showError(error.message)); } });
     $('#inventoryMovementSearch').addEventListener('input', () => {
@@ -2480,12 +2437,6 @@
     $('#inventoryMovementTypeFilter').addEventListener('change', () => { inventoryMovementPage = 1; refreshInventoryMovements().catch((error) => showError(error.message)); });
     $('#inventoryMovementsPrev').addEventListener('click', () => { if (inventoryMovementPage > 1) { inventoryMovementPage -= 1; refreshInventoryMovements().catch((error) => showError(error.message)); } });
     $('#inventoryMovementsNext').addEventListener('click', () => { if (inventoryMovementPage < inventoryMovementMeta.last_page) { inventoryMovementPage += 1; refreshInventoryMovements().catch((error) => showError(error.message)); } });
-    $('#inventoryTechStockSearch').addEventListener('input', () => {
-      clearTimeout(inventorySearchTimers.technicians);
-      inventorySearchTimers.technicians = setTimeout(() => { inventoryTechStockPage = 1; refreshInventoryTechnicianStocks().catch((error) => showError(error.message)); }, 320);
-    });
-    $('#inventoryTechStocksPrev').addEventListener('click', () => { if (inventoryTechStockPage > 1) { inventoryTechStockPage -= 1; refreshInventoryTechnicianStocks().catch((error) => showError(error.message)); } });
-    $('#inventoryTechStocksNext').addEventListener('click', () => { if (inventoryTechStockPage < inventoryTechStockMeta.last_page) { inventoryTechStockPage += 1; refreshInventoryTechnicianStocks().catch((error) => showError(error.message)); } });
     $('#inventoryMaintenanceStatusFilter').addEventListener('change', () => { inventoryMaintenancePage = 1; refreshInventoryMaintenance().catch((error) => showError(error.message)); });
     $('#inventoryMaintenancePrev').addEventListener('click', () => { if (inventoryMaintenancePage > 1) { inventoryMaintenancePage -= 1; refreshInventoryMaintenance().catch((error) => showError(error.message)); } });
     $('#inventoryMaintenanceNext').addEventListener('click', () => { if (inventoryMaintenancePage < inventoryMaintenanceMeta.last_page) { inventoryMaintenancePage += 1; refreshInventoryMaintenance().catch((error) => showError(error.message)); } });
@@ -2507,14 +2458,14 @@
       syncSummaryFilter(); applyBookingFilters();
     });
     syncSummaryFilter();
-    // Pintasan: tekan "/" untuk langsung mencari di halaman Data booking
+    // Pintasan: tekan "/" untuk langsung mencari di halaman Manajemen Order
     document.addEventListener('keydown', (event) => {
       if (event.key !== '/' || event.ctrlKey || event.metaKey || event.altKey) return;
       if (event.target.closest?.('input,textarea,select,[contenteditable]')) return;
       if (!$('#page-bookings').classList.contains('active') || $$('.modal-backdrop:not([hidden])').length) return;
       event.preventDefault(); $('#bookingSearch').focus();
     });
-    // Pengajuan baru: cek otomatis berkala dan saat tab kembali dibuka
+    // Permintaan layanan baru: periksa secara berkala dan saat tab kembali dibuka
     if (apiMode) {
       setInterval(pollNewBookings, POLL_MS);
       document.addEventListener('visibilitychange', () => { if (!document.hidden) pollNewBookings(); });
@@ -2599,9 +2550,9 @@
     if (apiMode) {
       $('#demoNotice').hidden = true;
       $('#bookingSourceNote').textContent = '';
-      $('#contentSourceNote').textContent = 'Perubahan disimpan ke server.';
+      $('#contentSourceNote').textContent = 'Perubahan berhasil disimpan.';
       $('#topModeChip')?.remove();
-      const chip = $('.preview-chip'); if (chip) { chip.classList.add('live-chip'); chip.innerHTML = '<i></i> Terhubung ke server'; }
+      const chip = $('.preview-chip'); if (chip) { chip.classList.add('live-chip'); chip.innerHTML = '<i></i> Tersinkronisasi'; }
     }
     bindEvents();
     if (location.hash && contentLabels[location.hash.slice(1)]) {
@@ -2627,7 +2578,7 @@
         knownTotal = null;
         renderRecent(); renderBookings(); renderChart([]);
         $('#demoNotice').hidden = false;
-        $('#demoNotice').innerHTML = `<span>!</span><div><strong>Dashboard belum dapat memuat data server</strong><small>${esc(error.message)}</small></div>`;
+        $('#demoNotice').innerHTML = `<span>!</span><div><strong>Dashboard Belum Dapat Memuat Data</strong><small>${esc(error.message)}</small></div>`;
       }
     }
   }

@@ -9,10 +9,14 @@ use App\Http\Middleware\EnsureJaspestAdmin;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('web')->group(function (): void {
-    $loginPath = '/'.ltrim((string) config('jaspest_admin.login_path', '/admin/login'), '/');
+    $loginPath = '/'.ltrim((string) config('jaspest_admin.login_path', '/admin'), '/');
     Route::get($loginPath, [JaspestAdminAuthController::class, 'showLogin'])->name('jaspest.login');
     Route::post($loginPath, [JaspestAdminAuthController::class, 'login'])
         ->middleware('throttle:6,1')->name('jaspest.login.submit');
+    // Alamat lama tetap berfungsi: /admin/login dialihkan ke halaman masuk yang baru.
+    if ($loginPath !== '/admin/login') {
+        Route::redirect('/admin/login', $loginPath);
+    }
     Route::post('/admin/logout', [JaspestAdminAuthController::class, 'logout'])->name('jaspest.logout');
 
     Route::post('/jaspest/enquiries', [JaspestEnquiryController::class, 'store'])
@@ -76,7 +80,6 @@ Route::middleware('web')->group(function (): void {
                     Route::get('/movements', [JaspestAdminApiController::class, 'inventoryMovements'])->name('movements.index');
                     Route::post('/movements', [JaspestAdminApiController::class, 'storeInventoryMovement'])
                         ->middleware('throttle:30,1')->name('movements.store');
-                    Route::get('/technician-stocks', [JaspestAdminApiController::class, 'inventoryTechnicianStocks'])->name('technician-stocks.index');
                     Route::get('/maintenance', [JaspestAdminApiController::class, 'inventoryMaintenance'])->name('maintenance.index');
                     Route::post('/maintenance', [JaspestAdminApiController::class, 'storeInventoryMaintenance'])
                         ->middleware('throttle:30,1')->name('maintenance.store');

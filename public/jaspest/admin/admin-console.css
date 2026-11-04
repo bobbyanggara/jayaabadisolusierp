@@ -938,7 +938,7 @@ body.jas-admin .booking-detail-footer .booking-status-button .ui-icon {
   body.jas-admin .booking-detail-footer .booking-status-button { white-space: normal; line-height: 1.15; }
 }
 
-/* ——— Inventaris & Gudang ——— */
+/* ——— Inventaris ——— */
 #page-inventory .inventory-page-heading{align-items:center}
 .inventory-stat-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:14px}
 .inventory-stat{display:flex;align-items:center;gap:12px;min-width:0;padding:15px 16px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-panel)}
@@ -952,16 +952,23 @@ body.jas-admin .booking-detail-footer .booking-status-button .ui-icon {
 .inventory-stat small{color:var(--muted);font-size:13px;line-height:1.25}
 .inventory-stat strong{font-size:25px;line-height:1.25;font-weight:700;letter-spacing:-.02em}
 .inventory-stat span:not(.inventory-stat-icon){color:var(--faint);font-size:12px;line-height:1.25}
-.inventory-alert-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
-.inventory-alert-panel{padding:14px 16px;min-width:0}
-.inventory-panel-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:8px}
-.inventory-panel-heading h2{font-size:16px;font-weight:700}
-.inventory-panel-heading p{font-size:13px;color:var(--muted)}
-.inventory-alert-mark{width:9px;height:9px;flex:0 0 9px;border-radius:50%;margin-top:7px}
-.amber-mark{background:#d99a1e}.red-mark{background:var(--red)}
+.inventory-attention{margin-bottom:16px;overflow:hidden}
+.inventory-attention-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding:13px 18px;border-bottom:1px solid var(--line)}
+.inventory-attention-head h2{font-size:15px;font-weight:700}
+.inventory-attention-total{color:var(--muted);font-size:13px}
+.inventory-attention-body{display:grid;grid-template-columns:1fr 1fr}
+.inventory-attention-col{min-width:0;padding:12px 18px 6px}
+.inventory-attention-col+.inventory-attention-col{border-left:1px solid var(--line)}
+.inventory-attention-label{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:4px;color:var(--muted);font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
+.inventory-count{min-width:24px;padding:1px 8px;border-radius:99px;font-size:12px;font-weight:700;text-align:center;letter-spacing:0;background:var(--sunken);color:var(--muted);border:1px solid var(--line)}
+.inventory-count.is-repair{color:var(--amber);background:var(--amber-soft);border-color:color-mix(in srgb,var(--amber) 28%,var(--line))}
+.inventory-count.is-damaged{color:var(--red);background:var(--red-soft);border-color:color-mix(in srgb,var(--red) 28%,var(--line))}
+.inventory-attention .inventory-alert-list{max-height:248px;overflow-y:auto}
+.inventory-attention .inventory-alert-row:first-child{border-top:0}
+.inventory-attention .inventory-empty-inline{display:flex;align-items:center;gap:8px;margin:0;padding:10px 0 14px;color:var(--muted);font-size:14px}
+.inventory-attention .inventory-empty-inline .ui-icon{width:16px;height:16px;flex:0 0 16px;color:var(--green)}
 .inventory-alert-list{display:grid;gap:0}
 .inventory-alert-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 0;border-top:1px solid var(--line);min-width:0}
-.inventory-alert-row:first-child{border-top:0}
 .inventory-alert-row>span:first-child{display:flex;flex-direction:column;min-width:0}
 .inventory-alert-row strong{font-size:14px;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .inventory-alert-row small{font-size:12px;color:var(--muted)}
@@ -1010,7 +1017,7 @@ body.jas-admin .booking-detail-footer .booking-status-button .ui-icon {
 @media(max-width:1100px){.inventory-stat-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:860px){
   #page-inventory .inventory-page-heading{align-items:flex-start}
-  .inventory-alert-grid{grid-template-columns:1fr}
+  .inventory-attention-body{grid-template-columns:1fr}.inventory-attention-col+.inventory-attention-col{border-left:0;border-top:1px solid var(--line)}
   .inventory-toolbar .search-box{flex-basis:100%}
   #page-inventory .table-scroll .inventory-table{display:table;min-width:1080px;width:100%}
   #page-inventory .table-scroll .inventory-table thead{position:static;width:auto;height:auto;overflow:visible;clip:auto;display:table-header-group}
@@ -1161,44 +1168,22 @@ body.jas-admin .booking-detail-footer .booking-followup-action .ui-icon { color:
 }
 
 
-/* Status teknisi — palet pastel konsisten di Data Teknisi dan saldo teknisi. */
-.technician-status-chip {
-  border: 1px solid transparent !important;
-  border-radius: 999px !important;
-  font-weight: 700 !important;
-  line-height: 1.25;
-}
-.status-pill.technician-status-chip::before { background: currentColor; }
-.technician-state-available {
-  color: #286846 !important;
-  background: #edf8f0 !important;
-  border-color: #cfe7d5 !important;
-}
-.technician-state-assigned {
-  color: #805f08 !important;
-  background: #fff8df !important;
-  border-color: #f0e1a8 !important;
-}
-.technician-state-off-duty {
-  color: #a2363e !important;
-  background: #fff0f0 !important;
-  border-color: #f0cdd0 !important;
-}
-.technician-summary .technician-dot-available { background: #8dbb99; }
-.technician-summary .technician-dot-assigned { background: #e3c45e; }
-.technician-summary .technician-dot-off-duty { background: #db9298; }
-html[data-theme=dark] .technician-state-available {
-  color: #d2f0dc !important;
-  background: #203c2d !important;
-  border-color: #355a42 !important;
-}
-html[data-theme=dark] .technician-state-assigned {
-  color: #f6e6a8 !important;
-  background: #40371e !important;
-  border-color: #66572e !important;
-}
-html[data-theme=dark] .technician-state-off-duty {
-  color: #ffd5d8 !important;
-  background: #45272b !important;
-  border-color: #704047 !important;
-}
+/* Ringkasan teknisi memakai token semantik yang sama dengan status Manajemen Order. */
+.technician-summary .technician-dot-available { background: var(--green); }
+.technician-summary .technician-dot-assigned { background: #d99a1e; }
+.technician-summary .technician-dot-off-duty { background: var(--red); }
+
+
+/* Inventory condition badges: match the shared admin semantic palette. */
+.inventory-condition-badge{display:inline-flex;align-items:center;gap:6px;max-width:100%;padding:5px 9px;border:1px solid transparent;border-radius:999px;font-size:10px;font-weight:750;line-height:1.25;white-space:nowrap}
+.inventory-condition-badge.is-normal{color:#246b45;background:#eaf6ee;border-color:#cfe8d7}
+.inventory-condition-badge.is-needs-repair{color:#85620a;background:#fff7df;border-color:#f1e2b2}
+.inventory-condition-badge.is-damaged{color:#a32f3d;background:#fff0f1;border-color:#f2cbd0}
+html[data-theme=dark] .inventory-condition-badge.is-normal{color:#d2f0dc;background:#203c2d;border-color:#355a42}
+html[data-theme=dark] .inventory-condition-badge.is-needs-repair{color:#f6e6a8;background:#40371e;border-color:#66572e}
+html[data-theme=dark] .inventory-condition-badge.is-damaged{color:#ffd5d8;background:#45272b;border-color:#704047}
+
+
+/* Petunjuk pengisian slot konten halaman */
+#contentHint{display:block;margin:0 0 6px;padding:10px 12px;border-left:3px solid #ed3548;border-radius:0 8px 8px 0;background:rgba(16,77,193,.07);font-size:12.5px;line-height:1.55}
+#contentHint[hidden]{display:none}

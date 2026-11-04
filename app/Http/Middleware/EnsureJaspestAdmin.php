@@ -16,7 +16,7 @@ class EnsureJaspestAdmin
                 return response()->json(['message' => 'Sesi login berakhir. Silakan masuk kembali.'], 401);
             }
 
-            return redirect()->guest(config('jaspest_admin.login_path', '/admin/login'));
+            return redirect()->guest(config('jaspest_admin.login_path', '/admin'));
         }
 
         if (! Gate::allows('manage-jaspest')) {

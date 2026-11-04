@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Models\BlogPost;
 use App\Models\JaspestContentItem;
 use App\Support\JaspestMedia;
+use App\Support\JaspestTikTok;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\View;
@@ -95,6 +96,17 @@ class JaspestAdminServiceProvider extends ServiceProvider
                 'detail' => $item->body ?? '',
                 'image' => JaspestMedia::url($item->image_path),
             ])->values()->all();
+
+            // Video TikTok: hanya tampil bila slot aktif dan link-nya valid; selain itu pemutar disembunyikan.
+            $videoPage = ($items['pages'] ?? collect())->firstWhere('slug', 'video-tiktok');
+            $videoUrl = $videoPage ? JaspestTikTok::normalize($videoPage->description) : null;
+            $content['tiktokVideos'] = $videoUrl === null ? [] : [[
+                'url' => $videoUrl,
+                'title' => trim((string) $videoPage->title) ?: 'Video kegiatan JASPEST',
+                'sourceLabel' => trim((string) $videoPage->category) ?: null,
+                'isTest' => false,
+                'cover' => JaspestMedia::url($videoPage->image_path) ?: asset('jaspest/assets/commercial-inspection.webp'),
+            ]];
 
             $pageItems = ($items['pages'] ?? collect())->keyBy(fn (JaspestContentItem $item) => $item->slug ?: (string) $item->id);
             $settings = ($items['settings'] ?? collect())->keyBy(fn (JaspestContentItem $item) => $item->slug ?: (string) $item->id);

@@ -24,7 +24,7 @@ window.JASPEST_CONTENT = {
     { id: 'g2', category: 'Bisnis', title: 'Lingkungan usaha yang lebih terjaga', subtitle: 'Ilustrasi pemeriksaan area komersial', image: '/jaspest/assets/hero-pest-control.webp' },
     { id: 'g3', category: 'Bisnis', title: 'Kebutuhan fasilitas dan pergudangan', subtitle: 'Ilustrasi monitoring di area gudang', image: '/jaspest/assets/commercial-inspection.webp' }
   ],
-  tiktokVideos: [{ url: 'https://www.tiktok.com/@pestigo.id/video/7647494281975876884', title: 'Video uji TikTok', sourceLabel: '@pestigo.id', isTest: true, cover: '/jaspest/assets/commercial-inspection.webp' }],
+  tiktokVideos: [],
   articles: [
     { id: 'persiapan-konsultasi', publishedAt: '2026-10-30', author: 'Tim JASPEST', tag: 'Panduan konsultasi', title: 'Apa yang perlu disiapkan sebelum konsultasi?', excerpt: 'Informasi sederhana yang membantu tim memahami kebutuhan lokasi Anda.', image: '/jaspest/assets/hero-pest-control.webp', minutes: '2 menit baca', keywords: ['konsultasi','persiapan','luas','luasan','alamat'], paragraphs: ['Sebelum mengajukan konsultasi, siapkan nama lengkap, nomor WhatsApp yang aktif, alamat lokasi, serta perkiraan luasan dalam meter persegi. Perkiraan awal membantu tim memahami gambaran kebutuhan Anda.', 'Pilih kebutuhan layanan dan tentukan apakah lokasi berupa rumah atau bisnis. Untuk bisnis, sertakan nama perusahaan. Ceritakan temuan yang Anda lihat melalui kolom keterangan.', 'Anda dapat melampirkan foto temuan jika tersedia. Tidak perlu mendekati atau menyentuh hama untuk mendapatkan foto. Gunakan dokumentasi yang bisa Anda ambil dari posisi aman.', 'Setelah pengajuan dikirim, tim JASPEST akan menghubungi nomor yang Anda cantumkan untuk membahas kebutuhan. Rincian survei, treatment, dan perawatan lanjutan dijelaskan langsung oleh tim.'] },
     { id: 'rumah-dan-bisnis', publishedAt: '2026-10-30', author: 'Tim JASPEST', tag: 'Kenali kebutuhan', title: 'Kebutuhan rumah dan bisnis, apa yang perlu diceritakan?', excerpt: 'Bantu tim mengenali lingkungan dan kebutuhan penggunaan ruang Anda.', image: '/jaspest/assets/residential-inspection.webp', minutes: '2 menit baca', keywords: ['rumah','bisnis','perusahaan','hunian','kantor'], paragraphs: ['Untuk kebutuhan rumah, ceritakan bagian bangunan yang mengalami gangguan dan kapan temuan mulai terlihat. Anda juga dapat menyebutkan informasi penggunaan ruang yang perlu diketahui tim.', 'Untuk kebutuhan bisnis, sertakan nama perusahaan dan jelaskan fungsi area yang memerlukan penanganan. Informasi jam aktivitas atau kondisi khusus lokasi dapat ditulis pada kolom keterangan.', 'Pilih layanan yang paling mendekati kebutuhan Anda. Jika belum mengetahui jenis layanan atau hama, pilih opsi konsultasi dahulu. Tim JASPEST akan membantu membahasnya melalui WhatsApp atau kontak langsung.'] },
@@ -44,7 +44,7 @@ window.JASPEST_CONTENT = {
 // Jika halaman dirender Laravel, modul admin menyuplai konten aktif dari MySQL.
 // Hanya properti yang benar-benar dikirim backend yang menggantikan konten bawaan.
 const dynamicContent = window.JASPEST_DYNAMIC_CONTENT || {};
-['services', 'gallery', 'faqs', 'pests', 'methods'].forEach((key) => {
+['services', 'gallery', 'faqs', 'pests', 'methods', 'tiktokVideos'].forEach((key) => {
   if (Array.isArray(dynamicContent[key])) window.JASPEST_CONTENT[key] = dynamicContent[key];
 });
 if (dynamicContent.brand && typeof dynamicContent.brand === 'object') {

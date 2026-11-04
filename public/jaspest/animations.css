@@ -13,7 +13,7 @@
   transform-origin:left center;
   transition:transform .35s var(--ease-out),filter .35s var(--ease-soft);
 }
-.brand:hover .brand-logo{transform:scale(1.05) rotate(-1deg);filter:drop-shadow(0 6px 10px #104dc122)}
+.brand:hover .brand-logo{transform:scale(1.05) rotate(-1deg);filter:drop-shadow(0 6px 10px #00a8f022)}
 .brand:active .brand-logo{transform:scale(.98)}
 .site-header.scrolled .brand .brand-logo{transform:scale(.88)}
 .site-header.scrolled .brand:hover .brand-logo{transform:scale(.93) rotate(-1deg)}
@@ -49,15 +49,15 @@
   transform:scaleX(0);transform-origin:left;transition:transform .3s var(--ease-out);
 }
 .desktop-nav a:hover::after,.desktop-nav a.is-active::after{transform:scaleX(1)}
-.desktop-nav a.is-active{color:var(--blue)}
+.desktop-nav a.is-active{color:var(--blue-ink)}
 .portal-link{transition:color .2s,transform .2s}
-.portal-link:hover{color:var(--blue);transform:translateY(-1px)}
+.portal-link:hover{color:var(--blue-ink);transform:translateY(-1px)}
 .portal-link:hover svg{animation:wiggle .5s ease-in-out}
 .menu-toggle svg{transition:transform .3s var(--ease-out)}
 .menu-toggle[aria-expanded="true"] svg{transform:rotate(90deg)}
 .mobile-nav:not([hidden]){animation:slideDown .3s var(--ease-out)}
 .mobile-nav>a,.mobile-nav>button{transition:color .2s,padding-left .2s}
-.mobile-nav>a:hover,.mobile-nav>button:hover{color:var(--blue);padding-left:6px}
+.mobile-nav>a:hover,.mobile-nav>button:hover{color:var(--blue-ink);padding-left:6px}
 @keyframes slideDown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
 @keyframes wiggle{0%,100%{transform:rotate(0)}25%{transform:rotate(-12deg)}75%{transform:rotate(12deg)}}
 
@@ -92,11 +92,11 @@
 @keyframes kenburns{from{transform:scale(1)}to{transform:scale(1.08)}}
 @keyframes growY{from{transform:scaleY(0)}to{transform:scaleY(1)}}
 @keyframes driftBox{from{transform:translate(0,0) rotate(0)}to{transform:translate(-8px,8px) rotate(2deg)}}
-@keyframes dotPulse{0%{box-shadow:0 0 0 0 #ed354866}80%,100%{box-shadow:0 0 0 9px #ed354800}}
+@keyframes dotPulse{0%{box-shadow:0 0 0 0 #e0202866}80%,100%{box-shadow:0 0 0 9px #e0202800}}
 @keyframes softBeat{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
 @keyframes ringPulse{
-  0%{box-shadow:0 8px 20px #ed354817,0 0 0 0 #ed354855}
-  70%,100%{box-shadow:0 8px 20px #ed354817,0 0 0 16px #ed354800}
+  0%{box-shadow:0 8px 20px #e0202817,0 0 0 0 #e0202855}
+  70%,100%{box-shadow:0 8px 20px #e0202817,0 0 0 16px #e0202800}
 }
 
 /* ---------- Tombol: kilau saat hover ---------- */
@@ -161,7 +161,7 @@
 /* FAQ */
 .faq-list details[open]>p{animation:fadeDown .35s var(--ease-out)}
 .faq-list summary{transition:color .2s}
-.faq-list summary:hover{color:var(--blue)}
+.faq-list summary:hover{color:var(--blue-ink)}
 .faq-list summary svg{transition:transform .3s var(--ease-out)}
 @keyframes fadeDown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
 
@@ -171,7 +171,7 @@
 .property-options label>span{transition:border-color .2s,background-color .2s,color .2s,transform .2s}
 .property-options label:hover>span{transform:translateY(-1px)}
 .upload-zone{transition:border-color .2s,background-color .2s,transform .2s}
-.upload-zone:hover{border-color:var(--blue);background:#f1f6ff}
+.upload-zone:hover{border-color:var(--blue);background:#f2fafe}
 .photo-item{animation:popIn .35s var(--ease-out) backwards}
 .field-error:not(:empty){animation:shake .4s ease-in-out}
 .form-error-summary{animation:shake .4s ease-in-out}
@@ -180,10 +180,10 @@
 /* ---------- Chat, dialog, toast ---------- */
 .js-anim .chat-launcher{animation:popIn .7s var(--ease-out) 1.6s backwards}
 .chat-launcher{transition:background-color .2s,transform .25s var(--ease-out),box-shadow .25s}
-.chat-launcher:hover{transform:translateY(-3px);box-shadow:0 10px 28px #072b5660}
+.chat-launcher:hover{transform:translateY(-3px);box-shadow:0 10px 28px #1b212a60}
 .chat-launcher-icon>svg{animation:wiggle 4.5s ease-in-out 3s infinite}
 .chat-online-dot{animation:dotPulseBlue 2s ease-out infinite}
-@keyframes dotPulseBlue{0%{box-shadow:0 0 0 0 #9ac4ffaa}80%,100%{box-shadow:0 0 0 7px #9ac4ff00}}
+@keyframes dotPulseBlue{0%{box-shadow:0 0 0 0 #cee7f3aa}80%,100%{box-shadow:0 0 0 7px #cee7f300}}
 .chat-panel:not([hidden]){animation:panelIn .3s var(--ease-out);transform-origin:bottom right}
 @keyframes panelIn{from{opacity:0;transform:translateY(14px) scale(.95)}to{opacity:1;transform:none}}
 .chat-message{animation:msgIn .35s var(--ease-out) backwards}
@@ -236,20 +236,44 @@
 :focus-visible{outline:3px solid var(--blue);outline-offset:3px}
 
 /* ---------- Bagian video: panel gelap bergaya sinematik ---------- */
-.video-section{position:relative;background:radial-gradient(circle at 18% 12%,rgba(16,77,193,.55),transparent 46%),linear-gradient(160deg,#0d1b3a,#102548 60%,#0a1730);color:#fff;isolation:isolate}
+.video-section{position:relative;background:radial-gradient(circle at 18% 12%,rgba(16,77,193,.55),transparent 46%),linear-gradient(160deg,#1b212a,#1b212a 60%,#22141a);color:#fff;isolation:isolate}
 .video-section::before{content:"♪";position:absolute;left:-2%;bottom:-23%;z-index:-1;font-size:560px;line-height:1;font-family:Georgia,serif;color:rgba(255,255,255,.045);pointer-events:none}
 .video-section::after{content:"";position:absolute;inset:0;z-index:-1;background-image:radial-gradient(rgba(255,255,255,.09) 1px,transparent 1.4px);background-size:22px 22px;-webkit-mask-image:linear-gradient(90deg,transparent,#000 70%);mask-image:linear-gradient(90deg,transparent,#000 70%);pointer-events:none}
 .video-copy h2{color:#fff}
 .video-copy h2::after{content:"";display:block;width:64px;height:4px;margin-top:24px;border-radius:2px;background:var(--red)}
-.video-copy>p{color:#c3d0ea}
+.video-copy>p{color:#d1d6dc}
 .video-mini-note{display:inline-flex;padding:14px 20px 14px 16px;border:1px solid rgba(255,255,255,.2);border-radius:14px;background:rgba(255,255,255,.06);backdrop-filter:blur(4px)}
 .video-mini-note strong{color:#fff}
-.video-mini-note div>span{color:#9fb2d6}
-.tiktok-letter{color:#6fa0ff}
+.video-mini-note div>span{color:#acb4c0}
+.tiktok-letter{color:#bec5ce}
 .video-cta{display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin-top:30px}
-.video-cta>span{max-width:230px;font-size:12px;line-height:1.6;color:#9fb2d6}
+.video-cta>span{max-width:230px;font-size:12px;line-height:1.6;color:#acb4c0}
 .video-host::before{content:"";position:absolute;inset:6% 2% 2%;z-index:-1;background:radial-gradient(circle at 50% 40%,rgba(237,53,72,.42),rgba(16,77,193,.25) 45%,transparent 70%);filter:blur(46px)}
 .video-outline{border-color:rgba(255,255,255,.28);background:rgba(255,255,255,.06)}
-.video-source-link{color:#9db8f5}
+.video-source-link{color:#cee7f3}
 .video-host .tiktok-frame,.video-host iframe{box-shadow:0 30px 60px -20px rgba(0,0,0,.6)}
 @media(max-width:960px){.video-cta>span{max-width:none}.video-section::before{font-size:340px}}
+
+/* Bagian video: putih dengan gradasi biru muda (menggantikan latar gelap) */
+.video-section{background:linear-gradient(180deg,#fff 0%,#e4f5fe 100%);color:var(--ink)}
+.video-section::before{color:rgba(0,168,240,.08)}
+.video-section::after{background-image:radial-gradient(rgba(0,168,240,.22) 1px,transparent 1.4px)}
+.video-copy h2{color:var(--ink)}
+.video-copy>p,.video-cta>span{color:#46586a}
+.video-mini-note{border-color:#c7e3f1;background:#fff;backdrop-filter:none;box-shadow:0 6px 18px -10px rgba(0,120,180,.25)}
+.video-mini-note strong{color:var(--ink)}
+.video-mini-note div>span{color:#5d6f82}
+.tiktok-letter{color:var(--blue-ink)}
+.video-host::before{background:radial-gradient(circle at 50% 40%,rgba(224,32,40,.12),rgba(0,168,240,.16) 45%,transparent 70%);filter:blur(46px)}
+.video-outline{border-color:#c7e3f1;background:#f2f9fc}
+.video-source-link{color:var(--blue-ink)}
+.video-host .tiktok-frame,.video-host iframe{box-shadow:0 24px 44px -22px rgba(20,60,90,.45)}
+
+/* Tipografi: Inter Display untuk judul, Inter untuk teks */
+h1,h2,h3,.brand-name,.process-no,.video-brand,.video-placeholder-copy strong{font-family:var(--display);font-weight:700}
+h1,h2,h3{letter-spacing:-.02em}
+.hero h1{letter-spacing:-.025em;line-height:1.08}
+.section-heading h2,.contact-copy h2,.video-copy h2{letter-spacing:-.025em;line-height:1.12}
+.service-card h3,.gallery-info h3,.article-info h3,.form-card h3{letter-spacing:-.015em;line-height:1.25}
+.brand-name,.video-brand,.video-placeholder-copy strong{letter-spacing:-.02em}
+.about-block h3{font-family:var(--font);letter-spacing:1.5px}
