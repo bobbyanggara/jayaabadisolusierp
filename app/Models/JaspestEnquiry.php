@@ -15,7 +15,7 @@ class JaspestEnquiry extends Model
         'reference', 'full_name', 'whatsapp', 'address', 'estimated_area', 'need',
         'property_type', 'company_name', 'description', 'consent', 'status',
         'wa_opened_at', 'contacted_at', 'followed_up_at', 'converted_at',
-        'order_price', 'order_area', 'scheduled_date', 'assigned_technician_id', 'assigned_technician_name',
+        'order_price', 'order_area', 'scheduled_date', 'service_schedules', 'assigned_technician_id', 'assigned_technician_name',
     ];
 
     protected function casts(): array
@@ -30,7 +30,46 @@ class JaspestEnquiry extends Model
             'order_price' => 'decimal:2',
             'order_area' => 'decimal:2',
             'scheduled_date' => 'date:Y-m-d',
+            'service_schedules' => 'array',
         ];
+    }
+
+    /**
+     * Daftar layanan order beserta tanggal pelaksanaannya.
+     * Order lama (satu layanan) otomatis dibaca dari kolom need + scheduled_date.
+     *
+     * @return array<int, array{slug: string, title: string, scheduled_date: ?string}>
+     */
+    public function serviceSchedules(): array
+    {
+        $rows = is_array($this->service_schedules) ? array_values($this->service_schedules) : [];
+        if ($rows === []) {
+            $rows = [[
+                'slug' => (string) $this->need,
+                'scheduled_date' => $this->scheduled_date?->format('Y-m-d'),
+            ]];
+        }
+
+        $slugs = array_values(array_unique(array_map(fn ($row) => (string) ($row['slug'] ?? ''), $rows)));
+        $titles = JaspestContentItem::query()
+            ->where('type', 'services')
+            ->whereIn('slug', $slugs)
+            ->pluck('title', 'slug');
+
+        return array_map(function ($row) use ($titles): array {
+            $slug = (string) ($row['slug'] ?? '');
+
+            return [
+                'slug' => $slug,
+                'title' => (string) ($titles[$slug] ?? \Illuminate\Support\Str::of($slug)->replace(['-', '_'], ' ')->title()->toString()),
+                'scheduled_date' => $row['scheduled_date'] ?? null,
+            ];
+        }, $rows);
+    }
+
+    public function serviceTitleLabel(): string
+    {
+        return implode(' + ', array_column($this->serviceSchedules(), 'title'));
     }
 
     public function getRouteKeyName(): string

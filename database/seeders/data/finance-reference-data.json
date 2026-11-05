@@ -1,0 +1,828 @@
+{
+  "source_workbook": "BAHAN KEUANGAN NEW.xlsx",
+  "bank_accounts": [
+    {
+      "id": 1,
+      "bank_name": "BNI",
+      "account_number": "5516615550",
+      "account_holder": "CV. Jaya Abadi Solusi"
+    },
+    {
+      "id": 2,
+      "bank_name": "BTN",
+      "account_number": "00624 - 01 - 30 - 000005 - 7",
+      "account_holder": "CV. Jaya Abadi Solusi"
+    },
+    {
+      "id": 3,
+      "bank_name": "BANK JATIM",
+      "account_number": "0261025671",
+      "account_holder": "CV. Jaya Abadi Solusi"
+    },
+    {
+      "id": 4,
+      "bank_name": "BNI",
+      "account_number": "0425866932",
+      "account_holder": "M. Firman Anis"
+    },
+    {
+      "id": 5,
+      "bank_name": "BCA",
+      "account_number": "4650610186",
+      "account_holder": "M. Firman Anis"
+    },
+    {
+      "id": 6,
+      "bank_name": "PANIN",
+      "account_number": "4523008372",
+      "account_holder": "Moch. Firman Anis .R"
+    },
+    {
+      "id": 7,
+      "bank_name": "BTN",
+      "account_number": "00425-01-88-000066-4",
+      "account_holder": "M. Firman Anis"
+    },
+    {
+      "id": 8,
+      "bank_name": "BRI",
+      "account_number": "0684-01-062029-50-7",
+      "account_holder": "M. Firman Anis"
+    }
+  ],
+  "default_invoice_bank_account_id": 1,
+  "chart_accounts": [
+    {
+      "source_row": 4,
+      "account_code": "111.01",
+      "account_name": "KAS BESAR",
+      "group_code": "100",
+      "group_name": "KAS"
+    },
+    {
+      "source_row": 5,
+      "account_code": "111.02",
+      "account_name": "KAS KECIL",
+      "group_code": "100",
+      "group_name": "KAS"
+    },
+    {
+      "source_row": 6,
+      "account_code": "111.03",
+      "account_name": "BANK JATIM",
+      "group_code": "100",
+      "group_name": "KAS"
+    },
+    {
+      "source_row": 7,
+      "account_code": "111.04",
+      "account_name": "BANK BNI GIRO KC GRAHA PANEGERAN (CV. JAYA ABADI SOLUSI)",
+      "group_code": "100",
+      "group_name": "KAS"
+    },
+    {
+      "source_row": 8,
+      "account_code": "111.05",
+      "account_name": "BANK BTN GIRO KCP UNAIR (CV. JAYA ABADI SOLUSI)",
+      "group_code": "100",
+      "group_name": "KAS"
+    },
+    {
+      "source_row": 9,
+      "account_code": "111.06",
+      "account_name": "BANK BNI GIRO KC SIDOARJO (CV. JAYA ABADI SOLUSI)",
+      "group_code": "100",
+      "group_name": "KAS"
+    },
+    {
+      "source_row": 10,
+      "account_code": "111.07",
+      "account_name": "BANK BSI GIRO KC SURABYA DARMO (CV. JAYA ABADI SOLUSI)",
+      "group_code": "100",
+      "group_name": "KAS"
+    },
+    {
+      "source_row": 11,
+      "account_code": "111.08",
+      "account_name": "BANK BNI (MOCH. FIRMAN ANIS R)",
+      "group_code": "100",
+      "group_name": "KAS"
+    },
+    {
+      "source_row": 12,
+      "account_code": "111.09",
+      "account_name": "BANK BTN (MOCH. FIRMAN ANIS R)",
+      "group_code": "100",
+      "group_name": "KAS"
+    },
+    {
+      "source_row": 13,
+      "account_code": "111.10",
+      "account_name": "BANK PANIN (MOCH. FIRMAN ANIS R)",
+      "group_code": "100",
+      "group_name": "KAS"
+    },
+    {
+      "source_row": 14,
+      "account_code": "111.11",
+      "account_name": "BANK BRI (MOCH. FIRMAN ANIS R)",
+      "group_code": "100",
+      "group_name": "KAS"
+    },
+    {
+      "source_row": 15,
+      "account_code": "111.12",
+      "account_name": "BANK BCA (MOCH. FIRMAN ANIS R)",
+      "group_code": "100",
+      "group_name": "KAS"
+    },
+    {
+      "source_row": 16,
+      "account_code": "111.13",
+      "account_name": "BANK BSI (MOCH. FIRMAN ANIS R)",
+      "group_code": "100",
+      "group_name": "KAS"
+    },
+    {
+      "source_row": 17,
+      "account_code": "111.14",
+      "account_name": "BANK BNI (YUNITA AYU ANGGRAINI)",
+      "group_code": "100",
+      "group_name": "KAS"
+    },
+    {
+      "source_row": 18,
+      "account_code": "111.15",
+      "account_name": "PPN MASUKAN",
+      "group_code": "100",
+      "group_name": "KAS"
+    },
+    {
+      "source_row": 20,
+      "account_code": "120.01",
+      "account_name": "PIUTANG USAHA",
+      "group_code": "120",
+      "group_name": "PIUTANG USAHA"
+    },
+    {
+      "source_row": 22,
+      "account_code": "131.01",
+      "account_name": "PERLENGKAPAN KANTOR",
+      "group_code": "130",
+      "group_name": "PERSEDIAAN"
+    },
+    {
+      "source_row": 23,
+      "account_code": "131.02",
+      "account_name": "PERLENGKAPAN OPERASIONAL",
+      "group_code": "130",
+      "group_name": "PERSEDIAAN"
+    },
+    {
+      "source_row": 25,
+      "account_code": "141.01",
+      "account_name": "GAJI DIBAYAR DIMUKA",
+      "group_code": "140",
+      "group_name": "PEMBAYARAN DIMUKA"
+    },
+    {
+      "source_row": 26,
+      "account_code": "141.02",
+      "account_name": "SEWA DIBAYAR DI MUKA",
+      "group_code": "140",
+      "group_name": "PEMBAYARAN DIMUKA"
+    },
+    {
+      "source_row": 27,
+      "account_code": "141.03",
+      "account_name": "PEMBAYARAN DIMUKA LAINNYA",
+      "group_code": "140",
+      "group_name": "PEMBAYARAN DIMUKA"
+    },
+    {
+      "source_row": 29,
+      "account_code": "151.01",
+      "account_name": "TANAH",
+      "group_code": "150",
+      "group_name": "ASET TETEAP"
+    },
+    {
+      "source_row": 30,
+      "account_code": "151.02",
+      "account_name": "GEDUNG/ BANGUNAN",
+      "group_code": "150",
+      "group_name": "ASET TETEAP"
+    },
+    {
+      "source_row": 31,
+      "account_code": "151.03",
+      "account_name": "KENDARAAN OPERASIONAL",
+      "group_code": "150",
+      "group_name": "ASET TETEAP"
+    },
+    {
+      "source_row": 32,
+      "account_code": "151.04",
+      "account_name": "PERALATAN KANTOR",
+      "group_code": "150",
+      "group_name": "ASET TETEAP"
+    },
+    {
+      "source_row": 33,
+      "account_code": "151.05",
+      "account_name": "PERALATAN OPERASIONAL",
+      "group_code": "150",
+      "group_name": "ASET TETEAP"
+    },
+    {
+      "source_row": 34,
+      "account_code": "151.06",
+      "account_name": "ASET LAINNYA",
+      "group_code": "150",
+      "group_name": "ASET TETEAP"
+    },
+    {
+      "source_row": 36,
+      "account_code": "161.01",
+      "account_name": "PROGRAM SISTEM",
+      "group_code": "160",
+      "group_name": "ASET TIDAK BERWUJUD"
+    },
+    {
+      "source_row": 37,
+      "account_code": "161.02",
+      "account_name": "PROGRAM WEBSITE",
+      "group_code": "160",
+      "group_name": "ASET TIDAK BERWUJUD"
+    },
+    {
+      "source_row": 39,
+      "account_code": "171.01",
+      "account_name": "AKUMULASI PENYUSUSTAN KENDARAAN OPERASIONAL",
+      "group_code": "170",
+      "group_name": "AKUMULASI PENYUSUTAN"
+    },
+    {
+      "source_row": 40,
+      "account_code": "171.02",
+      "account_name": "AKUMULASI PENYUSUTAN PERALATAN KANTOR",
+      "group_code": "170",
+      "group_name": "AKUMULASI PENYUSUTAN"
+    },
+    {
+      "source_row": 41,
+      "account_code": "171.03",
+      "account_name": "AKUMULASI PENYUSUTANPERALATAN OPERASIONAL",
+      "group_code": "170",
+      "group_name": "AKUMULASI PENYUSUTAN"
+    },
+    {
+      "source_row": 42,
+      "account_code": "171.04",
+      "account_name": "AKUMULASI PENYUSUTAN LAINNYA",
+      "group_code": "170",
+      "group_name": "AKUMULASI PENYUSUTAN"
+    },
+    {
+      "source_row": 45,
+      "account_code": "211.01",
+      "account_name": "HUTANG USAHA",
+      "group_code": "210",
+      "group_name": "HUTANG"
+    },
+    {
+      "source_row": 46,
+      "account_code": "211.02",
+      "account_name": "HUTANG LAIN LAIN",
+      "group_code": "210",
+      "group_name": "HUTANG"
+    },
+    {
+      "source_row": 47,
+      "account_code": "211.03",
+      "account_name": "HUTANG BIAYA",
+      "group_code": "210",
+      "group_name": "HUTANG"
+    },
+    {
+      "source_row": 48,
+      "account_code": "211.04",
+      "account_name": "HUTANG AKTIVA",
+      "group_code": "210",
+      "group_name": "HUTANG"
+    },
+    {
+      "source_row": 49,
+      "account_code": "211.05",
+      "account_name": "HUTANG BIAYA LISTRIK, AIR, TELEPON",
+      "group_code": "210",
+      "group_name": "HUTANG"
+    },
+    {
+      "source_row": 50,
+      "account_code": "211.06",
+      "account_name": "HUTANG BIAYA GAJI",
+      "group_code": "210",
+      "group_name": "HUTANG"
+    },
+    {
+      "source_row": 51,
+      "account_code": "211.07",
+      "account_name": "HUTANG SEWA",
+      "group_code": "210",
+      "group_name": "HUTANG"
+    },
+    {
+      "source_row": 52,
+      "account_code": "211.08",
+      "account_name": "HUTANG DIREKSI",
+      "group_code": "210",
+      "group_name": "HUTANG"
+    },
+    {
+      "source_row": 54,
+      "account_code": "311.01",
+      "account_name": "MODAL PEMILIK",
+      "group_code": "300",
+      "group_name": "MODAL"
+    },
+    {
+      "source_row": 55,
+      "account_code": "312.01",
+      "account_name": "PRIVE PEMILIK",
+      "group_code": "300",
+      "group_name": "MODAL"
+    },
+    {
+      "source_row": 57,
+      "account_code": "411.01",
+      "account_name": "PENDAPATAN PEST & RODENT CONTROL",
+      "group_code": "400",
+      "group_name": "PENDAPATAN"
+    },
+    {
+      "source_row": 58,
+      "account_code": "411.02",
+      "account_name": "PENDAPATAN TERMITE CONTROL",
+      "group_code": "400",
+      "group_name": "PENDAPATAN"
+    },
+    {
+      "source_row": 59,
+      "account_code": "411.03",
+      "account_name": "PENDAPATAN DESINFECTAN",
+      "group_code": "400",
+      "group_name": "PENDAPATAN"
+    },
+    {
+      "source_row": 60,
+      "account_code": "411.04",
+      "account_name": "PENDAPATAN FUMIGASI",
+      "group_code": "400",
+      "group_name": "PENDAPATAN"
+    },
+    {
+      "source_row": 61,
+      "account_code": "411.05",
+      "account_name": "PENDAPATAN PENJUALAN LAIN",
+      "group_code": "400",
+      "group_name": "PENDAPATAN"
+    },
+    {
+      "source_row": 63,
+      "account_code": "511.01",
+      "account_name": "B. GAJI KARYAWAN",
+      "group_code": "500",
+      "group_name": "BEBAN-BEBAN"
+    },
+    {
+      "source_row": 64,
+      "account_code": "511.02",
+      "account_name": "B. UPAH AHRIAN",
+      "group_code": "500",
+      "group_name": "BEBAN-BEBAN"
+    },
+    {
+      "source_row": 65,
+      "account_code": "511.03",
+      "account_name": "B. THR",
+      "group_code": "500",
+      "group_name": "BEBAN-BEBAN"
+    },
+    {
+      "source_row": 66,
+      "account_code": "511.04",
+      "account_name": "B. ENTERTAIMENT KARYAWAN",
+      "group_code": "500",
+      "group_name": "BEBAN-BEBAN"
+    },
+    {
+      "source_row": 67,
+      "account_code": "512.01",
+      "account_name": "B. PERLENGKAPAN KANTOR",
+      "group_code": "500",
+      "group_name": "BEBAN-BEBAN"
+    },
+    {
+      "source_row": 68,
+      "account_code": "512.02",
+      "account_name": "B. PERLENGKAPAN OPERASIONAL",
+      "group_code": "500",
+      "group_name": "BEBAN-BEBAN"
+    },
+    {
+      "source_row": 69,
+      "account_code": "512.03",
+      "account_name": "B. PEMAKAIAN CHEMICAL",
+      "group_code": "500",
+      "group_name": "BEBAN-BEBAN"
+    },
+    {
+      "source_row": 70,
+      "account_code": "512.04",
+      "account_name": "B. PEMAKAIAN BAHAN DAPUR",
+      "group_code": "500",
+      "group_name": "BEBAN-BEBAN"
+    },
+    {
+      "source_row": 71,
+      "account_code": "512.05",
+      "account_name": "B. PEMAKAIAN UMPAN",
+      "group_code": "500",
+      "group_name": "BEBAN-BEBAN"
+    },
+    {
+      "source_row": 72,
+      "account_code": "512.06",
+      "account_name": "B. PEMAKAIAN ALAT PENDUKUNG",
+      "group_code": "500",
+      "group_name": "BEBAN-BEBAN"
+    },
+    {
+      "source_row": 73,
+      "account_code": "512.07",
+      "account_name": "B. MATERIAL MESIN & PERALATAN",
+      "group_code": "500",
+      "group_name": "BEBAN-BEBAN"
+    },
+    {
+      "source_row": 74,
+      "account_code": "512.08",
+      "account_name": "B. PERLENGKAPAN PEST, RODENT & TERMITE CONTROL",
+      "group_code": "500",
+      "group_name": "BEBAN-BEBAN"
+    },
+    {
+      "source_row": 75,
+      "account_code": "512.09",
+      "account_name": "B. PEMAKAIAN MEDIA PEST CONTROL",
+      "group_code": "500",
+      "group_name": "BEBAN-BEBAN"
+    },
+    {
+      "source_row": 76,
+      "account_code": "512.10",
+      "account_name": "B. BBM FOGGING",
+      "group_code": "500",
+      "group_name": "BEBAN-BEBAN"
+    },
+    {
+      "source_row": 77,
+      "account_code": "512.11",
+      "account_name": "B. BBM DISEL",
+      "group_code": "500",
+      "group_name": "BEBAN-BEBAN"
+    },
+    {
+      "source_row": 78,
+      "account_code": "513.01",
+      "account_name": "B. TRANSPORTASI DAN AKOMODASI",
+      "group_code": "500",
+      "group_name": "BEBAN-BEBAN"
+    },
+    {
+      "source_row": 79,
+      "account_code": "513.02",
+      "account_name": "B. TOL DAN PARKIR",
+      "group_code": "500",
+      "group_name": "BEBAN-BEBAN"
+    },
+    {
+      "source_row": 80,
+      "account_code": "514.01",
+      "account_name": "B. TELPON / FAX / INTERNET",
+      "group_code": "500",
+      "group_name": "BEBAN-BEBAN"
+    },
+    {
+      "source_row": 81,
+      "account_code": "514.02",
+      "account_name": "B. LISTRIK & AIR",
+      "group_code": "500",
+      "group_name": "BEBAN-BEBAN"
+    },
+    {
+      "source_row": 82,
+      "account_code": "514.03",
+      "account_name": "B. POS & MATERAI",
+      "group_code": "500",
+      "group_name": "BEBAN-BEBAN"
+    },
+    {
+      "source_row": 83,
+      "account_code": "514.04",
+      "account_name": "B. FOTOCOPY / PERCETAKAN",
+      "group_code": "500",
+      "group_name": "BEBAN-BEBAN"
+    },
+    {
+      "source_row": 84,
+      "account_code": "514.05",
+      "account_name": "B. KONSUMSI BERSAMA",
+      "group_code": "500",
+      "group_name": "BEBAN-BEBAN"
+    },
+    {
+      "source_row": 85,
+      "account_code": "514.06",
+      "account_name": "B. IKLAN",
+      "group_code": "500",
+      "group_name": "BEBAN-BEBAN"
+    },
+    {
+      "source_row": 86,
+      "account_code": "514.07",
+      "account_name": "B. SOFWARE",
+      "group_code": "500",
+      "group_name": "BEBAN-BEBAN"
+    },
+    {
+      "source_row": 87,
+      "account_code": "514.08",
+      "account_name": "B. PENGURUSAN / PERIJINAN",
+      "group_code": "500",
+      "group_name": "BEBAN-BEBAN"
+    },
+    {
+      "source_row": 88,
+      "account_code": "514.09",
+      "account_name": "B. KONSULTASI MANAJEMEN/ PELATIHAN",
+      "group_code": "500",
+      "group_name": "BEBAN-BEBAN"
+    },
+    {
+      "source_row": 89,
+      "account_code": "514.10",
+      "account_name": "B. AMORTISASI",
+      "group_code": "500",
+      "group_name": "BEBAN-BEBAN"
+    },
+    {
+      "source_row": 90,
+      "account_code": "514.11",
+      "account_name": "B. IURAN & SUMBANGAN",
+      "group_code": "500",
+      "group_name": "BEBAN-BEBAN"
+    },
+    {
+      "source_row": 91,
+      "account_code": "514.12",
+      "account_name": "B. SEWA",
+      "group_code": "500",
+      "group_name": "BEBAN-BEBAN"
+    },
+    {
+      "source_row": 92,
+      "account_code": "514.13",
+      "account_name": "B. KEGIATAN RUTIN",
+      "group_code": "500",
+      "group_name": "BEBAN-BEBAN"
+    },
+    {
+      "source_row": 93,
+      "account_code": "514.14",
+      "account_name": "B. PEMBAYARAN BPJS",
+      "group_code": "500",
+      "group_name": "BEBAN-BEBAN"
+    },
+    {
+      "source_row": 94,
+      "account_code": "514.15",
+      "account_name": "B. PENGOBATAN",
+      "group_code": "500",
+      "group_name": "BEBAN-BEBAN"
+    },
+    {
+      "source_row": 95,
+      "account_code": "515.01",
+      "account_name": "B. FEE EKSTERNAL",
+      "group_code": "500",
+      "group_name": "BEBAN-BEBAN"
+    },
+    {
+      "source_row": 96,
+      "account_code": "515.02",
+      "account_name": "B. ENTERTAIMENT CLINET",
+      "group_code": "500",
+      "group_name": "BEBAN-BEBAN"
+    },
+    {
+      "source_row": 97,
+      "account_code": "515.03",
+      "account_name": "PPN KELUARAN",
+      "group_code": "500",
+      "group_name": "BEBAN-BEBAN"
+    },
+    {
+      "source_row": 98,
+      "account_code": "515.04",
+      "account_name": "PPH PASAL 25/ 29 BADAN",
+      "group_code": "500",
+      "group_name": "BEBAN-BEBAN"
+    },
+    {
+      "source_row": 99,
+      "account_code": "515.05",
+      "account_name": "PPH 21",
+      "group_code": "500",
+      "group_name": "BEBAN-BEBAN"
+    },
+    {
+      "source_row": 100,
+      "account_code": "515.06",
+      "account_name": "B. PAJAK BUMI/ BANGUNAN",
+      "group_code": "500",
+      "group_name": "BEBAN-BEBAN"
+    },
+    {
+      "source_row": 101,
+      "account_code": "516.01",
+      "account_name": "B. PAJAK KENDARAAN",
+      "group_code": "500",
+      "group_name": "BEBAN-BEBAN"
+    },
+    {
+      "source_row": 102,
+      "account_code": "516.01",
+      "account_name": "B. PAJAK LAINNYA",
+      "group_code": "500",
+      "group_name": "BEBAN-BEBAN"
+    },
+    {
+      "source_row": 103,
+      "account_code": "517.01",
+      "account_name": "B. MATERIAL PEMELIHARAAN GEDUNG",
+      "group_code": "500",
+      "group_name": "BEBAN-BEBAN"
+    },
+    {
+      "source_row": 104,
+      "account_code": "517.02",
+      "account_name": "B. MATERIAL PEMELIHARAAN INV KANTOR",
+      "group_code": "500",
+      "group_name": "BEBAN-BEBAN"
+    },
+    {
+      "source_row": 105,
+      "account_code": "517.03",
+      "account_name": "B. MATERIAL PEMELIHARAAN KEND. OPS",
+      "group_code": "500",
+      "group_name": "BEBAN-BEBAN"
+    },
+    {
+      "source_row": 106,
+      "account_code": "518.01",
+      "account_name": "B. OPERASIONAL LAINNYA",
+      "group_code": "500",
+      "group_name": "BEBAN-BEBAN"
+    },
+    {
+      "source_row": 107,
+      "account_code": "519.01",
+      "account_name": "B. ADMINISTRASI BANK",
+      "group_code": "500",
+      "group_name": "BEBAN-BEBAN"
+    },
+    {
+      "source_row": 108,
+      "account_code": "520.01",
+      "account_name": "PEMBULATAN",
+      "group_code": "500",
+      "group_name": "BEBAN-BEBAN"
+    }
+  ],
+  "cash_bank_accounts": [
+    {
+      "source_row": 4,
+      "account_code": "111.01",
+      "account_name": "KAS BESAR",
+      "group_code": "100",
+      "group_name": "KAS"
+    },
+    {
+      "source_row": 5,
+      "account_code": "111.02",
+      "account_name": "KAS KECIL",
+      "group_code": "100",
+      "group_name": "KAS"
+    },
+    {
+      "source_row": 6,
+      "account_code": "111.03",
+      "account_name": "BANK JATIM",
+      "group_code": "100",
+      "group_name": "KAS"
+    },
+    {
+      "source_row": 7,
+      "account_code": "111.04",
+      "account_name": "BANK BNI GIRO KC GRAHA PANEGERAN (CV. JAYA ABADI SOLUSI)",
+      "group_code": "100",
+      "group_name": "KAS"
+    },
+    {
+      "source_row": 8,
+      "account_code": "111.05",
+      "account_name": "BANK BTN GIRO KCP UNAIR (CV. JAYA ABADI SOLUSI)",
+      "group_code": "100",
+      "group_name": "KAS"
+    },
+    {
+      "source_row": 9,
+      "account_code": "111.06",
+      "account_name": "BANK BNI GIRO KC SIDOARJO (CV. JAYA ABADI SOLUSI)",
+      "group_code": "100",
+      "group_name": "KAS"
+    },
+    {
+      "source_row": 10,
+      "account_code": "111.07",
+      "account_name": "BANK BSI GIRO KC SURABYA DARMO (CV. JAYA ABADI SOLUSI)",
+      "group_code": "100",
+      "group_name": "KAS"
+    },
+    {
+      "source_row": 11,
+      "account_code": "111.08",
+      "account_name": "BANK BNI (MOCH. FIRMAN ANIS R)",
+      "group_code": "100",
+      "group_name": "KAS"
+    },
+    {
+      "source_row": 12,
+      "account_code": "111.09",
+      "account_name": "BANK BTN (MOCH. FIRMAN ANIS R)",
+      "group_code": "100",
+      "group_name": "KAS"
+    },
+    {
+      "source_row": 13,
+      "account_code": "111.10",
+      "account_name": "BANK PANIN (MOCH. FIRMAN ANIS R)",
+      "group_code": "100",
+      "group_name": "KAS"
+    },
+    {
+      "source_row": 14,
+      "account_code": "111.11",
+      "account_name": "BANK BRI (MOCH. FIRMAN ANIS R)",
+      "group_code": "100",
+      "group_name": "KAS"
+    },
+    {
+      "source_row": 15,
+      "account_code": "111.12",
+      "account_name": "BANK BCA (MOCH. FIRMAN ANIS R)",
+      "group_code": "100",
+      "group_name": "KAS"
+    },
+    {
+      "source_row": 16,
+      "account_code": "111.13",
+      "account_name": "BANK BSI (MOCH. FIRMAN ANIS R)",
+      "group_code": "100",
+      "group_name": "KAS"
+    },
+    {
+      "source_row": 17,
+      "account_code": "111.14",
+      "account_name": "BANK BNI (YUNITA AYU ANGGRAINI)",
+      "group_code": "100",
+      "group_name": "KAS"
+    }
+  ],
+  "payment_methods": [
+    {
+      "value": "transfer",
+      "label": "TRANSFER"
+    },
+    {
+      "value": "cash",
+      "label": "TUNAI"
+    },
+    {
+      "value": "bg",
+      "label": "BG (BILYET GIRO)"
+    }
+  ]
+}

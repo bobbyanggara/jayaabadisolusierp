@@ -13,6 +13,7 @@ use App\Models\JaspestInventoryMaintenance;
 use App\Models\JaspestInventoryMovement;
 use App\Models\JaspestTechnician;
 use App\Models\JaspestWhatsappNotification;
+use App\Services\JaspestContractService;
 use App\Services\JaspestFonnteService;
 use App\Support\JaspestTikTok;
 use App\Support\JaspestMap;
@@ -20,6 +21,7 @@ use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
+use App\Support\JaspestTechnicianWorkload;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -227,10 +229,7 @@ class JaspestAdminApiController extends Controller
         $rows = [];
         foreach ($items as $index => $item) {
             $createdAt = $item->created_at?->copy()->timezone('Asia/Jakarta');
-            $service = JaspestContentItem::where('type', 'services')->where('slug', $item->need)->value('title');
-            $need = $service ?: (str_contains((string) $item->need, '-')
-                ? Str::of($item->need)->replace('-', ' ')->title()->toString()
-                : $item->need);
+            $need = $item->serviceTitleLabel();
 
             $rows[] = [
                 (string) ($index + 1),
@@ -792,6 +791,13 @@ class JaspestAdminApiController extends Controller
 
     public function storeManualDealOrder(Request $request, JaspestFonnteService $fonnte): JsonResponse
     {
+        // Kompatibilitas: payload lama (satu layanan: need + scheduled_date) diubah menjadi daftar layanan.
+        if (! $request->has('services') && $request->filled('need')) {
+            $request->merge(['services' => [[
+                'slug' => $request->input('need'),
+                'scheduled_date' => $request->input('scheduled_date'),
+            ]]]);
+        }
         if (is_string($request->input('whatsapp'))) {
             $request->merge([
                 'whatsapp' => preg_replace('/[\s().-]+/', '', trim($request->input('whatsapp'))),
@@ -804,19 +810,20 @@ class JaspestAdminApiController extends Controller
             'address' => ['required', 'string', 'min:5', 'max:1000'],
             'property_type' => ['required', Rule::in(['rumah', 'bisnis'])],
             'company_name' => ['required_if:property_type,bisnis', 'nullable', 'string', 'max:200'],
-            'need' => ['required', 'string', 'max:100', function (string $attribute, mixed $value, \Closure $fail): void {
+            'services' => ['required', 'array', 'min:1', 'max:10'],
+            'services.*.slug' => ['required', 'string', 'max:100', 'distinct', function (string $attribute, mixed $value, \Closure $fail): void {
                 if (! JaspestContentItem::query()
                     ->where('type', 'services')->where('status', 'active')->where('slug', $value)->exists()) {
                     $fail('Pilih layanan yang masih tersedia.');
                 }
             }],
+            'services.*.scheduled_date' => ['required', 'date_format:Y-m-d'],
             'description' => ['nullable', 'string', 'max:3000'],
             'order_price' => ['required', 'numeric', 'min:1', 'max:999999999999.99'],
             'order_area' => ['required', 'numeric', 'gt:0', 'max:9999999999.99'],
-            'scheduled_date' => ['required', 'date_format:Y-m-d'],
             'assigned_technician_id' => [
                 'required', 'integer',
-                Rule::exists('jaspest_technicians', 'id')->where('operational_status', 'available'),
+                Rule::exists('jaspest_technicians', 'id')->where(fn ($query) => $query->where('operational_status', '<>', 'off_duty')),
             ],
             'consent' => ['accepted'],
         ], [
@@ -826,14 +833,17 @@ class JaspestAdminApiController extends Controller
             'address.required' => 'Alamat pelanggan wajib diisi.',
             'property_type.required' => 'Pilih jenis lokasi pelanggan.',
             'company_name.required_if' => 'Nama perusahaan wajib diisi untuk pelanggan bisnis.',
-            'need.required' => 'Pilih layanan yang dipesan.',
-            'order_price.required' => 'Harga kesepakatan wajib diisi.',
-            'order_price.min' => 'Harga kesepakatan harus lebih dari Rp0.',
+            'services.required' => 'Pilih minimal satu layanan yang dipesan.',
+            'services.min' => 'Pilih minimal satu layanan yang dipesan.',
+            'services.*.slug.distinct' => 'Layanan yang sama tidak boleh dipilih dua kali.',
+            'services.*.scheduled_date.required' => 'Tanggal pelaksanaan setiap layanan wajib dipilih.',
+            'services.*.scheduled_date.date_format' => 'Format tanggal pelaksanaan tidak valid.',
+            'order_price.required' => 'Harga per kunjungan wajib diisi.',
+            'order_price.min' => 'Harga per kunjungan harus lebih dari Rp0.',
             'order_area.required' => 'Luasan pekerjaan wajib diisi.',
             'order_area.gt' => 'Luasan pekerjaan harus lebih dari 0 m².',
-            'scheduled_date.required' => 'Tanggal pelaksanaan wajib dipilih.',
             'assigned_technician_id.required' => 'Pilih teknisi yang akan ditugaskan.',
-            'assigned_technician_id.exists' => 'Teknisi yang dipilih sudah tidak tersedia. Muat ulang daftar dan pilih teknisi lain.',
+            'assigned_technician_id.exists' => 'Teknisi yang dipilih sedang di luar tugas. Muat ulang daftar dan pilih teknisi lain.',
             'consent.accepted' => 'Persetujuan pelanggan untuk menerima konfirmasi WhatsApp wajib dicentang.',
         ]);
 
@@ -844,8 +854,21 @@ class JaspestAdminApiController extends Controller
             ]);
         }
 
+        $serviceSchedules = array_values(array_map(fn (array $row): array => [
+            'slug' => (string) $row['slug'],
+            'scheduled_date' => (string) $row['scheduled_date'],
+        ], $validated['services']));
+        $primaryService = $serviceSchedules[0]['slug'];
+        // Tanggal terdekat dipakai sebagai tanggal utama order (beban kerja teknisi, ringkasan, dan daftar order).
+        $earliestDate = min(array_column($serviceSchedules, 'scheduled_date'));
+
         $area = round((float) $validated['order_area'], 2);
-        $price = round((float) $validated['order_price'], 2);
+        $pricePerVisit = round((float) $validated['order_price'], 2);
+        $totalVisits = count($serviceSchedules);
+        $price = round($pricePerVisit * $totalVisits, 2);
+        if ($price > 9999999999999.0) {
+            throw ValidationException::withMessages(['order_price' => 'Total nilai order terlalu besar. Periksa harga per kunjungan dan jumlah kunjungan.']);
+        }
         $companyName = $validated['property_type'] === 'bisnis'
             ? trim((string) ($validated['company_name'] ?? ''))
             : null;
@@ -860,7 +883,12 @@ class JaspestAdminApiController extends Controller
             $companyName,
             $area,
             $price,
+            $pricePerVisit,
+            $totalVisits,
             $reference,
+            $serviceSchedules,
+            $primaryService,
+            $earliestDate,
         ): array {
             /** @var JaspestTechnician $technician */
             $technician = JaspestTechnician::query()
@@ -868,11 +896,13 @@ class JaspestAdminApiController extends Controller
                 ->lockForUpdate()
                 ->firstOrFail();
 
-            if ($technician->operational_status !== 'available') {
+            if ($technician->operational_status === 'off_duty') {
                 throw ValidationException::withMessages([
-                    'assigned_technician_id' => 'Teknisi tersebut baru saja ditugaskan. Pilih teknisi lain yang tersedia.',
+                    'assigned_technician_id' => 'Teknisi tersebut sedang di luar tugas. Pilih teknisi lain.',
                 ]);
             }
+            // Teknisi yang sudah bertugas tetap boleh menerima job baru; hanya diberi peringatan bila job aktifnya banyak.
+            $technicianWarning = JaspestTechnicianWorkload::warningFor($technician);
 
             $enquiry = JaspestEnquiry::create([
                 'reference' => $reference,
@@ -880,7 +910,7 @@ class JaspestAdminApiController extends Controller
                 'whatsapp' => $normalizedPhone,
                 'address' => trim($validated['address']),
                 'estimated_area' => $area,
-                'need' => $validated['need'],
+                'need' => $primaryService,
                 'property_type' => $validated['property_type'],
                 'company_name' => $companyName,
                 'description' => trim((string) ($validated['description'] ?? '')),
@@ -889,12 +919,15 @@ class JaspestAdminApiController extends Controller
                 'converted_at' => now(),
                 'order_price' => $price,
                 'order_area' => $area,
-                'scheduled_date' => $validated['scheduled_date'],
+                'scheduled_date' => $earliestDate,
+                'service_schedules' => $serviceSchedules,
                 'assigned_technician_id' => $technician->id,
                 'assigned_technician_name' => $technician->full_name,
             ]);
 
-            $technician->forceFill(['operational_status' => 'assigned'])->save();
+            if ($technician->operational_status !== 'assigned') {
+                $technician->forceFill(['operational_status' => 'assigned'])->save();
+            }
 
             JaspestEnquiryEvent::create([
                 'enquiry_id' => $enquiry->id,
@@ -902,12 +935,15 @@ class JaspestAdminApiController extends Controller
                 'event' => 'manual_order_created',
                 'from_status' => null,
                 'to_status' => 'converted',
-                'note' => 'Order manual dicatat melalui Manajemen Order.',
+                'note' => 'Order manual dicatat melalui Manajemen Order. Harga per kunjungan Rp'.number_format($pricePerVisit, 0, ',', '.').'; '.$totalVisits.' kunjungan; total Rp'.number_format($price, 0, ',', '.').'.',
                 'metadata' => [
                     'source' => 'admin_manual',
                     'order_price' => $price,
+                    'price_per_visit' => $pricePerVisit,
+                    'total_visits' => $totalVisits,
                     'order_area' => $area,
-                    'scheduled_date' => $validated['scheduled_date'],
+                    'scheduled_date' => $earliestDate,
+                    'service_schedules' => $serviceSchedules,
                     'assigned_technician_id' => $technician->id,
                     'assigned_technician_name' => $technician->full_name,
                 ],
@@ -931,6 +967,7 @@ class JaspestAdminApiController extends Controller
             return [
                 'enquiry_id' => $enquiry->id,
                 'notification_id' => $notification->id,
+                'technician_warning' => $technicianWarning,
             ];
         }, 3);
 
@@ -959,6 +996,7 @@ class JaspestAdminApiController extends Controller
             ? $this->whatsappNotificationResource($notification)
             : null;
         $resource['message'] = 'Order Manual berhasil dibuat.';
+        $resource['technician_warning'] = $result['technician_warning'] ?? null;
 
         return response()->json($resource, 201);
     }
@@ -970,61 +1008,79 @@ class JaspestAdminApiController extends Controller
             'note' => ['nullable', 'string', 'max:1000'],
             'order_price' => ['required_if:status,converted', 'nullable', 'numeric', 'min:1', 'max:999999999999.99'],
             'order_area' => ['required_if:status,converted', 'nullable', 'numeric', 'gt:0', 'max:9999999999.99'],
-            'scheduled_date' => ['required_if:status,converted', 'nullable', 'date_format:Y-m-d'],
+            'order_type' => ['nullable', Rule::in(['once', 'contract'])],
+            'period_type' => ['required_if:order_type,contract', 'nullable', Rule::in(array_keys(JaspestContractService::PERIODS))],
+            'visits_per_period' => ['required_if:order_type,contract', 'nullable', 'integer', 'min:1', 'max:200'],
+            'duration_periods' => ['required_if:order_type,contract', 'nullable', 'integer', 'min:1', 'max:200'],
+            'start_date' => ['required_if:order_type,contract', 'nullable', 'date_format:Y-m-d'],
+            'scheduled_date' => [Rule::requiredIf(fn () => $request->input('status') === 'converted' && $request->input('order_type') !== 'contract'), 'nullable', 'date_format:Y-m-d'],
             'assigned_technician_id' => [
-                'required_if:status,converted',
+                Rule::requiredIf(fn () => $request->input('status') === 'converted' && $request->input('order_type') !== 'contract'),
                 'nullable',
                 'integer',
-                Rule::exists('jaspest_technicians', 'id')->where('operational_status', 'available'),
+                Rule::exists('jaspest_technicians', 'id')->where(fn ($query) => $query->where('operational_status', '<>', 'off_duty')),
             ],
         ], [
             'order_price.required_if' => 'Harga kesepakatan wajib diisi untuk mengonfirmasi order.',
             'order_price.min' => 'Harga kesepakatan harus lebih dari Rp0.',
             'order_area.required_if' => 'Luas pekerjaan wajib diisi untuk mengonfirmasi order.',
             'order_area.gt' => 'Luas pekerjaan harus lebih dari 0 m².',
-            'scheduled_date.required_if' => 'Tanggal pelaksanaan wajib dipilih.',
-            'assigned_technician_id.required_if' => 'Pilih teknisi yang akan ditugaskan.',
-            'assigned_technician_id.exists' => 'Teknisi yang dipilih sudah tidak tersedia. Muat ulang daftar dan pilih teknisi lain.',
+            'scheduled_date.required' => 'Tanggal pelaksanaan wajib dipilih.',
+            'start_date.required_if' => 'Tanggal mulai kontrak wajib dipilih.',
+            'assigned_technician_id.required' => 'Pilih teknisi yang akan ditugaskan.',
+            'assigned_technician_id.exists' => 'Teknisi yang dipilih sedang di luar tugas. Muat ulang daftar dan pilih teknisi lain.',
         ]);
 
         $status = $validated['status'];
+        $isContract = ($validated['order_type'] ?? 'once') === 'contract';
+        if ($status === 'converted' && $isContract) {
+            app(JaspestContractService::class)->assertPlan((string) $validated['period_type'], (int) $validated['visits_per_period'], (int) $validated['duration_periods']);
+        }
 
         $whatsappNotificationId = null;
+        $technicianWarning = null;
 
         if ($status === 'converted') {
-            DB::transaction(function () use ($enquiry, $validated, &$whatsappNotificationId, $fonnte): void {
+            DB::transaction(function () use ($enquiry, $validated, $isContract, &$whatsappNotificationId, &$technicianWarning, $fonnte): void {
                 /** @var JaspestEnquiry $lockedEnquiry */
                 $lockedEnquiry = JaspestEnquiry::query()->lockForUpdate()->findOrFail($enquiry->id);
                 if ($lockedEnquiry->status === 'converted') {
                     abort(422, 'Order ini sudah berstatus Deal Order. Data tidak dapat dikonfirmasi ulang.');
                 }
 
-                /** @var JaspestTechnician $technician */
-                $technician = JaspestTechnician::query()
-                    ->lockForUpdate()
-                    ->findOrFail((int) $validated['assigned_technician_id']);
+                /** @var JaspestTechnician|null $technician */
+                $technician = ! empty($validated['assigned_technician_id'])
+                    ? JaspestTechnician::query()->lockForUpdate()->findOrFail((int) $validated['assigned_technician_id'])
+                    : null;
 
-                // Re-check availability while holding the row lock to prevent double assignment.
-                if ($technician->operational_status !== 'available') {
+                // Re-check availability while holding the row lock.
+                if ($technician && $technician->operational_status === 'off_duty') {
                     throw ValidationException::withMessages([
-                        'assigned_technician_id' => 'Teknisi tersebut baru saja ditugaskan atau sedang tidak tersedia. Pilih teknisi lain.',
+                        'assigned_technician_id' => 'Teknisi tersebut sedang di luar tugas. Pilih teknisi lain.',
                     ]);
                 }
+                $technicianWarning = $technician ? JaspestTechnicianWorkload::warningFor($technician) : null;
 
                 $before = $lockedEnquiry->status;
                 $price = round((float) $validated['order_price'], 2);
                 $area = round((float) $validated['order_area'], 2);
-                $scheduledDate = $validated['scheduled_date'];
+                $scheduledDate = $isContract ? null : $validated['scheduled_date'];
+                if ($isContract) {
+                    // Untuk kontrak, nilai yang diisi adalah harga per kunjungan; nilai order = total kontrak.
+                    $price = round($price * (int) $validated['visits_per_period'] * (int) $validated['duration_periods'], 2);
+                }
 
-                $technician->forceFill(['operational_status' => 'assigned'])->save();
+                if ($technician && $technician->operational_status !== 'assigned') {
+                    $technician->forceFill(['operational_status' => 'assigned'])->save();
+                }
                 $lockedEnquiry->forceFill([
                     'status' => 'converted',
                     'converted_at' => now(),
                     'order_price' => $price,
                     'order_area' => $area,
                     'scheduled_date' => $scheduledDate,
-                    'assigned_technician_id' => $technician->id,
-                    'assigned_technician_name' => $technician->full_name,
+                    'assigned_technician_id' => $technician?->id,
+                    'assigned_technician_name' => $technician?->full_name,
                 ])->save();
 
                 JaspestEnquiryEvent::create([
@@ -1033,19 +1089,43 @@ class JaspestAdminApiController extends Controller
                     'event' => 'order_confirmed',
                     'from_status' => $before,
                     'to_status' => 'converted',
-                    'note' => 'Order dikonfirmasi. Harga: Rp'.number_format($price, 0, ',', '.').'; luasan: '.number_format($area, 2, ',', '.').' m²; tanggal pelaksanaan: '.$scheduledDate.'; teknisi: '.$technician->full_name.'.',
+                    'note' => 'Order dikonfirmasi. Harga: Rp'.number_format($price, 0, ',', '.').'; luasan: '.number_format($area, 2, ',', '.').' m²; '.($isContract ? 'kontrak berkala' : 'tanggal pelaksanaan: '.$scheduledDate).'; teknisi: '.($technician?->full_name ?? '-').'.',
                     'metadata' => [
                         'order_price' => $price,
                         'order_area' => $area,
                         'scheduled_date' => $scheduledDate,
-                        'assigned_technician_id' => $technician->id,
-                        'assigned_technician_name' => $technician->full_name,
-                        'technician_code' => $technician->technician_code,
+                        'assigned_technician_id' => $technician?->id,
+                        'assigned_technician_name' => $technician?->full_name,
+                        'technician_code' => $technician?->technician_code,
                     ],
                 ]);
 
                 // Profil klien dan relasi order dibuat otomatis dalam transaksi yang sama.
-                $this->synchronizeDealOrderClient($lockedEnquiry);
+                $client = $this->synchronizeDealOrderClient($lockedEnquiry);
+
+                if ($isContract) {
+                    $contract = app(JaspestContractService::class)->createContract($lockedEnquiry, $client?->id, [
+                        'period_type' => $validated['period_type'],
+                        'visits_per_period' => (int) $validated['visits_per_period'],
+                        'duration_periods' => (int) $validated['duration_periods'],
+                        'start_date' => $validated['start_date'],
+                        'price_basis' => 'per_visit',
+                        'price_amount' => (float) $validated['order_price'],
+                        'area' => $area,
+                        'service' => $lockedEnquiry->need,
+                        'services' => $lockedEnquiry->serviceSchedules(),
+                        'notes' => trim((string) $lockedEnquiry->description) ?: null,
+                    ], $technician, auth()->id());
+                    JaspestEnquiryEvent::create([
+                        'enquiry_id' => $lockedEnquiry->id,
+                        'user_id' => auth()->id(),
+                        'event' => 'contract_created',
+                        'from_status' => 'converted',
+                        'to_status' => 'converted',
+                        'note' => 'Kontrak berkala '.$contract->contract_number.' dibuat dari permintaan layanan.',
+                        'metadata' => ['contract_id' => $contract->id, 'contract_number' => $contract->contract_number],
+                    ]);
+                }
 
                 $normalizedRecipient = $fonnte->normalizeIndonesianMobile((string) $lockedEnquiry->whatsapp);
                 $notification = JaspestWhatsappNotification::query()->firstOrCreate(
@@ -1111,6 +1191,9 @@ class JaspestAdminApiController extends Controller
         $resource = $this->bookingResource($freshEnquiry);
         if ($status === 'converted' && isset($notification)) {
             $resource['whatsapp_notification'] = $this->whatsappNotificationResource($notification);
+        }
+        if ($status === 'converted') {
+            $resource['technician_warning'] = $technicianWarning;
         }
 
         return response()->json($resource);
@@ -1375,7 +1458,7 @@ class JaspestAdminApiController extends Controller
      * Buat/temukan profil berdasarkan nomor WhatsApp dan tautkan Deal Order.
      * Dipanggil di dalam transaksi konversi maupun rekonsiliasi direktori.
      */
-    private function synchronizeDealOrderClient(JaspestEnquiry $enquiry): ?JaspestClient
+    protected function synchronizeDealOrderClient(JaspestEnquiry $enquiry): ?JaspestClient
     {
         return DB::transaction(function () use ($enquiry): ?JaspestClient {
             $lockedEnquiry = JaspestEnquiry::query()->lockForUpdate()->findOrFail($enquiry->id);
@@ -1483,7 +1566,7 @@ class JaspestAdminApiController extends Controller
         ]);
     }
 
-    private function normalizeClientWhatsapp(string $phone): string
+    protected function normalizeClientWhatsapp(string $phone): string
     {
         $digits = preg_replace('/\\D+/', '', $phone) ?? '';
         if (str_starts_with($digits, '0')) {
@@ -1537,19 +1620,34 @@ class JaspestAdminApiController extends Controller
         ]);
     }
 
-    /** Return existing technicians with an explicit availability flag for order assignment. */
+    /**
+     * Daftar teknisi untuk penugasan. Teknisi yang sedang bertugas tetap dapat dipilih;
+     * hanya yang di luar tugas yang tidak bisa dipilih. Teknisi dengan job aktif melebihi
+     * ambang ditandai `job_warning` (peringatan saja, tidak memblokir).
+     */
     public function bookingTechnicians(): JsonResponse
     {
-        $items = JaspestTechnician::query()->orderBy('full_name')->get()->map(fn (JaspestTechnician $technician): array => [
-            'id' => $technician->id,
-            'technician_code' => $technician->technician_code,
-            'full_name' => $technician->full_name,
-            'specialization' => $technician->specialization,
-            'operational_status' => $technician->operational_status,
-            'is_available' => $technician->operational_status === 'available',
-        ])->values();
+        $technicians = JaspestTechnician::query()->orderBy('full_name')->get();
+        $counts = JaspestTechnicianWorkload::activeJobCounts($technicians->pluck('id')->all());
+        $threshold = JaspestTechnicianWorkload::threshold();
 
-        return response()->json(['data' => $items])->header('Cache-Control', 'no-store, private');
+        $items = $technicians->map(function (JaspestTechnician $technician) use ($counts, $threshold): array {
+            $jobs = $counts[$technician->id] ?? 0;
+
+            return [
+                'id' => $technician->id,
+                'technician_code' => $technician->technician_code,
+                'full_name' => $technician->full_name,
+                'specialization' => $technician->specialization,
+                'operational_status' => $technician->operational_status,
+                'is_available' => $technician->operational_status !== 'off_duty',
+                'active_jobs' => $jobs,
+                'job_warning' => $jobs > $threshold,
+            ];
+        })->values();
+
+        return response()->json(['data' => $items, 'warning_threshold' => $threshold])
+            ->header('Cache-Control', 'no-store, private');
     }
 
     public function storeTechnician(Request $request): JsonResponse
@@ -2497,7 +2595,7 @@ class JaspestAdminApiController extends Controller
         ];
     }
 
-    private function whatsappNotificationResource(JaspestWhatsappNotification $notification): array
+    protected function whatsappNotificationResource(JaspestWhatsappNotification $notification): array
     {
         return [
             'status' => $notification->status,
@@ -2519,8 +2617,8 @@ class JaspestAdminApiController extends Controller
 
     private function bookingResource(JaspestEnquiry $item): array
     {
-        $service = JaspestContentItem::where('type', 'services')->where('slug', $item->need)->value('title');
-        $need = $service ?: (str_contains($item->need, '-') ? Str::of($item->need)->replace('-', ' ')->title()->toString() : $item->need);
+        $serviceSchedules = $item->serviceSchedules();
+        $need = implode(' + ', array_column($serviceSchedules, 'title'));
         $createdAt = $item->created_at?->copy()->timezone('Asia/Jakarta');
         $waOpenedAt = $item->wa_opened_at?->copy()->timezone('Asia/Jakarta');
         $contactedAt = $item->contacted_at?->copy()->timezone('Asia/Jakarta');
@@ -2535,6 +2633,7 @@ class JaspestAdminApiController extends Controller
             'area' => (string) $item->estimated_area,
             'need' => $need,
             'need_code' => $item->need,
+            'services' => $serviceSchedules,
             'property' => $item->property_type,
             'company' => $item->company_name,
             'description' => $item->description,

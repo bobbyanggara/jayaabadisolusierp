@@ -9,4 +9,6 @@ return [
     'prefix' => trim((string) env('JASPEST_ADMIN_PREFIX', 'admin/jaspest'), '/'),
     'photo_disk' => 'local', // Foto booking disimpan privat, tidak di public/storage.
     'content_disk' => 'public',
+    // Teknisi dengan job aktif lebih dari angka ini hanya diberi peringatan (tidak diblokir).
+    'technician_job_warning_threshold' => (int) env('JASPEST_TECHNICIAN_JOB_WARNING', 5),
 ];

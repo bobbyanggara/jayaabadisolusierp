@@ -1,0 +1,198 @@
+/* Kontrak berkala di Manajemen Order */
+.order-tabs{display:flex;gap:6px;margin:0 0 16px;border-bottom:1px solid var(--line)}
+.order-tab{appearance:none;background:none;border:0;border-bottom:3px solid transparent;margin-bottom:-1px;padding:10px 14px;font:inherit;font-weight:700;color:var(--muted);cursor:pointer;display:inline-flex;align-items:center;gap:8px}
+.order-tab:hover{color:var(--ink)}
+.order-tab.active{color:var(--brand-text);border-bottom-color:var(--brand)}
+.order-tab-badge{min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:var(--red);color:#fff;font-size:12px;line-height:20px;text-align:center}
+.contract-counts{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.contract-count{display:inline-flex;align-items:center;gap:8px;padding:7px 12px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--muted);font-size:14px;cursor:pointer}
+.contract-count strong{color:var(--ink)}
+.contract-count.warn strong{color:var(--red)}
+.contract-count:hover{border-color:var(--line-strong)}
+.contract-table td{vertical-align:middle}
+.contract-num{font-weight:700;color:var(--ink);display:block}
+.contract-sub{display:block;color:var(--muted);font-size:13px;margin-top:2px}
+.contract-progress{min-width:150px}
+.contract-progress-bar{height:8px;border-radius:999px;background:var(--sunken);border:1px solid var(--line);overflow:hidden}
+.contract-progress-bar span{display:block;height:100%;background:var(--green)}
+.contract-progress-text{display:block;margin-top:4px;font-size:13px;color:var(--muted)}
+.contract-progress-text .warn{color:var(--red);font-weight:700}
+.contract-status-active{color:var(--brand-text)}
+.contract-status-completed{color:var(--green)}
+.contract-status-cancelled{color:var(--muted)}
+.contract-plan-summary{margin:10px 0 0;padding:10px 12px;border-radius:var(--r-ctl);background:var(--brand-soft);color:var(--brand-text);font-size:14px}
+.contract-plan-summary.is-error{background:var(--red-soft);color:var(--red)}
+.contract-detail-modal{width:min(980px,100%)}
+.contract-info{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;margin-bottom:16px}
+.contract-info div{padding:10px 12px;border:1px solid var(--line);border-radius:var(--r-ctl);background:var(--sunken)}
+.contract-info small{display:block;color:var(--muted);font-size:12px;margin-bottom:2px}
+.contract-info strong{font-size:15px;word-break:break-word}
+.contract-kpis{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+.contract-kpi{padding:6px 12px;border-radius:999px;border:1px solid var(--line);background:var(--surface);font-size:14px;color:var(--muted)}
+.contract-kpi strong{color:var(--ink)}
+.contract-kpi.warn{border-color:var(--red);color:var(--red)}
+.contract-kpi.warn strong{color:var(--red)}
+.contract-period{border:1px solid var(--line);border-radius:var(--r-panel);margin-bottom:10px;background:var(--surface);overflow:hidden}
+.contract-period.is-current{border-color:var(--brand)}
+.contract-period-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;padding:10px 14px;background:var(--sunken);border-bottom:1px solid var(--line)}
+.contract-period-head strong{font-size:15px}
+.contract-period-head span{color:var(--muted);font-size:13px}
+.contract-period-tag{padding:2px 8px;border-radius:999px;background:var(--brand-soft);color:var(--brand-text)!important;font-weight:700}
+.contract-visit{display:grid;grid-template-columns:90px 150px minmax(150px,1fr) auto;gap:8px;align-items:center;padding:8px 14px;border-top:1px solid var(--line)}
+.contract-visit:first-of-type{border-top:0}
+.contract-visit .slot{font-weight:700;font-size:14px}
+.contract-visit input,.contract-visit select{width:100%;min-height:34px;padding:0 8px;border:1px solid var(--line-strong);border-radius:var(--r-ctl);background:var(--surface);color:var(--ink);font:inherit;font-size:14px}
+.contract-visit input:disabled,.contract-visit select:disabled{background:var(--sunken);color:var(--muted)}
+.contract-visit-actions{display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end;align-items:center}
+.visit-state{font-size:13px;font-weight:700;white-space:nowrap}
+.visit-state.s-done{color:var(--green)}
+.visit-state.s-scheduled{color:var(--brand-text)}
+.visit-state.s-unscheduled{color:var(--muted)}
+.visit-state.s-skipped,.visit-state.s-cancelled{color:var(--muted)}
+.visit-state.is-overdue{color:var(--red)}
+.contract-visit.is-overdue{background:var(--red-soft)}
+.contract-extra{margin-top:16px;padding:14px;border:1px dashed var(--line-strong);border-radius:var(--r-panel)}
+.contract-extra h3,.contract-section-title{font-size:15px;margin:0 0 10px}
+.contract-extra-form{display:grid;grid-template-columns:150px minmax(150px,1fr) minmax(150px,1fr) auto;gap:8px;align-items:end}
+.contract-extra-form label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)}
+.contract-extra-form input,.contract-extra-form select{min-height:34px;padding:0 8px;border:1px solid var(--line-strong);border-radius:var(--r-ctl);background:var(--surface);color:var(--ink);font:inherit}
+.contract-inline-panel{margin-top:14px;padding:14px;border:1px solid var(--line);border-radius:var(--r-panel);background:var(--sunken)}
+.contract-inline-panel .row{display:flex;flex-wrap:wrap;gap:10px;align-items:end}
+.contract-inline-panel label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)}
+.contract-inline-panel input{min-height:34px;padding:0 8px;border:1px solid var(--line-strong);border-radius:var(--r-ctl);background:var(--surface);color:var(--ink);font:inherit}
+.contract-detail-footer{justify-content:space-between}
+.contract-detail-footer .group{display:flex;gap:8px;flex-wrap:wrap}
+@media (max-width:720px){
+  .contract-visit{grid-template-columns:1fr 1fr}
+  .contract-visit .slot{grid-column:1/-1}
+  .contract-visit-actions{grid-column:1/-1;justify-content:flex-start}
+  .contract-extra-form{grid-template-columns:1fr 1fr}
+  .contract-extra-form button{grid-column:1/-1}
+}
+
+/* Kontrak berkala kini bagian dari form Tambah Order Manual */
+.manual-contract-fields{padding:12px;border:1px dashed var(--line-strong,var(--line));border-radius:var(--r-ctl);background:var(--sunken)}
+.manual-contract-fields[hidden]{display:none}
+.manual-contract-fields .contract-plan-summary{margin:0}
+.order-technician-hint.is-caution{border:1px solid var(--amber);background:var(--amber-soft);color:var(--ink)}
+.order-technician-hint.is-caution::before{content:"⚠ ";font-weight:700;color:var(--amber)}
+
+/* Blok kontrak & ringkasan selalu selebar penuh, di bawah pilihan Jenis Order (semua modal order) */
+.order-modal .form-field-full,
+.order-modal .manual-contract-fields,
+.order-modal .manual-contract-fields .contract-plan-summary{grid-column:1 / -1}
+.order-modal .manual-contract-fields .contract-plan-summary{width:100%;box-sizing:border-box}
+@media (max-width:720px){
+  .order-modal .form-field-full,
+  .order-modal .manual-contract-fields{grid-column:auto}
+}
+
+/* Detail kontrak: penjelasan yang lebih jelas */
+.contract-guide{margin:0 0 14px;padding:12px 14px;border-radius:var(--r-ctl);background:var(--brand-soft);color:var(--brand-text);font-size:14px;line-height:1.55}
+.contract-guide.is-alert{background:var(--red-soft);color:var(--red)}
+.contract-section-title{margin:6px 0 10px;font-size:16px}
+.contract-section-title small,.contract-extra h3 small{display:block;margin-top:2px;color:var(--muted);font-size:13px;font-weight:400}
+button.contract-period-head{appearance:none;width:100%;border:0;margin:0;font:inherit;color:var(--ink);text-align:left;cursor:pointer;border-bottom:0}
+button.contract-period-head:hover{background:var(--surface-2,var(--sunken))}
+.contract-period.is-open>button.contract-period-head{border-bottom:1px solid var(--line)}
+.contract-period-title{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;color:var(--ink)!important;font-size:15px!important}
+.contract-period-title::before{content:"▸";color:var(--muted);transition:transform .15s}
+.contract-period.is-open .contract-period-title::before{transform:rotate(90deg)}
+.contract-period-title strong{color:var(--ink);font-size:15px}
+.contract-period-title em{font-style:normal;color:var(--muted);font-size:13px}
+.contract-period-count{color:var(--muted);font-size:13px}
+.contract-period-body[hidden]{display:none}
+.contract-period-tag.is-late{background:var(--red-soft);color:var(--red)!important}
+
+#contractExtendModal{z-index:70}
+.contract-extend-modal{width:min(94vw,580px)}
+.extend-section-title{margin:18px 0 8px;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.extend-section-title:first-child{margin-top:0}
+.extend-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;margin:0;border:1px solid var(--line);border-radius:var(--r-panel);background:var(--line);overflow:hidden}
+.extend-grid>div{padding:9px 12px;background:var(--sunken);min-width:0}
+.extend-grid dt{margin:0 0 2px;font-size:11.5px;color:var(--muted)}
+.extend-grid dd{margin:0;font-size:13.5px;font-weight:600;color:var(--ink);overflow-wrap:anywhere}
+.extend-grid-result>div{background:var(--surface)}
+.extend-grid>div.is-strong{grid-column:1/-1;background:var(--sunken)}
+.extend-grid>div.is-strong dd{font-size:16px}
+.contract-extend-fields{display:flex;flex-direction:column;gap:14px}
+.contract-extend-fields label{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--ink)}
+.contract-extend-fields input{min-height:40px;padding:0 10px;border:1px solid var(--line-strong);border-radius:var(--r-ctl);background:var(--surface);color:var(--ink);font:inherit}
+.extend-hint{font-size:12px;color:var(--muted);line-height:1.4}
+.extend-note{margin:12px 0 0;font-size:12.5px;color:var(--muted);line-height:1.5}
+@media (max-width:520px){.extend-grid{grid-template-columns:1fr}}
+.extend-label{display:block;font-size:13px;font-weight:600;color:var(--ink);line-height:1.4}
+.extend-label .required-mark{display:inline;margin-left:2px}
+.contract-extend-fields select{min-height:40px;padding:0 10px;border:1px solid var(--line-strong);border-radius:var(--r-ctl);background:var(--surface);color:var(--ink);font:inherit}
+
+/* ===== Data Teknisi: beban kerja ===== */
+.tech-workload-bar{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--line);background:var(--sunken)}
+.tech-workload-chips{display:flex;flex-wrap:wrap;gap:8px}
+.tech-chip{display:inline-flex;align-items:center;gap:7px;min-height:32px;padding:0 12px;border:1px solid var(--line-strong);border-radius:999px;background:var(--surface);color:var(--ink);font:inherit;font-size:13px;cursor:pointer}
+.tech-chip strong{font-weight:700}
+.tech-chip:hover{border-color:var(--muted)}
+.tech-chip.is-active{background:var(--ink);border-color:var(--ink);color:var(--surface)}
+.tech-dot{width:8px;height:8px;border-radius:50%;background:var(--muted)}
+.tech-chip-free .tech-dot{background:var(--green)}
+.tech-chip-busy .tech-dot{background:var(--amber)}
+.tech-chip-over .tech-dot{background:var(--red)}
+.tech-sort{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted)}
+.tech-sort select{min-height:32px;padding:0 8px;border:1px solid var(--line-strong);border-radius:var(--r-ctl);background:var(--surface);color:var(--ink);font:inherit}
+.tech-load-cell{min-width:210px}
+.tech-load{display:flex;flex-direction:column;gap:5px}
+.tech-load-top{display:flex;align-items:baseline;gap:5px}
+.tech-load-top strong{font-size:17px;line-height:1}
+.tech-load-top span{font-size:12px;color:var(--muted)}
+.tech-load-chip{margin-left:auto;padding:2px 8px;border-radius:999px;font-style:normal;font-size:11.5px;font-weight:600;background:var(--sunken);color:var(--muted)}
+.tech-load-meter{height:6px;border-radius:999px;background:var(--line);overflow:hidden}
+.tech-load-meter i{display:block;height:100%;border-radius:999px;background:var(--muted)}
+.tech-load small{font-size:12px;color:var(--muted);line-height:1.35}
+.tech-load-free .tech-load-chip{background:var(--green-soft,#e3f4e8);color:var(--green)}
+.tech-load-low .tech-load-meter i,.tech-load-mid .tech-load-meter i{background:var(--green)}
+.tech-load-low .tech-load-chip{background:var(--green-soft,#e3f4e8);color:var(--green)}
+.tech-load-mid .tech-load-meter i,.tech-load-high .tech-load-meter i{background:var(--amber)}
+.tech-load-mid .tech-load-chip,.tech-load-high .tech-load-chip{background:var(--amber-soft);color:var(--ink)}
+.tech-load-over .tech-load-meter i{background:var(--red)}
+.tech-load-over .tech-load-chip{background:var(--red-soft,#fde8e8);color:var(--red)}
+.tech-load-over small{color:var(--red)}
+.tech-load-off{opacity:.75}
+.tech-load-empty{color:var(--muted)}
+.tech-filter-empty{padding:22px 16px;text-align:center;color:var(--muted)}
+@media (max-width:640px){.tech-workload-bar{padding:10px 12px}.tech-load-cell{min-width:180px}}
+.tech-live{flex:1 1 100%;order:3;font-size:12px;color:var(--muted)}
+.tech-live:empty{display:none}
+
+/* ===== Data Klien: kontrak berkala ===== */
+.client-contract{display:flex;flex-direction:column;gap:3px;align-items:flex-start}
+.client-contract-chip{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:600;background:var(--sunken);color:var(--muted)}
+.client-contract-chip.is-active{background:var(--green-soft,#e3f4e8);color:var(--green)}
+.client-contract small{font-size:12px;color:var(--muted)}
+.client-contract-warn{color:var(--red)!important;font-weight:600}
+.client-contract-none{color:var(--muted)}
+/* Tombol Ekspor: hijau */
+body.jas-admin .btn-export{background:#16865f;border-color:#16865f;color:#fff}
+body.jas-admin .btn-export:hover:not(:disabled){background:#126f4f;border-color:#126f4f;color:#fff;box-shadow:0 3px 10px rgba(22,134,95,.25)}
+body.jas-admin .btn-export:focus-visible{outline:2px solid #16865f;outline-offset:2px}
+/* Chip filter kontrak: indikator aktif, selaras dengan filter ringkasan Manajemen Order */
+.contract-count{transition:border-color .16s ease,background-color .16s ease,color .16s ease,box-shadow .16s ease}
+.contract-count:hover{border-color:var(--brand);color:var(--brand-text)}
+.contract-count[aria-pressed="true"]{border-color:var(--brand);background:var(--brand-soft);color:var(--brand-text);font-weight:600;box-shadow:inset 0 0 0 1px var(--brand)}
+.contract-count[aria-pressed="true"] strong{color:var(--brand-text)}
+.contract-count.warn[aria-pressed="true"]{border-color:var(--state-lost-ink,var(--red));background:var(--state-lost-bg,var(--red-soft));color:var(--state-lost-ink,var(--red));box-shadow:inset 0 0 0 1px var(--state-lost-ink,var(--red))}
+.contract-count.warn[aria-pressed="true"] strong{color:var(--state-lost-ink,var(--red))}
+.contract-count:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+/* Order manual: pilih beberapa layanan + tanggal pelaksanaan per layanan */
+.manual-field-block{margin-bottom:14px}
+.manual-field-title{display:block;font-weight:700}
+.manual-field-hint{margin:4px 0 8px;font-size:13px;color:var(--muted)}
+.service-picker{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px;margin-top:6px}
+.service-picker-empty,.service-schedule-empty{grid-column:1/-1;margin:0;padding:10px 12px;border:1px dashed var(--line-strong);border-radius:var(--r-ctl,8px);font-size:13px;color:var(--muted)}
+.service-option{position:relative;display:flex;align-items:center;gap:10px;min-height:44px;padding:9px 12px;border:1px solid var(--line-strong);border-radius:var(--r-ctl,8px);background:var(--surface);color:var(--ink);font-weight:500;cursor:pointer;transition:border-color .16s ease,background-color .16s ease,color .16s ease,box-shadow .16s ease}
+.service-option:hover{border-color:var(--brand)}
+.service-option input{width:auto;height:auto;margin:0;padding:0;flex:0 0 auto;accent-color:var(--brand);cursor:pointer}
+.service-option.is-selected,.service-option:has(input:checked){border-color:var(--brand);background:var(--brand-soft);color:var(--brand-text);font-weight:600;box-shadow:inset 0 0 0 1px var(--brand)}
+.service-option:has(input:focus-visible){outline:2px solid var(--brand);outline-offset:2px}
+.service-schedule-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;margin-top:6px}
+.service-schedule-row{margin:0}
+.service-schedule-row>span{display:block;font-weight:600}
+@media (max-width:640px){.service-picker,.service-schedule-list{grid-template-columns:1fr}}

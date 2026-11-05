@@ -3,8 +3,10 @@
 use App\Http\Controllers\JaspestAdminApiController;
 use App\Http\Controllers\JaspestAdminAuthController;
 use App\Http\Controllers\JaspestAdminController;
+use App\Http\Controllers\JaspestContractApiController;
 use App\Http\Controllers\JaspestFonnteWebhookController;
 use App\Http\Controllers\JaspestEnquiryController;
+use App\Http\Controllers\JaspestFinanceController;
 use App\Http\Middleware\EnsureJaspestAdmin;
 use Illuminate\Support\Facades\Route;
 
@@ -31,7 +33,7 @@ Route::middleware('web')->group(function (): void {
             Route::prefix('api')->name('api.')->group(function (): void {
                 Route::get('/dashboard', [JaspestAdminApiController::class, 'dashboard'])->name('dashboard');
                 Route::get('/bookings', [JaspestAdminApiController::class, 'bookings'])->name('bookings.index');
-                Route::post('/bookings/manual', [JaspestAdminApiController::class, 'storeManualDealOrder'])
+                Route::post('/bookings/manual', [JaspestContractApiController::class, 'storeManualOrder'])
                     ->middleware('throttle:20,1')->name('bookings.manual.store');
                 Route::get('/bookings/export', [JaspestAdminApiController::class, 'exportBookings'])->name('bookings.export');
                 Route::get('/bookings/{enquiry}', [JaspestAdminApiController::class, 'showBooking'])->name('bookings.show');
@@ -46,6 +48,39 @@ Route::middleware('web')->group(function (): void {
                     ->middleware('throttle:30,1')->name('bookings.status');
                 Route::post('/bookings/{enquiry}/whatsapp-notification/retry', [JaspestAdminApiController::class, 'retryDealOrderWhatsapp'])
                     ->middleware('throttle:5,1')->name('bookings.whatsapp-notification.retry');
+
+                Route::prefix('finance')->name('finance.')->middleware('can:manage-jaspest-finance')->group(function (): void {
+                    Route::get('/summary', [JaspestFinanceController::class, 'summary'])->name('summary');
+                    Route::get('/references', [JaspestFinanceController::class, 'references'])->name('references');
+                    Route::get('/bank-accounts', [JaspestFinanceController::class, 'bankAccounts'])->name('bank-accounts.index');
+                    Route::post('/bank-accounts', [JaspestFinanceController::class, 'storeBankAccount'])->middleware('throttle:30,1')->name('bank-accounts.store');
+                    Route::put('/bank-accounts/{bankAccount}', [JaspestFinanceController::class, 'updateBankAccount'])->whereNumber('bankAccount')->middleware('throttle:30,1')->name('bank-accounts.update');
+                    Route::delete('/bank-accounts/{bankAccount}', [JaspestFinanceController::class, 'deleteBankAccount'])->whereNumber('bankAccount')->middleware('throttle:30,1')->name('bank-accounts.delete');
+                    Route::get('/orders', [JaspestFinanceController::class, 'orders'])->name('orders');
+                    Route::get('/invoices', [JaspestFinanceController::class, 'invoices'])->name('invoices.index');
+                    Route::get('/cash', [JaspestFinanceController::class, 'cash'])->name('cash');
+                    Route::get('/receivables', [JaspestFinanceController::class, 'receivables'])->name('receivables');
+                    Route::get('/export', [JaspestFinanceController::class, 'export'])->name('export');
+                    Route::post('/orders/{enquiry}/invoice', [JaspestFinanceController::class, 'createInvoice'])->name('invoices.store');
+                    Route::post('/invoices/{invoice}/payments', [JaspestFinanceController::class, 'recordPayment'])->whereNumber('invoice')->name('payments.store');
+                    Route::get('/invoices/{invoice}/print', [JaspestFinanceController::class, 'printInvoice'])->whereNumber('invoice')->name('invoices.print');
+                });
+
+                Route::prefix('contracts')->name('contracts.')->group(function (): void {
+                    Route::get('/', [JaspestContractApiController::class, 'contractIndex'])->name('index');
+                    Route::post('/', [JaspestContractApiController::class, 'contractStore'])
+                        ->middleware('throttle:20,1')->name('store');
+                    Route::get('/{contract}', [JaspestContractApiController::class, 'contractShow'])
+                        ->whereNumber('contract')->name('show');
+                    Route::post('/{contract}/extend', [JaspestContractApiController::class, 'contractExtend'])
+                        ->whereNumber('contract')->middleware('throttle:20,1')->name('extend');
+                    Route::patch('/{contract}/cancel', [JaspestContractApiController::class, 'contractCancel'])
+                        ->whereNumber('contract')->middleware('throttle:10,1')->name('cancel');
+                });
+                Route::patch('/contract-visits/{visit}', [JaspestContractApiController::class, 'contractVisitUpdate'])
+                    ->whereNumber('visit')->middleware('throttle:60,1')->name('contract-visits.update');
+                Route::post('/contract-visits/{visit}/action', [JaspestContractApiController::class, 'contractVisitAction'])
+                    ->whereNumber('visit')->middleware('throttle:60,1')->name('contract-visits.action');
 
                 Route::get('/accounts', [JaspestAdminApiController::class, 'accounts'])->middleware('can:manage-jaspest-accounts')->name('accounts.index');
                 Route::post('/accounts', [JaspestAdminApiController::class, 'storeAccount'])

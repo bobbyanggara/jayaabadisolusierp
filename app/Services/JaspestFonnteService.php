@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\JaspestContentItem;
+use App\Models\JaspestContract;
 use App\Models\JaspestEnquiry;
 use App\Models\JaspestWhatsappNotification;
 use Carbon\Carbon;
@@ -227,6 +228,51 @@ class JaspestFonnteService
         return $locked->fresh();
     }
 
+    /**
+     * Pesan konfirmasi kontrak berkala. Hanya dikirim sekali saat kontrak pertama kali dibuat
+     * (notifikasi bersifat idempoten per order); jadwal kunjungan tidak memicu pesan lain.
+     */
+    private function buildContractMessage(JaspestEnquiry $enquiry, JaspestContract $contract, string $serviceTitle): string
+    {
+        $rule = JaspestContractService::PERIODS[$contract->period_type] ?? ['label' => $contract->period_type, 'unit' => 'periode'];
+        $unit = strtolower($rule['unit']);
+        $totalVisits = (int) $contract->visits_per_period * (int) $contract->duration_periods;
+        $rupiah = static fn ($value): string => 'Rp. '.number_format((float) $value, 0, ',', '.');
+        $date = static fn ($value): string => Carbon::parse($value)->locale('id')->translatedFormat('d F Y');
+        $perVisit = $contract->price_basis === 'per_visit'
+            ? (float) $contract->price_amount
+            : (float) $contract->total_price / max(1, $totalVisits);
+        $recipientName = trim((string) ($enquiry->company_name ?: $enquiry->full_name));
+
+        return implode("\n", [
+            'Halo Bapak/Ibu *'.$recipientName.'* 👋',
+            '',
+            'Terima kasih telah mempercayakan kebutuhan pest control Anda kepada *CV Jaya Abadi Solusi (JASPEST)*.',
+            '',
+            'Dengan senang hati kami informasikan bahwa *kontrak layanan berkala* Anda telah *berhasil dikonfirmasi*.',
+            '',
+            '*DETAIL KONTRAK*',
+            'Nomor Kontrak: *'.$contract->contract_number.'*',
+            'Nomor Order: '.$enquiry->reference,
+            'Layanan: '.$serviceTitle,
+            'Luasan: '.number_format((float) ($contract->area ?? $enquiry->order_area), 2, ',', '.').' m²',
+            'Frekuensi Kunjungan: '.$contract->visits_per_period.'x setiap '.$unit,
+            'Lama Kontrak: '.$contract->duration_periods.' '.$unit.' ('.$totalVisits.' kunjungan)',
+            'Masa Berlaku: '.$date($contract->start_date).' s/d '.$date($contract->end_date),
+            (is_array($contract->services) && count($contract->services) > 1 ? 'Harga Paket per Kunjungan: ' : 'Harga per Kunjungan: ').$rupiah($perVisit),
+            'Total Nilai Kontrak: *'.$rupiah($contract->total_price).'*',
+            'Teknisi: '.($contract->default_technician_name ?: 'Akan diinformasikan'),
+            '',
+            'Tim kami akan menghubungi Anda untuk mengatur tanggal setiap kunjungan.',
+            'Apabila terdapat pertanyaan atau perubahan jadwal, silakan membalas pesan ini.',
+            '',
+            'Terima kasih atas kepercayaan Anda.',
+            '',
+            '*CV JAYA ABADI SOLUSI*',
+            '*JASPEST — Professional Pest Control*',
+        ]);
+    }
+
     public function buildDealOrderMessage(JaspestEnquiry $enquiry): string
     {
         $serviceTitle = JaspestContentItem::query()
@@ -239,15 +285,47 @@ class JaspestFonnteService
             ->title()
             ->toString();
 
+        $contract = JaspestContract::query()->where('enquiry_id', $enquiry->id)->orderBy('id')->first();
+        if ($contract) {
+            $contractServices = is_array($contract->services) ? $contract->services : [];
+            if ($contractServices !== []) {
+                $labels = array_values(array_filter(array_map(
+                    static fn ($item): string => is_array($item) ? trim((string) ($item['title'] ?? $item['slug'] ?? '')) : trim((string) $item),
+                    $contractServices
+                )));
+                if ($labels !== []) {
+                    $serviceTitle = implode(', ', $labels);
+                }
+            }
+
+            return $this->buildContractMessage($enquiry, $contract, (string) $serviceTitle);
+        }
+
         $scheduledDate = $enquiry->scheduled_date
             ? Carbon::parse($enquiry->scheduled_date)->locale('id')->translatedFormat('d F Y')
             : '-';
+
+        // Order dengan beberapa layanan: tampilkan jadwal pelaksanaan per layanan.
+        $serviceSchedules = $enquiry->serviceSchedules();
+        $isMultiService = count($serviceSchedules) > 1;
+        if ($isMultiService) {
+            $serviceTitle = implode(', ', array_column($serviceSchedules, 'title'));
+            $scheduleLines = ['Jadwal Pelaksanaan:'];
+            foreach ($serviceSchedules as $row) {
+                $date = $row['scheduled_date']
+                    ? Carbon::parse($row['scheduled_date'])->locale('id')->translatedFormat('d F Y')
+                    : '-';
+                $scheduleLines[] = '• '.$row['title'].': '.$date;
+            }
+        } else {
+            $scheduleLines = ['Tanggal Pelaksanaan: '.$scheduledDate];
+        }
 
         $recipientName = trim((string) ($enquiry->company_name ?: $enquiry->full_name));
         $price = 'Rp. '.number_format((float) $enquiry->order_price, 0, ',', '.');
         $area = number_format((float) $enquiry->order_area, 2, ',', '.');
 
-        return implode("\n", [
+        return implode("\n", array_merge([
             'Halo Bapak/Ibu *'.$recipientName.'* 👋',
             '',
             'Terima kasih telah mempercayakan kebutuhan pest control Anda kepada *CV Jaya Abadi Solusi (JASPEST)*.',
@@ -259,7 +337,7 @@ class JaspestFonnteService
             'Layanan: '.$serviceTitle,
             'Luasan: '.$area.' m²',
             'Harga Kesepakatan: *'.$price.'*',
-            'Tanggal Pelaksanaan: '.$scheduledDate,
+        ], $scheduleLines, [
             'Teknisi: '.($enquiry->assigned_technician_name ?: '-'),
             '',
             'Tim kami akan mempersiapkan kebutuhan operasional untuk pelaksanaan pekerjaan tersebut.',
@@ -269,7 +347,7 @@ class JaspestFonnteService
             '',
             '*CV JAYA ABADI SOLUSI*',
             '*JASPEST — Professional Pest Control*',
-        ]);
+        ]));
     }
 
 

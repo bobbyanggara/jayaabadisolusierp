@@ -309,7 +309,12 @@
   let clientMeta = { current_page: 1, last_page: 1, total: 0 };
   let accountPage = 1;
   let technicianPage = 1;
+  let technicianWorkloadAll = [];
+  let dealOrderWorkload = null;
+  let technicianWorkloadMap = {};
+  let technicianWorkloadThreshold = 5;
   let clientPage = 1;
+  let clientPerPage = 15;
   let accountEditingId = null;
   let technicianEditingId = null;
   let clientEditingId = null;
@@ -1002,19 +1007,7 @@
         <path class="cm-area" d="${area}"/>
         <path class="cm-line" d="${line}"/>
         ${points}
-      </svg>
-      <details class="cm-notes">
-        <summary>Cara membaca grafik</summary>
-        <ul>
-          <li><b>Sumber data:</b> jumlah permintaan layanan yang dibuat pada tiap hari, mulai ${totals.length - 1} hari lalu sampai hari ini. Semua status ikut dihitung (Baru, Follow-up, Deal Order, Tidak Deal), termasuk Order Manual.</li>
-          <li><b>Batas hari:</b> mengikuti waktu WIB (pukul 00.00–23.59).</li>
-          <li><b>Titik dan garis:</b> angka di atas titik adalah jumlah sebenarnya. Lengkung garis hanya penghubung, tidak ada nilai di antara dua hari.</li>
-          <li><b>Sumbu kiri:</b> menyesuaikan nilai tertinggi dan dibagi 4 interval sama besar (saat ini 0–${yMax}, tiap ${step}).</li>
-          <li><b>Hari ini (merah):</b> belum sehari penuh, jadi selisih “dari kemarin” dan rata-rata bisa terlihat lebih rendah di pagi hari.</li>
-          <li><b>Puncak:</b> bila ada beberapa hari dengan nilai sama, yang ditampilkan adalah hari paling awal.</li>
-          <li><b>Pembaruan:</b> angka dihitung saat halaman dimuat; muat ulang untuk melihat permintaan terbaru.</li>
-        </ul>
-      </details>`;
+      </svg>`;
   }
   function renderRecent() {
     const rows = (recentBookings.length ? recentBookings : bookings).slice(0, 5);
@@ -1116,7 +1109,7 @@
     hint.textContent = 'Permintaan layanan yang telah ditindaklanjuti oleh tim.';
   }
   function eventLabel(event) {
-    return ({ status_changed: 'Status Diperbarui', whatsapp_opened: 'Follow-up Dibuka', automatic_whatsapp_followup: 'Follow-up Dibuka', note_added: 'Catatan Internal', order_confirmed: 'Order Dikonfirmasi', manual_order_created: 'Order Manual Dibuat', client_linked: 'Klien Diperbarui' })[event.event] || 'Permintaan Layanan Diterima';
+    return ({ status_changed: 'Status Diperbarui', whatsapp_opened: 'Follow-up Dibuka', automatic_whatsapp_followup: 'Follow-up Dibuka', note_added: 'Catatan Internal', order_confirmed: 'Order Dikonfirmasi', manual_order_created: 'Order Manual Dibuat', contract_created: 'Kontrak Berkala Dibuat', contract_visit: 'Kunjungan Kontrak', contract_updated: 'Kontrak Diperbarui', client_linked: 'Klien Diperbarui' })[event.event] || 'Permintaan Layanan Diterima';
   }
   function renderEventList(events) {
     if (!events.length) return '<p class="muted-empty">Belum ada riwayat aktivitas.</p>';
@@ -1201,6 +1194,8 @@
     setTimeout(() => (danger ? $('#confirmCancel') : ok).focus(), 0);
     return new Promise((resolve) => { pendingConfirm = resolve; });
   }
+  // API bersama untuk modul lain agar notifikasi dan konfirmasi konsisten dengan UI admin.
+  window.JASPEST_ADMIN_UI = Object.assign(window.JASPEST_ADMIN_UI || {}, { toast, confirmDialog });
   function closeModal(id) {
     const modal = $(`#${id}`);
     if (!modal) return;
@@ -1375,7 +1370,9 @@
         ...(normalizeBookingStatus(booking.status) === 'converted' ? [
           ['Nilai order', formatRupiah(booking.order_price)],
           ['Luas pekerjaan', booking.order_area ? `${booking.order_area} m²` : '-'],
-          ['Tanggal pelaksanaan', formatDateLong(booking.scheduled_date)],
+          Array.isArray(booking.services) && booking.services.length > 1
+            ? ['Jadwal pelaksanaan', booking.services.map((row) => `${row.title}: ${formatDateLong(row.scheduled_date)}`).join(' · '), true]
+            : ['Tanggal pelaksanaan', formatDateLong(booking.scheduled_date)],
           ['Teknisi penanggung jawab', booking.assigned_technician_name || '-']
         ] : [])
       ];
@@ -1453,6 +1450,93 @@
       showError(error.message || 'Status order belum berhasil diperbarui.');
     }
   }
+  // ---- Penugasan teknisi: teknisi yang sudah bertugas tetap bisa dipilih; hanya "Di Luar Tugas" yang tidak bisa.
+  // Bila job aktif melebihi ambang (default 5) hanya muncul peringatan, tidak ada pemblokiran.
+  let orderTechnicianList = [];
+  let orderTechnicianThreshold = 5;
+  let manualTechnicianList = [];
+  let manualTechnicianThreshold = 5;
+
+  function isTechnicianSelectable(technician) {
+    return technician.operational_status !== 'off_duty';
+  }
+  function technicianOptionHtml(technician, withSpecialization) {
+    const selectable = isTechnicianSelectable(technician);
+    const jobs = Number(technician.active_jobs) || 0;
+    let label = `${technician.technician_code || 'TKN'} — ${technician.full_name}`;
+    if (withSpecialization) label += ` · ${technician.specialization || 'Teknisi'}`;
+    const notes = [];
+    if (!selectable) notes.push('Di Luar Tugas');
+    else {
+      if (technician.operational_status === 'assigned') notes.push('Sedang Bertugas');
+      if (jobs > 0) notes.push(`${jobs} job aktif`);
+    }
+    const warn = selectable && technician.job_warning ? '⚠ ' : '';
+    return `<option value="${Number(technician.id)}" ${selectable ? '' : 'disabled'}>${esc(warn + label + (notes.length ? ` (${notes.join(' · ')})` : ''))}</option>`;
+  }
+  function technicianWarningText(technician, threshold) {
+    if (!technician || !technician.job_warning) return '';
+    return `${technician.full_name} sudah memiliki ${Number(technician.active_jobs) || 0} job aktif (lebih dari ${threshold}). Anda tetap dapat memilih teknisi ini.`;
+  }
+  function bindTechnicianWarning(select, target, getList, getThreshold) {
+    select.onchange = () => {
+      const technician = getList().find((item) => String(item.id) === String(select.value));
+      target.textContent = technicianWarningText(technician, getThreshold());
+    };
+  }
+
+  // Konfirmasi order dari website: bisa sekali jalan atau kontrak berkala.
+  const orderState = { techniciansAvailable: true, planError: false, loading: false };
+  function orderIsContract() { return $('#orderType').value === 'contract'; }
+  function syncOrderSubmit() {
+    $('#orderSubmitButton').disabled = orderState.loading
+      || (orderIsContract() ? orderState.planError : !orderState.techniciansAvailable);
+  }
+  function updateOrderPlan() {
+    const type = $('#orderPeriodType').value;
+    const rule = CONTRACT_PERIODS[type];
+    $('#orderUnitA').textContent = rule.unit;
+    $('#orderUnitB').textContent = rule.unit;
+    $('#orderVisits').max = String(rule.maxVisits);
+    $('#orderDuration').max = String(rule.maxPeriods);
+    const summary = $('#orderPlanSummary');
+    if (!orderIsContract()) { summary.textContent = ''; orderState.planError = false; return; }
+    const visits = Number($('#orderVisits').value);
+    const duration = Number($('#orderDuration').value);
+    const start = $('#orderStart').value;
+    let error = '';
+    if (!Number.isInteger(visits) || visits < 1 || visits > rule.maxVisits) error = `Kunjungan per ${rule.unit} harus antara 1 dan ${rule.maxVisits}.`;
+    else if (!Number.isInteger(duration) || duration < 1 || duration > rule.maxPeriods) error = `Lama kontrak harus antara 1 dan ${rule.maxPeriods} ${rule.unit}.`;
+    else if (visits * duration > CONTRACT_MAX_TOTAL_VISITS) error = `Total kunjungan tidak boleh lebih dari ${CONTRACT_MAX_TOTAL_VISITS}.`;
+    summary.classList.toggle('is-error', Boolean(error));
+    orderState.planError = Boolean(error);
+    syncOrderSubmit();
+    if (error) { summary.textContent = error; return; }
+    let text = `${rule.label}: ${visits}x per ${rule.unit} selama ${duration} ${rule.unit} = ${visits * duration} kunjungan`;
+    if (start) text += `, berlaku ${formatDateShort(start)} s/d ${formatDateShort(contractEndDate(start, type, duration))}`;
+    summary.textContent = text + '.';
+  }
+  function updateOrderType() {
+    const isContract = orderIsContract();
+    $('#orderContractFields').hidden = !isContract;
+    $$('#orderContractFields input, #orderContractFields select').forEach((field) => { field.disabled = !isContract; });
+    $('#orderScheduledField').hidden = isContract;
+    $('#orderScheduledDate').disabled = isContract;
+    $('#orderScheduledDate').required = !isContract;
+    const technician = $('#orderTechnicianSelect');
+    technician.required = true;
+    $('#orderTechnicianLabel').textContent = 'Teknisi Penanggung Jawab';
+    $('#orderTechnicianRequired').hidden = false;
+    if (technician.options[0] && technician.options[0].value === '') technician.options[0].textContent = 'Pilih teknisi';
+    $('#orderPriceLabel').textContent = isContract ? 'Harga per kunjungan' : 'Nilai Order';
+    $('#orderPriceHint').textContent = isContract ? 'Harga per kunjungan; total kontrak dihitung otomatis.' : 'Nilai akhir sesuai kesepakatan dengan klien.';
+    $('#orderAssignmentHint').textContent = isContract ? 'Teknisi penanggung jawab bisa diganti per kunjungan. Tanggal kunjungan diatur setelah kontrak dibuat.' : 'Tentukan tanggal pelaksanaan dan teknisi penanggung jawab.';
+    $('#orderSubmitButton span').textContent = isContract ? 'Buat Kontrak' : 'Konfirmasi Order';
+    if (isContract && !$('#orderStart').value) $('#orderStart').value = todayJakarta();
+    updateOrderPlan();
+    syncOrderSubmit();
+  }
+
   async function openOrderConversion() {
     if (!currentBooking) return;
     if (!apiMode) {
@@ -1467,42 +1551,46 @@
     const select = $('#orderTechnicianSelect');
     const submit = $('#orderSubmitButton');
     const hint = $('#orderTechnicianHint');
+    bindTechnicianWarning(select, $('#orderTechnicianWarning'), () => orderTechnicianList, () => orderTechnicianThreshold);
     select.innerHTML = '<option value="">Memuat daftar teknisi…</option>';
     select.disabled = true;
-    submit.disabled = true;
+    orderState.loading = true;
+    orderState.techniciansAvailable = true;
+    orderState.planError = false;
+    updateOrderType();
     hint.textContent = 'Memuat teknisi yang tersedia…';
     hint.classList.remove('is-warning');
+    $('#orderTechnicianWarning').textContent = '';
     showModal('orderModal');
 
     try {
       const response = await apiRequest('/booking-technicians');
       const list = Array.isArray(response.data) ? response.data : [];
-      const available = list.filter((item) => item.is_available === true || item.operational_status === 'available');
-      const statusText = { available: 'Tersedia', assigned: 'Sedang Bertugas', off_duty: 'Di Luar Tugas' };
+      const available = list.filter(isTechnicianSelectable);
       if (list.length === 0) {
         select.innerHTML = '<option value="">Belum ada data teknisi</option>';
         hint.textContent = 'Tambahkan teknisi terlebih dahulu melalui menu Data Teknisi.';
         hint.classList.add('is-warning');
         select.disabled = true;
-        submit.disabled = true;
+        orderState.techniciansAvailable = false;
         return;
       }
 
-      select.innerHTML = '<option value="">Pilih teknisi yang tersedia</option>' + list.map((technician) => {
-        const isAvailable = technician.is_available === true || technician.operational_status === 'available';
-        const label = `${technician.technician_code || 'TKN'} — ${technician.full_name} · ${technician.specialization || 'Teknisi'}`;
-        const suffix = isAvailable ? '' : ` (${statusText[technician.operational_status] || 'Tidak tersedia'})`;
-        return `<option value="${Number(technician.id)}" ${isAvailable ? '' : 'disabled'}>${esc(label + suffix)}</option>`;
-      }).join('');
+      select.innerHTML = '<option value="">Pilih teknisi</option>' + list.map((technician) => technicianOptionHtml(technician, true)).join('');
       select.disabled = available.length === 0;
-      submit.disabled = available.length === 0;
+      orderState.techniciansAvailable = available.length > 0;
       hint.textContent = available.length
-        ? `${available.length} teknisi tersedia. Teknisi yang sudah bertugas atau di luar tugas tidak dapat dipilih.`
-        : 'Tidak ada teknisi yang tersedia. Ubah status teknisi menjadi Tersedia di menu Data Teknisi.';
+        ? ''
+        : 'Semua teknisi sedang di luar tugas. Ubah status teknisi di menu Data Teknisi.';
       hint.classList.toggle('is-warning', available.length === 0);
+      orderTechnicianList = list;
+      orderTechnicianThreshold = Number(response.warning_threshold) || 5;
     } catch (error) {
       closeModal('orderModal');
       showError(error.message || 'Daftar teknisi gagal dimuat.');
+    } finally {
+      orderState.loading = false;
+      updateOrderType();
     }
   }
 
@@ -1516,15 +1604,32 @@
     const values = Object.fromEntries(new FormData(form).entries());
     values.order_price = parseThousandsInput(values.order_price);
     values.order_area = parseThousandsInput(values.order_area);
-    const technicianLabel = $('#orderTechnicianSelect').selectedOptions[0]?.textContent || 'Teknisi';
+    const isContract = values.order_type === 'contract';
+    const technicianOption = $('#orderTechnicianSelect').selectedOptions[0];
+    const technicianLabel = technicianOption && technicianOption.value ? technicianOption.textContent : '';
+    const technicianWarning = $('#orderTechnicianWarning').textContent;
+    const warningNote = technicianWarning ? ` Perhatian: ${technicianWarning}` : '';
+    let dialog;
+    if (isContract) {
+      const rule = CONTRACT_PERIODS[values.period_type];
+      const visits = Number(values.visits_per_period);
+      const duration = Number(values.duration_periods);
+      dialog = {
+        title: 'Buat Kontrak Berkala?',
+        message: `Order ${currentBooking.id} dengan layanan ${currentBooking.need || 'yang tercatat'} akan dikonfirmasi sebagai kontrak ${rule.label.toLowerCase()} ${visits}x per ${rule.unit} selama ${duration} ${rule.unit} (${visits * duration} kunjungan), mulai ${formatDateLong(values.start_date)}, harga paket ${formatRupiah(values.order_price)} per kunjungan, nilai total ${formatRupiah(Number(values.order_price) * visits * duration)}${technicianLabel ? `, teknisi penanggung jawab ${technicianLabel}` : ''}.${warningNote} Tindakan ini tidak dapat dibatalkan dari halaman Manajemen Order.`,
+        confirmText: 'Buat Kontrak'
+      };
+    } else {
+      dialog = {
+        title: 'Konfirmasi Order?',
+        message: `Order ${currentBooking.id} akan dikonfirmasi dengan nilai ${formatRupiah(values.order_price)}, luas pekerjaan ${Number(values.order_area).toLocaleString('id-ID')} m², tanggal pelaksanaan ${formatDateLong(values.scheduled_date)}, dan teknisi penanggung jawab ${technicianLabel}.${warningNote} Tindakan ini tidak dapat dibatalkan dari halaman Manajemen Order.`,
+        confirmText: 'Konfirmasi Order'
+      };
+    }
     submit.disabled = true;
-    const confirmed = await confirmDialog({
-      title: 'Konfirmasi Order?',
-      message: `Order ${currentBooking.id} akan dikonfirmasi dengan nilai ${formatRupiah(values.order_price)}, luas pekerjaan ${Number(values.order_area).toLocaleString('id-ID')} m², tanggal pelaksanaan ${formatDateLong(values.scheduled_date)}, dan teknisi penanggung jawab ${technicianLabel}. Tindakan ini tidak dapat dibatalkan dari halaman Manajemen Order.`,
-      confirmText: 'Konfirmasi Order'
-    });
+    const confirmed = await confirmDialog(dialog);
     if (!confirmed) {
-      submit.disabled = false;
+      syncOrderSubmit();
       return;
     }
 
@@ -1534,15 +1639,24 @@
         method: 'PATCH',
         body: {
           status: 'converted',
+          order_type: values.order_type,
           order_price: values.order_price,
           order_area: values.order_area,
-          scheduled_date: values.scheduled_date,
-          assigned_technician_id: values.assigned_technician_id
+          scheduled_date: isContract ? null : values.scheduled_date,
+          assigned_technician_id: values.assigned_technician_id ? Number(values.assigned_technician_id) : null,
+          ...(isContract ? {
+            period_type: values.period_type,
+            visits_per_period: Number(values.visits_per_period),
+            duration_periods: Number(values.duration_periods),
+            start_date: values.start_date
+          } : {})
         }
       });
       currentBooking = { ...currentBooking, ...updated };
       closeModal('orderModal');
       closeModal('detailModal');
+      if (updated.technician_warning) showWarning(updated.technician_warning);
+      if (isContract) toast('Order dikonfirmasi sebagai kontrak berkala. Atur tanggal tiap kunjungan pada tab Kontrak Berkala.', 'success');
       try {
         await Promise.all([refreshDashboard(), refreshBookings()]);
       } catch (refreshError) {
@@ -1560,14 +1674,14 @@
         showWarning('Order berhasil disimpan, tetapi status konfirmasi belum dapat dipastikan. Periksa riwayat sebelum mencoba kembali.');
       } else if (notice?.status === 'skipped_consent' || notice?.status === 'skipped_invalid_number') {
         showWarning('Order berhasil disimpan, tetapi konfirmasi tidak dikirim. Periksa persetujuan dan nomor kontak pelanggan.');
-      } else {
+      } else if (!isContract) {
         toast('Order berhasil dikonfirmasi dan penugasan teknisi telah diperbarui.', 'success');
       }
     } catch (error) {
       showError(error.message || 'Order belum berhasil disimpan. Periksa data dan ketersediaan teknisi.');
     } finally {
-      submit.disabled = false;
       submit.innerHTML = original;
+      updateOrderType();
     }
   }
 
@@ -1580,6 +1694,90 @@
     if (!isBusiness) input.value = '';
   }
 
+  // Status form Order Manual: kontrol tombol simpan dari beberapa sumber (memuat, teknisi, skema kontrak).
+  const manualState = { loading: false, techniciansAvailable: true, planError: false };
+  function manualOrderIsContract() {
+    return $('#manualOrderType').value === 'contract';
+  }
+  function syncManualSubmit() {
+    const isContract = manualOrderIsContract();
+    $('#manualBookingSubmit').disabled = manualState.loading
+      || (isContract ? manualState.planError : !manualState.techniciansAvailable);
+  }
+  function updateManualPriceLabel() {
+    const label = $('#manualPriceLabel');
+    const hint = $('#manualPriceHint');
+    const isContract = manualOrderIsContract();
+    if (label) label.textContent = isContract ? 'Harga paket per kunjungan' : 'Harga per kunjungan';
+    if (hint) hint.textContent = isContract
+      ? 'Masukkan harga paket untuk satu kunjungan yang mencakup seluruh layanan terpilih. Total kontrak dihitung dari harga paket per kunjungan dikalikan seluruh kunjungan dalam periode kontrak.'
+      : 'Masukkan harga satu kali kunjungan. Total order dihitung otomatis dari harga per kunjungan dikalikan jumlah jadwal kunjungan yang dipilih.';
+  }
+  // Pilihan layanan Order Manual: satu atau beberapa layanan untuk order sekali jalan maupun kontrak.
+  // Pada kontrak, semua layanan menjadi satu paket yang dikerjakan pada setiap kunjungan.
+  let manualServiceDates = {};
+  function manualServiceBoxes() {
+    return $$('#manualServiceList input[type="checkbox"]');
+  }
+  function renderManualSchedule() {
+    const list = $('#manualScheduleList');
+    if (!list) return;
+    const isContract = manualOrderIsContract();
+    $$('#manualScheduleList input[data-service-date]').forEach((input) => { manualServiceDates[input.dataset.serviceDate] = input.value; });
+    const boxes = manualServiceBoxes();
+    boxes.forEach((box) => box.closest('.service-option').classList.toggle('is-selected', box.checked));
+    const checked = boxes.filter((box) => box.checked);
+    if (!checked.length) {
+      list.innerHTML = '<p class="service-schedule-empty">Pilih layanan terlebih dahulu, lalu tentukan tanggal pelaksanaan masing-masing.</p>';
+      return;
+    }
+    list.innerHTML = checked.map((box) => `<label class="form-label service-schedule-row"><span>${esc(box.dataset.title)}</span><input type="date" data-service-date="${esc(box.value)}" value="${esc(manualServiceDates[box.value] || '')}" ${isContract ? 'disabled' : 'required'} aria-label="Tanggal pelaksanaan ${esc(box.dataset.title)}"></label>`).join('');
+  }
+  function enforceManualServiceMode() {
+    const isContract = manualOrderIsContract();
+    const hint = $('#manualServicesHint');
+    if (hint) {
+      hint.textContent = isContract
+        ? 'Pilih 1–10 layanan. Semua layanan terpilih termasuk dalam paket dan dikerjakan pada setiap kunjungan kontrak.'
+        : 'Pilih 1–10 layanan. Tanggal pelaksanaan diatur per layanan pada bagian Rincian Order.';
+    }
+    renderManualSchedule();
+  }
+  function handleManualServiceChange(event) {
+    const box = event.target.closest('input[type="checkbox"]');
+    if (!box) return;
+    const selectedCount = manualServiceBoxes().filter((item) => item.checked).length;
+    if (selectedCount > 10) {
+      box.checked = false;
+      showWarning('Maksimal 10 layanan dapat dipilih dalam satu order atau kontrak.');
+    }
+    renderManualSchedule();
+  }
+
+  // Menampilkan/menyembunyikan bagian kontrak berkala di dalam form Order Manual.
+  function updateManualOrderType() {
+    const isContract = manualOrderIsContract();
+    $('#manualContractFields').hidden = !isContract;
+    $$('#manualContractFields input, #manualContractFields select').forEach((field) => { field.disabled = !isContract; });
+    $('#manualScheduledField').hidden = isContract;
+    enforceManualServiceMode();
+    const technician = $('#manualTechnicianSelect');
+    technician.required = true;
+    $('#manualTechnicianLabel').textContent = 'Teknisi Penanggung Jawab';
+    $('#manualTechnicianRequired').hidden = false;
+    if (technician.options[0] && technician.options[0].value === '') {
+      technician.options[0].textContent = 'Pilih teknisi';
+    }
+    $('#manualAgreementHint').textContent = isContract
+      ? 'Skema kontrak, nilai, dan teknisi penanggung jawab (bisa diganti per kunjungan). Tanggal tiap kunjungan diatur setelah kontrak dibuat.'
+      : 'Jenis order, nilai pekerjaan, jadwal pelaksanaan, dan teknisi penanggung jawab.';
+    $('#manualBookingSubmit span').textContent = isContract ? 'Buat Kontrak' : 'Simpan Order';
+    if (isContract && !$('#contractStart').value) $('#contractStart').value = todayJakarta();
+    updateManualPriceLabel();
+    updateContractPlan();
+    syncManualSubmit();
+  }
+
   async function openManualBooking() {
     if (!apiMode) {
       showWarning('Order manual belum dapat ditambahkan saat ini. Periksa koneksi dan coba kembali.');
@@ -1587,19 +1785,25 @@
     }
 
     const form = $('#manualBookingForm');
-    const serviceSelect = $('#manualServiceSelect');
+    const serviceList = $('#manualServiceList');
     const technicianSelect = $('#manualTechnicianSelect');
-    const submit = $('#manualBookingSubmit');
     const hint = $('#manualTechnicianHint');
+    const warning = $('#manualTechnicianWarning');
 
     form.reset();
     updateManualCompanyField();
-    serviceSelect.innerHTML = '<option value="">Memuat layanan…</option>';
+    manualServiceDates = {};
+    serviceList.innerHTML = '<p class="service-picker-empty">Memuat layanan…</p>';
     technicianSelect.innerHTML = '<option value="">Memuat teknisi…</option>';
     technicianSelect.disabled = true;
-    submit.disabled = true;
+    manualState.loading = true;
+    manualState.techniciansAvailable = true;
+    manualState.planError = false;
+    manualTechnicianList = [];
     hint.textContent = 'Memuat daftar teknisi…';
     hint.classList.remove('is-warning');
+    warning.textContent = '';
+    updateManualOrderType();
     showModal('manualBookingModal');
 
     try {
@@ -1611,61 +1815,106 @@
       const services = (Array.isArray(serviceResponse.data) ? serviceResponse.data : [])
         .filter((item) => item.status === 'Aktif' && item.slug)
         .map((item) => ({ slug: item.slug, title: item.title }));
-      serviceSelect.innerHTML = '<option value="">Pilih layanan</option>'
-        + services.map((service) => `<option value="${esc(service.slug)}">${esc(service.title)}</option>`).join('');
+      serviceList.innerHTML = services.length
+        ? services.map((service) => `<label class="service-option"><input type="checkbox" name="service_pick" value="${esc(service.slug)}" data-title="${esc(service.title)}"><span>${esc(service.title)}</span></label>`).join('')
+        : '<p class="service-picker-empty">Belum ada layanan aktif. Aktifkan layanan pada menu Konten terlebih dahulu.</p>';
+      renderManualSchedule();
 
       const technicians = Array.isArray(technicianResponse.data) ? technicianResponse.data : [];
-      const available = technicians.filter((item) => item.is_available === true || item.operational_status === 'available');
-      const statusText = { available: 'Tersedia', assigned: 'Sedang Bertugas', off_duty: 'Di Luar Tugas' };
-      technicianSelect.innerHTML = '<option value="">Pilih teknisi</option>' + technicians.map((technician) => {
-        const isAvailable = technician.is_available === true || technician.operational_status === 'available';
-        const label = `${technician.technician_code || 'TKN'} — ${technician.full_name}`;
-        const suffix = isAvailable ? '' : ` (${statusText[technician.operational_status] || 'Tidak tersedia'})`;
-        return `<option value="${Number(technician.id)}" ${isAvailable ? '' : 'disabled'}>${esc(label + suffix)}</option>`;
-      }).join('');
+      const available = technicians.filter(isTechnicianSelectable);
+      manualTechnicianList = technicians;
+      manualTechnicianThreshold = Number(technicianResponse.warning_threshold) || 5;
+      technicianSelect.innerHTML = '<option value="">Pilih teknisi</option>' + technicians.map((technician) => technicianOptionHtml(technician, false)).join('');
       technicianSelect.disabled = available.length === 0;
-      submit.disabled = available.length === 0;
+      bindTechnicianWarning(technicianSelect, warning, () => manualTechnicianList, () => manualTechnicianThreshold);
+      manualState.techniciansAvailable = available.length > 0;
       hint.textContent = available.length
-        ? `${available.length} teknisi tersedia.`
-        : 'Belum ada teknisi yang tersedia. Perbarui status teknisi sebelum mencatat Order Manual.';
+        ? ''
+        : 'Semua teknisi sedang di luar tugas. Perbarui status teknisi sebelum mencatat Order Manual.';
       hint.classList.toggle('is-warning', available.length === 0);
     } catch (error) {
       closeModal('manualBookingModal');
       showError(error.message || 'Form order manual gagal dimuat.');
+    } finally {
+      manualState.loading = false;
+      updateManualOrderType();
     }
   }
 
   async function saveManualBooking(event) {
     event.preventDefault();
     const form = event.currentTarget;
+    const pickedServices = manualServiceBoxes().filter((box) => box.checked);
+    if (!pickedServices.length) { showWarning('Pilih minimal satu layanan.'); return; }
     if (!form.reportValidity()) return;
 
     const submit = $('#manualBookingSubmit');
     const original = submit.innerHTML;
     const values = Object.fromEntries(new FormData(form).entries());
+    const isContract = values.order_type === 'contract';
     values.order_price = parseThousandsInput(values.order_price);
     values.order_area = parseThousandsInput(values.order_area);
     values.company_name = values.property_type === 'bisnis' ? String(values.company_name || '').trim() : null;
     values.description = String(values.description || '').trim();
     values.consent = true;
+    delete values.service_pick;
+    let serviceSchedules = [];
+    if (isContract) {
+      values.need = pickedServices[0].value;
+      values.services = pickedServices.map((box) => box.value);
+    } else {
+      serviceSchedules = pickedServices.map((box) => {
+        const dateInput = $$('#manualScheduleList input[data-service-date]').find((input) => input.dataset.serviceDate === box.value);
+        return { slug: box.value, title: box.dataset.title, scheduled_date: dateInput ? dateInput.value : '' };
+      });
+      if (serviceSchedules.some((row) => !row.scheduled_date)) { showWarning('Tanggal pelaksanaan setiap layanan wajib dipilih.'); return; }
+      values.services = serviceSchedules.map((row) => ({ slug: row.slug, scheduled_date: row.scheduled_date }));
+    }
+    if (!values.assigned_technician_id) { showWarning('Pilih teknisi terlebih dahulu.'); return; }
+    if (isContract) {
+      values.assigned_technician_id = values.assigned_technician_id ? Number(values.assigned_technician_id) : null;
+      values.visits_per_period = Number(values.visits_per_period);
+      values.duration_periods = Number(values.duration_periods);
+      values.price_basis = 'per_visit';
+    }
 
     const price = Number(values.order_price);
     const area = Number(values.order_area);
     if (!Number.isFinite(price) || price <= 0 || !Number.isFinite(area) || area <= 0) {
-      showWarning('Periksa kembali harga dan luasan pekerjaan. Keduanya harus lebih dari nol.');
+      showWarning(isContract
+        ? 'Periksa kembali nilai kontrak dan luasan pekerjaan. Keduanya harus lebih dari nol.'
+        : 'Periksa kembali harga dan luasan pekerjaan. Keduanya harus lebih dari nol.');
       return;
     }
 
     const customer = values.company_name || values.full_name;
-    const technicianLabel = $('#manualTechnicianSelect').selectedOptions[0]?.textContent || 'Teknisi';
+    const technicianOption = $('#manualTechnicianSelect').selectedOptions[0];
+    const technicianLabel = technicianOption && technicianOption.value ? technicianOption.textContent : '';
+    const technicianWarning = $('#manualTechnicianWarning').textContent;
+    const warningNote = technicianWarning ? ` Perhatian: ${technicianWarning}` : '';
+
+    let dialog;
+    if (isContract) {
+      const rule = CONTRACT_PERIODS[values.period_type];
+      const total = values.visits_per_period * values.duration_periods;
+      const totalPrice = price * total;
+      const serviceLabels = pickedServices.map((box) => box.dataset.title || box.value);
+      dialog = {
+        title: 'Buat Kontrak Berkala?',
+        message: `${customer}: kontrak mencakup layanan ${serviceLabels.join(', ')}. Skema ${rule.label.toLowerCase()} ${values.visits_per_period}x per ${rule.unit} selama ${values.duration_periods} ${rule.unit} (${total} kunjungan), mulai ${formatDateLong(values.start_date)}. Harga paket ${formatRupiah(price)} per kunjungan, nilai total ${formatRupiah(totalPrice)}${technicianLabel ? `, teknisi penanggung jawab ${technicianLabel}` : ''}.${warningNote}`,
+        confirmText: 'Buat Kontrak'
+      };
+    } else {
+      dialog = {
+        title: 'Konfirmasi Order Manual?',
+        message: `${customer} akan dicatat sebagai Order Manual dengan harga ${formatRupiah(price)} per kunjungan × ${serviceSchedules.length} kunjungan = total ${formatRupiah(price * serviceSchedules.length)}, luasan ${area.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} m², ${serviceSchedules.length > 1 ? 'layanan dan pelaksanaan ' + serviceSchedules.map((row) => `${row.title} ${formatDateLong(row.scheduled_date)}`).join(', ') : 'pelaksanaan ' + formatDateLong(serviceSchedules[0].scheduled_date)}, dan teknisi ${technicianLabel || 'Teknisi'}.${warningNote}`,
+        confirmText: 'Simpan Order Manual'
+      };
+    }
     submit.disabled = true;
-    const confirmed = await confirmDialog({
-      title: 'Konfirmasi Order Manual?',
-      message: `${customer} akan dicatat sebagai Order Manual dengan nilai ${formatRupiah(price)}, luasan ${area.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} m², pelaksanaan ${formatDateLong(values.scheduled_date)}, dan teknisi ${technicianLabel}.`,
-      confirmText: 'Simpan Order Manual'
-    });
+    const confirmed = await confirmDialog(dialog);
     if (!confirmed) {
-      submit.disabled = false;
+      syncManualSubmit();
       return;
     }
 
@@ -1673,6 +1922,22 @@
     try {
       const created = await apiRequest('/bookings/manual', { method: 'POST', body: values });
       closeModal('manualBookingModal');
+
+      if (isContract) {
+        toast(`Kontrak ${created.contract_number} berhasil dibuat. Atur tanggal tiap kunjungan pada daftar periode.`, 'success');
+        const waStatus = created.whatsapp_notification?.status;
+        if (waStatus === 'accepted' || waStatus === 'sent') toast('Konfirmasi kontrak telah dikirim ke pelanggan via WhatsApp.', 'success');
+        else if (waStatus) showWarning('Kontrak tersimpan, tetapi konfirmasi WhatsApp belum terkirim. Periksa nomor dan persetujuan pelanggan.');
+        if (created.technician_warning) showWarning(created.technician_warning);
+        setOrderTab('contracts');
+        renderContractDetail(created);
+        showModal('contractDetailModal');
+        Promise.allSettled([refreshDashboard(), refreshBookings()]);
+        if ($('#page-clients')?.classList.contains('active')) refreshClients().catch((error) => showError(error.message));
+        return;
+      }
+
+      setOrderTab('requests');
       $('#bookingSearch').value = '';
       $('#statusFilter').value = 'converted';
       $('#typeFilter').value = 'all';
@@ -1696,6 +1961,7 @@
           toast(`Order Manual ${created.reference || created.id} berhasil dibuat.`, 'success');
         }
       }
+      if (created.technician_warning) showWarning(created.technician_warning);
       if ($('#page-clients')?.classList.contains('active')) {
         refreshClients().catch((error) => showError(error.message));
       }
@@ -1703,11 +1969,502 @@
         refreshTechnicians().catch((error) => showError(error.message));
       }
     } catch (error) {
-      showError(error.message || 'Order manual belum berhasil disimpan. Periksa kembali data dan ketersediaan teknisi.');
+      showError(error.message || (isContract
+        ? 'Kontrak belum berhasil disimpan. Periksa kembali datanya.'
+        : 'Order manual belum berhasil disimpan. Periksa kembali data dan teknisi yang dipilih.'));
     } finally {
-      submit.disabled = false;
       submit.innerHTML = original;
+      updateManualOrderType();
+      syncManualSubmit();
     }
+  }
+
+  // ===================== Kontrak Berkala (mingguan / bulanan / tahunan) =====================
+  const CONTRACT_PERIODS = {
+    weekly: { label: 'Mingguan', unit: 'minggu', maxVisits: 14, maxPeriods: 104 },
+    monthly: { label: 'Bulanan', unit: 'bulan', maxVisits: 31, maxPeriods: 60 },
+    yearly: { label: 'Tahunan', unit: 'tahun', maxVisits: 120, maxPeriods: 10 }
+  };
+  const CONTRACT_MAX_TOTAL_VISITS = 1000;
+  const CONTRACT_STATUS_LABEL = { active: 'Aktif', completed: 'Selesai', cancelled: 'Dibatalkan' };
+  const VISIT_STATUS_LABEL = { unscheduled: 'Belum dijadwalkan', scheduled: 'Terjadwal', done: 'Selesai', skipped: 'Dilewati', cancelled: 'Dibatalkan' };
+  let contractPage = 1;
+  let contractMeta = { last_page: 1, total: 0 };
+  let contractSearchTimer = null;
+  let contractTechnicians = [];
+  let currentContract = null;
+
+  function formatDateShort(value) {
+    if (!value) return '-';
+    const date = new Date(`${value}T00:00:00+07:00`);
+    return Number.isNaN(date.getTime()) ? String(value) : new Intl.DateTimeFormat('id-ID', { dateStyle: 'medium', timeZone: 'Asia/Jakarta' }).format(date);
+  }
+  function todayJakarta() {
+    return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+  }
+  // Awal periode ke-index (0-based), selalu dihitung dari tanggal mulai (sama dengan perhitungan server).
+  function contractPeriodStart(startStr, type, index) {
+    const [y, m, d] = startStr.split('-').map(Number);
+    if (type === 'weekly') return new Date(Date.UTC(y, m - 1, d + 7 * index));
+    const total = (m - 1) + (type === 'monthly' ? index : index * 12);
+    const targetYear = y + Math.floor(total / 12);
+    const targetMonth = total % 12;
+    const lastDay = new Date(Date.UTC(targetYear, targetMonth + 1, 0)).getUTCDate();
+    return new Date(Date.UTC(targetYear, targetMonth, Math.min(d, lastDay)));
+  }
+  function contractEndDate(startStr, type, periods) {
+    const next = contractPeriodStart(startStr, type, periods);
+    next.setUTCDate(next.getUTCDate() - 1);
+    return next.toISOString().slice(0, 10);
+  }
+
+  function setOrderTab(tab) {
+    const contracts = tab === 'contracts';
+    $('#requestsView').hidden = contracts;
+    $('#contractsView').hidden = !contracts;
+    $$('[data-order-tab]').forEach((button) => {
+      const active = button.dataset.orderTab === tab;
+      button.classList.toggle('active', active);
+      button.setAttribute('aria-selected', String(active));
+    });
+    if (contracts) refreshContracts().catch((error) => showError(error.message));
+  }
+
+  async function refreshContracts() {
+    if (!apiMode) return;
+    const params = new URLSearchParams({ page: String(contractPage) });
+    const status = $('#contractStatusFilter').value;
+    if (status !== 'all') params.set('status', status);
+    const term = $('#contractSearch').value.trim();
+    if (term) params.set('q', term);
+    const result = await apiRequest(`/contracts?${params.toString()}`);
+    contractMeta = result.meta || { page: 1, last_page: 1, total: 0 };
+    if (contractPage > contractMeta.last_page) {
+      contractPage = Math.max(1, contractMeta.last_page);
+      return refreshContracts();
+    }
+    renderContractCounts(result.counts || {});
+    renderContractRows(Array.isArray(result.data) ? result.data : []);
+  }
+
+  async function refreshContractBadge() {
+    try {
+      const result = await apiRequest('/contracts?status=attention');
+      updateContractBadge((result.counts || {}).attention || 0);
+    } catch (error) { /* lencana bersifat tambahan */ }
+  }
+  function updateContractBadge(count) {
+    const badge = $('#contractAttentionBadge');
+    if (!badge) return;
+    badge.textContent = String(count);
+    badge.hidden = !count;
+    badge.title = count ? `${count} kontrak memiliki kunjungan terlewat` : '';
+  }
+
+  function renderContractCounts(counts) {
+    updateContractBadge(counts.attention || 0);
+    const current = $('#contractStatusFilter').value || 'all';
+    const item = (key, label, warn) => `<button type="button" class="contract-count ${warn && counts[key] ? 'warn' : ''}" data-contract-filter="${key}" aria-pressed="${current === key}"><span>${label}</span><strong>${Number(counts[key] || 0)}</strong></button>`;
+    $('#contractCounts').innerHTML = item('active', 'Aktif') + item('attention', 'Perlu perhatian', true) + item('completed', 'Selesai') + item('cancelled', 'Dibatalkan');
+  }
+
+  function contractSchemeText(contract) {
+    return `${contract.period_label} · ${contract.visits_per_period}x per ${contract.period_unit.toLowerCase()}`;
+  }
+
+  function renderContractRows(items) {
+    const body = $('#contractRows');
+    body.innerHTML = items.map((contract) => {
+      const progress = contract.progress || {};
+      const total = Number(progress.total) || 0;
+      const done = Number(progress.done) || 0;
+      const pct = total ? Math.min(100, Math.round((done / total) * 100)) : 0;
+      const notes = [];
+      if (progress.overdue) notes.push(`<span class="warn">${progress.overdue} terlewat</span>`);
+      if (progress.unscheduled) notes.push(`${progress.unscheduled} belum dijadwalkan`);
+      return `<tr>
+        <td><span class="contract-num">${esc(contract.contract_number)}</span><span class="contract-sub">${esc(contract.service)}</span></td>
+        <td><strong>${esc(contract.customer || '-')}</strong><span class="contract-sub">${esc(contract.whatsapp || '')}</span></td>
+        <td>${esc(contractSchemeText(contract))}<span class="contract-sub">${contract.duration_periods} ${esc(contract.period_unit.toLowerCase())} · ${contract.total_visits} kunjungan</span></td>
+        <td class="contract-progress"><div class="contract-progress-bar"><span style="width:${pct}%"></span></div><span class="contract-progress-text">${done}/${total} selesai${notes.length ? ' · ' + notes.join(' · ') : ''}</span></td>
+        <td>${esc(formatDateShort(contract.start_date))}<span class="contract-sub">s/d ${esc(formatDateShort(contract.end_date))}</span></td>
+        <td><span class="status-pill contract-status-${esc(contract.status)}">${esc(CONTRACT_STATUS_LABEL[contract.status] || contract.status)}</span></td>
+        <td class="align-right"><button type="button" class="btn btn-secondary btn-sm" data-contract-open="${Number(contract.id)}">Kelola</button></td>
+      </tr>`;
+    }).join('');
+    $('#emptyContracts').hidden = items.length > 0;
+    $('#contractTableCount').textContent = contractMeta.total ? `${contractMeta.total} kontrak` : 'Tidak ada kontrak';
+    $('#contractPageLabel').textContent = `${contractMeta.page || 1} / ${contractMeta.last_page || 1}`;
+    $('#contractsPrev').disabled = (contractMeta.page || 1) <= 1;
+    $('#contractsNext').disabled = (contractMeta.page || 1) >= (contractMeta.last_page || 1);
+  }
+
+  // ---------- Skema kontrak (bagian dari form Tambah Order Manual) ----------
+  function updateContractPlan() {
+    const type = $('#contractPeriodType').value;
+    const rule = CONTRACT_PERIODS[type];
+    $('#contractUnitA').textContent = rule.unit;
+    $('#contractUnitB').textContent = rule.unit;
+    $('#contractVisits').max = String(rule.maxVisits);
+    $('#contractDuration').max = String(rule.maxPeriods);
+    updateManualPriceLabel();
+
+    const summary = $('#contractPlanSummary');
+    if (!manualOrderIsContract()) {
+      summary.textContent = '';
+      summary.classList.remove('is-error');
+      manualState.planError = false;
+      return;
+    }
+    const visits = Number($('#contractVisits').value);
+    const duration = Number($('#contractDuration').value);
+    const start = $('#contractStart').value;
+    let error = '';
+    if (!Number.isInteger(visits) || visits < 1 || visits > rule.maxVisits) error = `Kunjungan per ${rule.unit} harus antara 1 dan ${rule.maxVisits}.`;
+    else if (!Number.isInteger(duration) || duration < 1 || duration > rule.maxPeriods) error = `Lama kontrak harus antara 1 dan ${rule.maxPeriods} ${rule.unit}.`;
+    else if (visits * duration > CONTRACT_MAX_TOTAL_VISITS) error = `Total kunjungan tidak boleh lebih dari ${CONTRACT_MAX_TOTAL_VISITS}.`;
+    summary.classList.toggle('is-error', Boolean(error));
+    manualState.planError = Boolean(error);
+    syncManualSubmit();
+    if (error) { summary.textContent = error; return; }
+    const total = visits * duration;
+    let text = `${rule.label}: ${visits}x per ${rule.unit} selama ${duration} ${rule.unit} = ${total} kunjungan`;
+    if (start) text += `, berlaku ${formatDateShort(start)} s/d ${formatDateShort(contractEndDate(start, type, duration))}`;
+    text += '.';
+    summary.textContent = text;
+  }
+
+  // ---------- Detail kontrak & jadwal kunjungan ----------
+  async function openContractDetail(id) {
+    try {
+      const [contract, technicianResponse] = await Promise.all([apiRequest(`/contracts/${Number(id)}`), apiRequest('/booking-technicians')]);
+      contractTechnicians = Array.isArray(technicianResponse.data) ? technicianResponse.data : [];
+      renderContractDetail(contract);
+      showModal('contractDetailModal');
+    } catch (error) {
+      showError(error.message || 'Detail kontrak gagal dimuat.');
+    }
+  }
+
+  function contractTechOptions(selectedId) {
+    const selected = Number(selectedId) || 0;
+    return '<option value="">Pilih teknisi</option>' + contractTechnicians.map((technician) => {
+      const id = Number(technician.id);
+      const off = technician.operational_status === 'off_duty';
+      const jobs = Number(technician.active_jobs) || 0;
+      const note = off ? ' (Di luar tugas)' : (jobs > 0 ? ` (${jobs} job aktif)` : '');
+      const warn = !off && technician.job_warning ? '⚠ ' : '';
+      return `<option value="${id}" ${id === selected ? 'selected' : ''} ${off && id !== selected ? 'disabled' : ''}>${esc(warn + technician.full_name + note)}</option>`;
+    }).join('');
+  }
+
+  function renderVisitRow(visit, contract, period) {
+    const locked = contract.status === 'cancelled' || !['unscheduled', 'scheduled'].includes(visit.status);
+    const label = visit.is_extra ? `Tambahan ${visit.slot_no}` : `Kunjungan ${visit.slot_no}`;
+    const stateText = visit.is_overdue ? 'Terlewat' : (VISIT_STATUS_LABEL[visit.status] || visit.status);
+    const bounds = !visit.is_extra && period ? `min="${esc(period.start)}" max="${esc(period.end)}"` : '';
+    let actions = `<span class="visit-state s-${esc(visit.status)} ${visit.is_overdue ? 'is-overdue' : ''}">${esc(stateText)}</span>`;
+    if (contract.status !== 'cancelled') {
+      if (['unscheduled', 'scheduled'].includes(visit.status)) {
+        actions += `<button type="button" class="btn btn-secondary btn-sm" data-visit-save="${visit.id}">Simpan</button>`;
+        if (visit.status === 'scheduled') {
+          actions += `<button type="button" class="btn btn-primary btn-sm" data-visit-action="complete" data-visit-id="${visit.id}" ${visit.can_complete ? '' : 'disabled title="Tanggal kunjungan belum tiba"'}>Selesai</button>`;
+        }
+        actions += `<button type="button" class="btn btn-outline btn-sm" data-visit-action="skip" data-visit-id="${visit.id}">Lewati</button>`;
+      } else if (['done', 'skipped'].includes(visit.status)) {
+        actions += `<button type="button" class="btn btn-outline btn-sm" data-visit-action="reopen" data-visit-id="${visit.id}">Buka kembali</button>`;
+      }
+    }
+    return `<div class="contract-visit ${visit.is_overdue ? 'is-overdue' : ''}" data-visit-row="${visit.id}">
+      <span class="slot">${esc(label)}</span>
+      <input type="date" data-visit-date value="${esc(visit.scheduled_date || '')}" ${bounds} ${locked ? 'disabled' : ''} aria-label="Tanggal ${esc(label)}">
+      <select data-visit-tech ${locked ? 'disabled' : ''} aria-label="Teknisi ${esc(label)}">${contractTechOptions(visit.technician_id)}</select>
+      <div class="contract-visit-actions">${actions}</div>
+    </div>`;
+  }
+
+  function renderContractDetail(contract) {
+    currentContract = contract;
+    const progress = contract.progress || {};
+    const unit = contract.period_unit.toLowerCase();
+    $('#contractDetailKicker').textContent = `KONTRAK ${contract.period_label.toUpperCase()} · ${(CONTRACT_STATUS_LABEL[contract.status] || '').toUpperCase()}`;
+    $('#contractDetailTitle').textContent = contract.contract_number;
+    $('#contractDetailSub').textContent = `${contract.customer || '-'} · ${contract.service}`;
+
+    const totalVisits = Number(progress.total) || (contract.visits_per_period * contract.duration_periods);
+    const perVisitPrice = contract.price_basis === 'per_visit'
+      ? formatRupiah(contract.price_amount)
+      : formatRupiah(Number(contract.total_price) / Math.max(1, totalVisits));
+    const info = [
+      ['Pelanggan', contract.customer || '-'],
+      ['Kontak WhatsApp', contract.whatsapp || '-'],
+      ['Frekuensi kunjungan', `${contract.visits_per_period}x setiap ${unit}`],
+      ['Lama kontrak', `${contract.duration_periods} ${unit} (${totalVisits} kunjungan)`],
+      ['Masa berlaku', `${formatDateShort(contract.start_date)} s/d ${formatDateShort(contract.end_date)}`],
+      [Array.isArray(contract.services) && contract.services.length > 1 ? 'Harga paket per kunjungan' : 'Harga per kunjungan', perVisitPrice],
+      ['Total nilai kontrak', formatRupiah(contract.total_price)],
+      ['Teknisi penanggung jawab', contract.default_technician_name || 'Belum ditentukan'],
+      ['Alamat lokasi', contract.address || '-']
+    ].map(([label, value]) => `<div><small>${esc(label)}</small><strong>${esc(value)}</strong></div>`).join('');
+
+    const done = progress.done || 0;
+    const unscheduled = progress.unscheduled || 0;
+    const overdue = progress.overdue || 0;
+    const kpi = (label, value, warn) => `<span class="contract-kpi ${warn && value ? 'warn' : ''}">${esc(label)} <strong>${value}</strong></span>`;
+    const kpis = kpi('Sudah dikerjakan', `${done} dari ${progress.total || 0}`)
+      + kpi('Sudah dijadwalkan', progress.scheduled || 0)
+      + kpi('Belum diberi tanggal', unscheduled)
+      + kpi('Telat / terlewat', overdue, true)
+      + kpi('Dilewati', progress.skipped || 0);
+
+    let guide = '';
+    if (contract.status === 'cancelled') guide = 'Kontrak ini sudah dibatalkan.';
+    else if (contract.status === 'completed') guide = 'Kontrak ini sudah selesai. Semua kunjungan telah dikerjakan atau dilewati.';
+    else if (overdue > 0) guide = `<strong>${overdue} kunjungan terlewat</strong> (tanggalnya sudah lewat tetapi belum ditandai selesai). Buka periodenya, lalu klik <b>Selesai</b> bila sudah dikerjakan atau <b>Lewati</b> bila tidak jadi.`;
+    else if (unscheduled > 0) guide = `<strong>Langkah berikutnya:</strong> ${unscheduled} kunjungan belum punya tanggal. Buka periode di bawah, pilih <b>tanggal</b> dan <b>teknisi</b> untuk tiap kunjungan, lalu klik <b>Simpan</b>. Setelah hari kunjungan tiba dan pekerjaan beres, klik <b>Selesai</b>.`;
+    else guide = 'Semua kunjungan sudah terjadwal. Klik <b>Selesai</b> pada tiap kunjungan setelah dikerjakan.';
+    const guideHtml = `<div class="contract-guide ${overdue > 0 && contract.status === 'active' ? 'is-alert' : ''}">${guide}</div>`;
+
+    // Pertahankan periode yang sedang dibuka saat tampilan dimuat ulang; pertama kali: buka periode berjalan.
+    const hadPrevious = $$('#contractDetailBody .contract-period[data-period]').length > 0;
+    const previouslyOpen = new Set($$('#contractDetailBody .contract-period.is-open').map((el) => el.dataset.period));
+    const allPeriods = contract.periods || [];
+    const defaultOpen = allPeriods.find((period) => period.is_current) || allPeriods.find((period) => period.resolved < period.planned) || allPeriods[0];
+    const periods = allPeriods.map((period) => {
+      const open = hadPrevious ? previouslyOpen.has(String(period.index)) : (defaultOpen && defaultOpen.index === period.index);
+      const tag = period.is_current ? '<span class="contract-period-tag">Sedang berjalan</span>' : '';
+      const lateTag = period.visits.some((visit) => visit.is_overdue) ? '<span class="contract-period-tag is-late">Ada yang terlewat</span>' : '';
+      return `<section class="contract-period ${period.is_current ? 'is-current' : ''} ${open ? 'is-open' : ''}" data-period="${period.index}">
+        <button type="button" class="contract-period-head" data-period-toggle aria-expanded="${open ? 'true' : 'false'}">
+          <span class="contract-period-title"><strong>${esc(period.label)}</strong><em>${esc(formatDateShort(period.start))} – ${esc(formatDateShort(period.end))}</em>${tag}${lateTag}</span>
+          <span class="contract-period-count">${period.done} dari ${period.quota} kunjungan selesai</span>
+        </button>
+        <div class="contract-period-body" ${open ? '' : 'hidden'}>${period.visits.map((visit) => renderVisitRow(visit, contract, period)).join('')}</div>
+      </section>`;
+    }).join('');
+    const periodsHeading = allPeriods.length ? `<h3 class="contract-section-title">Jadwal kunjungan per ${esc(unit)} <small>Klik satu ${esc(unit)} untuk membuka atau menutup daftarnya</small></h3>` : '';
+
+    $('#contractDetailBody').innerHTML = `${guideHtml}<div class="contract-info">${info}</div><div class="contract-kpis">${kpis}</div>${periodsHeading}${periods}`;
+
+    const footer = $('#contractDetailFooter');
+    let groups = '';
+    if (contract.status !== 'cancelled') {
+      groups += `<button type="button" class="btn btn-secondary" data-contract-extend-toggle title="Tambah masa kontrak beserta kunjungan barunya">Perpanjang Kontrak</button>`;
+    }
+    if (contract.status === 'active') {
+      groups += `<button type="button" class="btn btn-danger" data-contract-cancel>Batalkan Kontrak</button>`;
+    }
+    footer.innerHTML = `<button type="button" class="btn btn-outline" data-close="contractDetailModal">Tutup</button><div class="group">${groups}</div>`;
+  }
+
+  async function contractMutation(request, successMessage) {
+    try {
+      const result = await request();
+      renderContractDetail(result);
+      if (successMessage) toast(successMessage, 'success');
+      if (result.technician_warning) showWarning(result.technician_warning);
+      refreshContracts().catch(() => {});
+      return true;
+    } catch (error) {
+      showError(error.message || 'Perubahan belum berhasil disimpan.');
+      return false;
+    }
+  }
+
+  async function handleContractDetailClick(event) {
+    const target = event.target.closest('button');
+    if (!target || !currentContract) return;
+    const contractId = currentContract.id;
+
+    if (target.hasAttribute('data-period-toggle')) {
+      const section = target.closest('.contract-period');
+      const open = section.classList.toggle('is-open');
+      target.setAttribute('aria-expanded', String(open));
+      section.querySelector('.contract-period-body').hidden = !open;
+      return;
+    }
+
+    if (target.dataset.visitSave) {
+      const row = target.closest('[data-visit-row]');
+      const date = row.querySelector('[data-visit-date]').value || null;
+      const technician = row.querySelector('[data-visit-tech]').value || null;
+      target.disabled = true;
+      await contractMutation(() => apiRequest(`/contract-visits/${Number(target.dataset.visitSave)}`, {
+        method: 'PATCH',
+        body: { scheduled_date: date, technician_id: technician ? Number(technician) : null }
+      }), 'Jadwal kunjungan disimpan.');
+      return;
+    }
+
+    if (target.dataset.visitAction) {
+      const action = target.dataset.visitAction;
+      const copy = {
+        complete: ['Tandai kunjungan selesai?', 'Kunjungan akan dicatat selesai dan terhitung pada kuota periode ini.', 'Ya, selesai'],
+        skip: ['Lewati kunjungan ini?', 'Kunjungan dicatat dilewati dan tidak terhitung selesai. Anda masih bisa membukanya kembali.', 'Ya, lewati'],
+        reopen: ['Buka kembali kunjungan?', 'Status kunjungan dikembalikan agar jadwalnya dapat diubah.', 'Ya, buka kembali']
+      }[action];
+      if (!copy) return;
+      const confirmed = await confirmDialog({ title: copy[0], message: copy[1], confirmText: copy[2] });
+      if (!confirmed) return;
+      await contractMutation(() => apiRequest(`/contract-visits/${Number(target.dataset.visitId)}/action`, { method: 'POST', body: { action } }),
+        action === 'complete' ? 'Kunjungan ditandai selesai.' : (action === 'skip' ? 'Kunjungan dilewati.' : 'Kunjungan dibuka kembali.'));
+      return;
+    }
+
+    if (target.hasAttribute('data-contract-extend-toggle')) {
+      openContractExtendModal();
+      return;
+    }
+
+    if (target.hasAttribute('data-contract-cancel')) {
+      const confirmed = await confirmDialog({
+        title: 'Batalkan kontrak?',
+        message: `Semua kunjungan yang belum selesai pada ${currentContract.contract_number} akan dibatalkan. Kunjungan yang sudah selesai tetap tercatat. Tindakan ini tidak dapat dibatalkan.`,
+        confirmText: 'Batalkan Kontrak',
+        danger: true
+      });
+      if (!confirmed) return;
+      await contractMutation(() => apiRequest(`/contracts/${contractId}/cancel`, { method: 'PATCH', body: {} }), 'Kontrak dibatalkan.');
+    }
+  }
+
+  // Popup perpanjang kontrak (menggantikan panel inline di dalam detail kontrak).
+  function contractPeriodTypeOf(contract) {
+    if (CONTRACT_PERIODS[contract.period_type]) return contract.period_type;
+    return { minggu: 'weekly', bulan: 'monthly', tahun: 'yearly' }[String(contract.period_unit || '').toLowerCase()] || 'monthly';
+  }
+  function extendGridHtml(rows) {
+    return rows.map(([label, value, strong]) => `<div class="${strong ? 'is-strong' : ''}"><dt>${esc(label)}</dt><dd>${esc(value)}</dd></div>`).join('');
+  }
+  function updateContractExtendSummary() {
+    const contract = currentContract;
+    if (!contract) return;
+    const unit = contract.period_unit.toLowerCase();
+    const periods = Number($('#extendPeriods').value);
+    const valid = Number.isInteger(periods) && periods >= 1;
+    const needsPrice = contract.price_basis === 'total';
+    const perPeriod = Number(contract.visits_per_period) || 0;
+    const currentVisits = Number((contract.progress || {}).total) || (perPeriod * contract.duration_periods);
+    const addedVisits = valid ? periods * perPeriod : 0;
+    const type = contractPeriodTypeOf(contract);
+    const rule = CONTRACT_PERIODS[type];
+
+    let addedValue = 0;
+    if (needsPrice) addedValue = Number(parseThousandsInput($('#extendPrice').value)) || 0;
+    else addedValue = valid ? addedVisits * Number(contract.price_amount || 0) : 0;
+    const perVisit = needsPrice
+      ? (addedVisits > 0 && addedValue > 0 ? addedValue / addedVisits : null)
+      : Number(contract.price_amount || 0);
+    const newEnd = valid && contract.start_date ? contractEndDate(contract.start_date, type, Number(contract.duration_periods) + periods) : null;
+
+    $('#contractExtendResult').innerHTML = extendGridHtml([
+      ['Masa berlaku baru', newEnd ? `${formatDateShort(contract.start_date)} s/d ${formatDateShort(newEnd)}` : '-'],
+      ['Lama kontrak baru', valid ? `${Number(contract.duration_periods) + periods} ${unit}` : '-'],
+      ['Total kunjungan baru', valid ? `${currentVisits + addedVisits} kunjungan (+${addedVisits})` : '-'],
+      ['Harga per kunjungan', perVisit ? formatRupiah(perVisit) : '-'],
+      ['Tambahan nilai kontrak', valid && addedValue > 0 ? formatRupiah(addedValue) : '-'],
+      ['Total nilai kontrak baru', valid && addedValue > 0 ? formatRupiah(Number(contract.total_price) + addedValue) : '-', true]
+    ]);
+  }
+
+  function openContractExtendModal() {
+    const contract = currentContract;
+    if (!contract) return;
+    const unit = contract.period_unit.toLowerCase();
+    const needsPrice = contract.price_basis === 'total';
+    const progress = contract.progress || {};
+    const currentVisits = Number(progress.total) || (contract.visits_per_period * contract.duration_periods);
+    $('#contractExtendSub').textContent = `${contract.contract_number || ''} · ${contract.customer || '-'}`;
+    $('#contractExtendUnit').textContent = unit;
+    $('#contractExtendCurrent').innerHTML = extendGridHtml([
+      ['Pelanggan', contract.customer || '-'],
+      ['Layanan', contract.service || '-'],
+      ['Skema', `${contract.period_label || ''} · ${contract.visits_per_period}x setiap ${unit}`],
+      ['Masa berlaku saat ini', `${formatDateShort(contract.start_date)} s/d ${formatDateShort(contract.end_date)}`],
+      ['Lama kontrak', `${contract.duration_periods} ${unit} (${currentVisits} kunjungan)`],
+      ['Total nilai kontrak', formatRupiah(contract.total_price)]
+    ]);
+    $('#extendPeriods').value = contract.duration_periods;
+    $('#extendPrice').value = '';
+    $('#extendPriceField').hidden = !needsPrice;
+    updateContractExtendSummary();
+    showModal('contractExtendModal');
+    setTimeout(() => $('#extendPeriods').focus(), 0);
+  }
+
+  async function saveContractExtend() {
+    if (!currentContract) return;
+    const contractId = currentContract.id;
+    const periods = Number($('#extendPeriods').value);
+    if (!Number.isInteger(periods) || periods < 1) { showWarning('Jumlah periode tambahan minimal 1.'); return; }
+    const extendRule = CONTRACT_PERIODS[contractPeriodTypeOf(currentContract)];
+    if (extendRule && Number(currentContract.duration_periods) + periods > extendRule.maxPeriods) {
+      showWarning(`Total lama kontrak tidak boleh melebihi ${extendRule.maxPeriods} ${extendRule.unit}.`); return;
+    }
+    const needsPrice = currentContract.price_basis === 'total';
+    const addedPrice = needsPrice ? Number(parseThousandsInput($('#extendPrice').value)) : null;
+    if (needsPrice && (!Number.isFinite(addedPrice) || addedPrice <= 0)) { showWarning('Isi nilai tambahan untuk perpanjangan kontrak dengan harga total.'); return; }
+    const newEnd = currentContract.start_date
+      ? contractEndDate(currentContract.start_date, contractPeriodTypeOf(currentContract), Number(currentContract.duration_periods) + periods)
+      : null;
+    const confirmed = await confirmDialog({
+      title: 'Perpanjang kontrak?',
+      message: `Kontrak ${currentContract.contract_number} ditambah ${periods} ${currentContract.period_unit.toLowerCase()} dengan ${periods * currentContract.visits_per_period} slot kunjungan baru${newEnd ? `, berlaku sampai ${formatDateLong(newEnd)}` : ''}${addedPrice ? `, nilai tambahan ${formatRupiah(addedPrice)}` : ''}. Lanjutkan?`,
+      confirmText: 'Ya, perpanjang'
+    });
+    if (!confirmed) return;
+    const button = $('#contractExtendSave');
+    button.disabled = true;
+    try {
+      const ok = await contractMutation(() => apiRequest(`/contracts/${contractId}/extend`, {
+        method: 'POST', body: { periods, added_price: addedPrice }
+      }), 'Kontrak berhasil diperpanjang.');
+      if (ok) closeModal('contractExtendModal');
+    } finally {
+      button.disabled = false;
+    }
+  }
+
+  function bindContracts() {
+    $$('[data-order-tab]').forEach((button) => button.addEventListener('click', () => setOrderTab(button.dataset.orderTab)));
+    $('#manualOrderType').addEventListener('change', updateManualOrderType);
+    $('#manualServiceList').addEventListener('change', handleManualServiceChange);
+    $('#orderType').addEventListener('change', updateOrderType);
+    ['#orderPeriodType', '#orderVisits', '#orderDuration', '#orderStart'].forEach((selector) => {
+      $(selector).addEventListener('input', updateOrderPlan);
+      $(selector).addEventListener('change', updateOrderPlan);
+    });
+    ['#contractPeriodType', '#contractVisits', '#contractDuration', '#contractStart'].forEach((selector) => {
+      $(selector).addEventListener('input', updateContractPlan);
+      $(selector).addEventListener('change', updateContractPlan);
+    });
+    $('#contractRows').addEventListener('click', (event) => {
+      const open = event.target.closest('[data-contract-open]');
+      if (open) openContractDetail(open.dataset.contractOpen);
+    });
+    $('#contractCounts').addEventListener('click', (event) => {
+      const chip = event.target.closest('[data-contract-filter]');
+      if (!chip) return;
+      const select = $('#contractStatusFilter');
+      select.value = select.value === chip.dataset.contractFilter ? 'all' : chip.dataset.contractFilter;
+      contractPage = 1;
+      refreshContracts().catch((error) => showError(error.message));
+    });
+    $('#contractStatusFilter').addEventListener('change', () => { contractPage = 1; refreshContracts().catch((error) => showError(error.message)); });
+    $('#contractSearch').addEventListener('input', () => {
+      clearTimeout(contractSearchTimer);
+      contractSearchTimer = setTimeout(() => { contractPage = 1; refreshContracts().catch((error) => showError(error.message)); }, 320);
+    });
+    $('#contractsPrev').addEventListener('click', () => { if (contractPage > 1) { contractPage -= 1; refreshContracts().catch((error) => showError(error.message)); } });
+    $('#contractsNext').addEventListener('click', () => { if (contractPage < (contractMeta.last_page || 1)) { contractPage += 1; refreshContracts().catch((error) => showError(error.message)); } });
+    $('#contractDetailBody').addEventListener('click', handleContractDetailClick);
+    $('#contractDetailFooter').addEventListener('click', handleContractDetailClick);
+    bindThousandsInputs($('#contractExtendModal'));
+    $('#extendPeriods').addEventListener('input', updateContractExtendSummary);
+    $('#extendPrice').addEventListener('input', updateContractExtendSummary);
+    $('#contractExtendSave').addEventListener('click', saveContractExtend);
+    $('#contractExtendModal').addEventListener('keydown', (event) => { if (event.key === 'Enter' && event.target.tagName === 'INPUT') { event.preventDefault(); saveContractExtend(); } });
+    if (apiMode) refreshContractBadge();
   }
 
   function closeAllModals() {
@@ -2321,40 +3078,122 @@
 
   function clientStatusLabel(status) { return status === 'active' ? 'Aktif' : 'Nonaktif'; }
   function clientStatusClass(status) { return status === 'active' ? 'status-contacted' : 'status-new'; }
-  function updateClientSummary(summary = {}) {
-    $('#clientTotal').textContent = Number(summary.total || 0);
-    $('#clientActive').textContent = Number(summary.active || 0);
-    $('#clientLinkedOrders').textContent = Number(summary.linked_orders || 0);
+  // Data klien = klien dari Deal Order (server) + klien kontrak berkala. Nomor WhatsApp yang sama digabung.
+  let clientSummaryServer = {};
+  let clientContractsOk = true;
+  function normalizeWhatsapp(value) {
+    let digits = String(value || '').replace(/\D/g, '');
+    if (digits.startsWith('0')) digits = `62${digits.slice(1)}`;
+    else if (digits.startsWith('8')) digits = `62${digits}`;
+    return digits;
+  }
+  async function fetchAllPages(path, baseParams, cap = 40) {
+    const items = [];
+    let first = null;
+    let page = 1;
+    let last = 1;
+    do {
+      const result = await apiRequest(`${path}?${new URLSearchParams({ ...baseParams, page: String(page) }).toString()}`);
+      if (!first) first = result;
+      items.push(...(Array.isArray(result.data) ? result.data : []));
+      last = Number((result.meta || {}).last_page) || 1;
+      page += 1;
+    } while (page <= last && page <= cap);
+    return { items, first };
+  }
+  function mergeClientsWithContracts(serverClients, contracts) {
+    const list = serverClients.map((client) => ({ ...client, contracts: [], contract_only: false }));
+    const byPhone = new Map();
+    list.forEach((client) => { const key = normalizeWhatsapp(client.whatsapp); if (key) byPhone.set(key, client); });
+    (contracts || []).forEach((contract) => {
+      const key = normalizeWhatsapp(contract.whatsapp);
+      let client = key ? byPhone.get(key) : null;
+      if (!client) {
+        client = {
+          id: `contract:${key || contract.id}`, full_name: contract.customer || '-', company_name: '', whatsapp: contract.whatsapp || '',
+          client_code: 'Dari kontrak', order_count: 0, status: 'inactive', contracts: [], contract_only: true
+        };
+        list.push(client);
+        if (key) byPhone.set(key, client);
+      }
+      client.contracts.push(contract);
+    });
+    list.forEach((client) => {
+      if (client.contract_only && client.contracts.some((contract) => contract.status === 'active')) client.status = 'active';
+    });
+    return list;
+  }
+  function updateClientSummary() {
+    const contractOnly = clients.filter((client) => client.contract_only);
+    $('#clientTotal').textContent = Number(clientSummaryServer.total || 0) + contractOnly.length;
+    $('#clientActive').textContent = Number(clientSummaryServer.active || 0) + contractOnly.filter((client) => client.status === 'active').length;
+    $('#clientLinkedOrders').textContent = Number(clientSummaryServer.linked_orders || 0);
+    $('#clientContractTotal').textContent = clients.filter((client) => client.contracts.length).length;
+  }
+  function clientContractCell(client) {
+    if (!client.contracts.length) return '<span class="client-contract-none">—</span>';
+    const active = client.contracts.filter((contract) => contract.status === 'active');
+    const overdue = client.contracts.reduce((sum, contract) => sum + (Number((contract.progress || {}).overdue) || 0), 0);
+    const nearestEnd = active.map((contract) => contract.end_date).filter(Boolean).sort()[0];
+    const numbers = client.contracts.map((contract) => contract.contract_number).filter(Boolean).join(', ');
+    return `<div class="client-contract" title="${esc(numbers)}">
+      <span class="client-contract-chip ${active.length ? 'is-active' : ''}">${client.contracts.length} kontrak${active.length ? ` · ${active.length} aktif` : ''}</span>
+      <small>${nearestEnd ? `Berakhir ${esc(formatDateShort(nearestEnd))}` : 'Tidak ada kontrak aktif'}</small>
+      ${overdue ? `<small class="client-contract-warn">${overdue} kunjungan terlewat</small>` : ''}
+    </div>`;
+  }
+  function filteredClients() {
+    const term = $('#clientSearch').value.trim().toLowerCase();
+    const termDigits = term.replace(/\D/g, '');
+    const status = $('#clientStatusFilter').value || 'all';
+    const type = $('#clientTypeFilter').value || 'all';
+    return clients.filter((client) => {
+      if (status !== 'all' && client.status !== status) return false;
+      if (type === 'contract' && !client.contracts.length) return false;
+      if (type === 'regular' && client.contracts.length) return false;
+      if (!term) return true;
+      const text = `${client.full_name} ${client.client_code} ${client.company_name || ''}`.toLowerCase();
+      return text.includes(term) || (termDigits.length >= 3 && normalizeWhatsapp(client.whatsapp).includes(termDigits.replace(/^0/, '62')));
+    });
   }
   function renderClientRows() {
-    $('#clientRows').innerHTML = clients.map((client) => `
+    updateClientSummary();
+    const filtered = filteredClients();
+    const lastPage = Math.max(1, Math.ceil(filtered.length / clientPerPage));
+    if (clientPage > lastPage) clientPage = lastPage;
+    const pageItems = filtered.slice((clientPage - 1) * clientPerPage, clientPage * clientPerPage);
+    $('#clientRows').innerHTML = pageItems.map((client) => `
       <tr>
         <td><div class="master-person"><span class="client-initial">${esc(initials(client.full_name))}</span><span><strong>${esc(client.full_name)}</strong><small>${esc(client.client_code)}</small></span></div></td>
         <td class="master-cell">${esc(client.company_name || 'Perorangan')}</td>
         <td class="master-contact">${esc(formatPhone(client.whatsapp))}</td>
         <td><span class="client-order-count">${Number(client.order_count || 0)} order</span></td>
+        <td>${clientContractCell(client)}</td>
         <td><span class="status-pill ${clientStatusClass(client.status)}">${esc(clientStatusLabel(client.status))}</span></td>
-        <td class="master-actions"><div class="table-actions"><button type="button" class="table-action" data-edit-client="${esc(client.id)}" title="Edit data klien" aria-label="Edit data klien ${esc(client.full_name)}">${uiIcon('edit')}<span>Edit</span></button></div></td>
+        <td class="master-actions"><div class="table-actions">${client.contract_only
+          ? `<button type="button" class="table-action" disabled title="Klien ini baru tercatat lewat kontrak berkala; profilnya belum bisa diedit di sini">${uiIcon('edit')}<span>Edit</span></button>`
+          : `<button type="button" class="table-action" data-edit-client="${esc(client.id)}" title="Edit data klien" aria-label="Edit data klien ${esc(client.full_name)}">${uiIcon('edit')}<span>Edit</span></button>`}</div></td>
       </tr>`).join('');
-    $('#emptyClients').hidden = clients.length > 0;
-    $('#clientCount').textContent = `${clientMeta.total || 0} klien`;
-    $('#clientDirectoryCount').textContent = `${clientMeta.total || 0} klien`;
-    $('#clientTableCount').textContent = `Menampilkan ${clients.length} dari ${clientMeta.total || 0} klien`;
-    $('#clientPageLabel').textContent = `${clientMeta.current_page || 1} / ${clientMeta.last_page || 1}`;
-    $('#clientsPrev').disabled = (clientMeta.current_page || 1) <= 1;
-    $('#clientsNext').disabled = (clientMeta.current_page || 1) >= (clientMeta.last_page || 1);
+    $('#emptyClients').hidden = filtered.length > 0;
+    $('#clientCount').textContent = `${filtered.length} klien`;
+    $('#clientDirectoryCount').textContent = `${filtered.length} klien`;
+    $('#clientTableCount').textContent = `Menampilkan ${pageItems.length} dari ${filtered.length} klien`;
+    $('#clientPageLabel').textContent = `${clientPage} / ${lastPage}`;
+    $('#clientsPrev').disabled = clientPage <= 1;
+    $('#clientsNext').disabled = clientPage >= lastPage;
   }
   async function refreshClients() {
     if (!apiMode) { showWarning('Data Klien belum dapat dimuat. Silakan coba kembali.'); return; }
-    const params = new URLSearchParams({
-      search: $('#clientSearch').value.trim(),
-      status: $('#clientStatusFilter').value || 'all',
-      page: String(clientPage)
-    });
-    const response = await apiRequest(`/clients?${params.toString()}`);
-    clients = response.data || [];
-    clientMeta = response.meta || { current_page: 1, last_page: 1, total: clients.length };
-    updateClientSummary(response.summary || {});
+    const [clientResult, contractResult] = await Promise.all([
+      fetchAllPages('/clients', { search: '', status: 'all' }),
+      fetchAllPages('/contracts', {}).catch(() => null)
+    ]);
+    const response = clientResult.first || {};
+    clientSummaryServer = response.summary || {};
+    clientPerPage = Math.max(1, Number((response.meta || {}).per_page) || 15);
+    clientContractsOk = Boolean(contractResult);
+    clients = mergeClientsWithContracts(clientResult.items, contractResult ? contractResult.items : []);
+    $('#clientTypeFilter').hidden = !clientContractsOk;
     renderClientRows();
     if (Number(response.sync_issues || 0) > 0) {
       showWarning(`${Number(response.sync_issues)} order berstatus Deal Order belum dapat disinkronkan karena identitas klien perlu diperiksa.`);
@@ -2392,11 +3231,95 @@
     finally { submit.disabled = false; submit.innerHTML = original; }
   }
 
+  // ---------- Beban kerja teknisi ----------
+  function dealOrderCountFor(technician) {
+    if (!dealOrderWorkload) return null;
+    const byId = dealOrderWorkload.byId[String(technician.id)];
+    const byName = dealOrderWorkload.byName[String(technician.full_name || '').trim().toLowerCase()];
+    return byId || byName || { active: 0, undated: 0 };
+  }
+  // Mengambil semua Deal Order (status converted) dan menghitung job aktif tiap teknisi dari data order asli.
+  async function loadDealOrderWorkload() {
+    const today = todayJakarta();
+    const byId = {};
+    const byName = {};
+    let page = 1;
+    let last = 1;
+    do {
+      const query = new URLSearchParams({ search: '', status: 'converted', type: 'all', page: String(page) });
+      const result = await apiRequest(`/bookings?${query.toString()}`);
+      (result.data || []).forEach((order) => {
+        const technicianId = order.assigned_technician_id;
+        const technicianName = String(order.assigned_technician_name || '').trim().toLowerCase();
+        if (!technicianId && !technicianName) return;
+        const date = order.scheduled_date ? String(order.scheduled_date).slice(0, 10) : '';
+        const field = date ? (date >= today ? 'active' : null) : 'undated';
+        if (!field) return;
+        const bucket = technicianId
+          ? (byId[String(technicianId)] ||= { active: 0, undated: 0 })
+          : (byName[technicianName] ||= { active: 0, undated: 0 });
+        bucket[field] += 1;
+      });
+      last = Number((result.meta || {}).last_page) || 1;
+      page += 1;
+    } while (page <= last && page <= 40);
+    return { byId, byName, loadedAt: new Date() };
+  }
+  function technicianJobs(technician) {
+    const deal = dealOrderCountFor(technician);
+    if (deal) return deal.active;
+    const own = technician.active_jobs;
+    if (own !== undefined && own !== null) return Number(own) || 0;
+    const merged = technicianWorkloadMap[String(technician.id)];
+    return merged && merged.active_jobs !== undefined && merged.active_jobs !== null ? (Number(merged.active_jobs) || 0) : null;
+  }
+  function technicianLoadLevel(jobs, threshold) {
+    if (jobs === 0) return { key: 'free', label: 'Belum ada job' };
+    const ratio = jobs / Math.max(1, threshold);
+    if (ratio > 1) return { key: 'over', label: 'Melebihi batas' };
+    if (ratio === 1) return { key: 'high', label: 'Padat' };
+    if (ratio > 0.4) return { key: 'mid', label: 'Sedang' };
+    return { key: 'low', label: 'Ringan' };
+  }
+  function technicianWorkloadCell(technician) {
+    const jobs = technicianJobs(technician);
+    const threshold = technicianWorkloadThreshold;
+    if (jobs === null) return '<span class="tech-load-empty">—</span>';
+    const off = technician.operational_status === 'off_duty';
+    const level = technicianLoadLevel(jobs, threshold);
+    const percent = jobs ? Math.max(8, Math.min(100, Math.round((jobs / Math.max(1, threshold)) * 100))) : 0;
+    let chip = level.label;
+    let note;
+    if (off) {
+      chip = 'Di luar tugas';
+      note = jobs > 0 ? `Masih memegang ${jobs} job, tidak menerima penugasan baru` : 'Tidak menerima penugasan baru';
+    } else if (jobs === 0) {
+      note = 'Siap langsung ditugaskan';
+    } else if (jobs > threshold) {
+      note = `Lewat batas ${threshold} job (+${jobs - threshold})`;
+    } else if (jobs === threshold) {
+      note = `Sudah mencapai batas ${threshold} job`;
+    } else {
+      note = `Sisa kapasitas ${threshold - jobs} job dari batas ${threshold}`;
+    }
+    const undated = (dealOrderCountFor(technician) || {}).undated || 0;
+    if (undated > 0) note += ` · +${undated} order tanpa tanggal`;
+    return `<div class="tech-load tech-load-${off ? 'off' : level.key}" title="Dihitung dari Deal Order dengan tanggal pelaksanaan hari ini atau setelahnya. Batas peringatan: lebih dari ${threshold} job aktif">
+      <div class="tech-load-top"><strong>${jobs}</strong><span>job aktif</span><em class="tech-load-chip">${esc(chip)}</em></div>
+      <div class="tech-load-meter" role="img" aria-label="${jobs} job aktif dari batas ${threshold}"><i style="width:${percent}%"></i></div>
+      <small>${esc(note)}</small>
+    </div>`;
+  }
+  function visibleTechnicians() {
+    return technicians.slice();
+  }
   function renderTechnicianRows() {
-    $('#technicianRows').innerHTML = technicians.map((technician) => `
+    const visible = visibleTechnicians();
+    $('#technicianRows').innerHTML = visible.map((technician) => `
       <tr>
-        <td><div class="master-person"><span class="client-initial">${esc(initials(technician.full_name))}</span><span><strong>${esc(technician.full_name)}</strong><small>${esc(technician.technician_code)}</small></span></div></td>
-        <td class="master-cell">${esc(technician.email || 'Email Belum Dicatat')}</td><td class="master-cell"><strong>${esc(technician.specialization)}</strong><small>${esc(technician.certification || 'Sertifikasi Belum Dicatat')}</small></td><td class="master-cell">${esc(technician.service_area || 'Belum Ditentukan')}</td>
+        <td><div class="master-person"><span class="client-initial">${esc(initials(technician.full_name))}</span><span><strong>${esc(technician.full_name)}</strong><small>${esc(technician.technician_code)} · ${esc(technician.email || 'Email belum dicatat')}</small></span></div></td>
+        <td class="master-cell"><strong>${esc(technician.specialization)}</strong><small>${esc(technician.certification || 'Sertifikasi Belum Dicatat')}</small></td><td class="master-cell">${esc(technician.service_area || 'Belum Ditentukan')}</td>
+        <td class="tech-load-cell">${technicianWorkloadCell(technician)}</td>
         <td><span class="status-pill ${technicianStatusClass(technician.operational_status)}">${esc(technicianStatusLabel(technician.operational_status))}</span></td>
         <td class="master-actions"><div class="table-actions"><button type="button" class="table-action" data-edit-technician="${esc(technician.id)}" title="Edit teknisi" aria-label="Edit ${esc(technician.full_name)}">${uiIcon('edit')}<span>Edit</span></button><button type="button" class="table-action delete" data-delete-technician="${esc(technician.id)}" title="Hapus teknisi" aria-label="Hapus teknisi ${esc(technician.full_name)}">${uiIcon('trash')}<span>Hapus</span></button></div></td>
       </tr>`).join('');
@@ -2415,7 +3338,15 @@
       status: $('#technicianStatusFilter').value || 'all',
       page: String(technicianPage)
     });
-    const response = await apiRequest(`/technicians?${params.toString()}`);
+    const [response, workload, deals] = await Promise.all([
+      apiRequest(`/technicians?${params.toString()}`),
+      apiRequest('/booking-technicians').catch(() => null),
+      loadDealOrderWorkload().catch(() => null)
+    ]);
+    dealOrderWorkload = deals || dealOrderWorkload;
+    technicianWorkloadAll = workload && Array.isArray(workload.data) ? workload.data : [];
+    technicianWorkloadMap = Object.fromEntries(technicianWorkloadAll.map((item) => [String(item.id), item]));
+    technicianWorkloadThreshold = Number(workload && workload.warning_threshold) || 5;
     technicians = response.data || [];
     technicianMeta = response.meta || { current_page: 1, last_page: 1, total: technicians.length };
     updateTechnicianSummary(response.summary || {});
@@ -2492,7 +3423,7 @@
     $$('.nav-link[data-page]').forEach((button) => button.classList.toggle('active', button.dataset.page === page || (page === 'content' && button.dataset.page === currentContentType)));
     const masterNavToggle = $('#masterNavToggle');
     const masterSubmenu = $('#masterSubmenu');
-    const masterPageActive = ['accounts', 'technicians', 'clients', 'stock-catalog'].includes(page);
+    const masterPageActive = ['accounts', 'technicians', 'clients', 'bank-accounts', 'stock-catalog'].includes(page);
     if (masterNavToggle && masterSubmenu) {
       masterNavToggle.classList.toggle('active', masterPageActive);
       masterNavToggle.setAttribute('aria-expanded', String(masterPageActive));
@@ -2506,7 +3437,7 @@
       contentNavToggle.setAttribute('aria-expanded', String(contentPageActive));
       contentSubmenu.hidden = !contentPageActive;
     }
-    const pageTitles = { bookings: 'Manajemen Order', accounts: 'Data Karyawan', technicians: 'Data Teknisi', clients: 'Data Klien', 'stock-catalog': 'Data Stok & Bahan', inventory: 'Inventaris' };
+    const pageTitles = { finance: 'Keuangan & Akuntansi', bookings: 'Manajemen Order', accounts: 'Data Karyawan', technicians: 'Data Teknisi', clients: 'Data Klien', 'bank-accounts': 'Rekening Bank', 'stock-catalog': 'Data Stok & Bahan', inventory: 'Inventaris' };
     const label = page === 'content' ? contentLabels[currentContentType] : (pageTitles[page] || 'Dashboard');
     $('#breadcrumbCurrent').textContent = label;
     history.replaceState(null, '', `#${page === 'content' ? currentContentType : page}`);
@@ -2520,6 +3451,8 @@
     if (page === 'clients') refreshClients().catch((error) => showError(error.message));
     if (page === 'stock-catalog') refreshStockCatalogPage().catch((error) => showError(error.message));
     if (page === 'inventory') refreshInventory().catch((error) => showError(error.message));
+    if (page === 'finance') window.dispatchEvent(new CustomEvent('jaspest:finance-open'));
+    if (page === 'bank-accounts') window.dispatchEvent(new CustomEvent('jaspest:finance-bank-accounts-open'));
   }
 
   function setRealtimeStatus(state, label) {
@@ -2698,15 +3631,16 @@
     });
     $('#technicianStatusFilter').addEventListener('change', () => { technicianPage = 1; refreshTechnicians().catch((error) => showError(error.message)); });
     $('#clientSearch').addEventListener('input', () => {
-      clearTimeout(clientSearchTimer); clientSearchTimer = setTimeout(() => { clientPage = 1; refreshClients().catch((error) => showError(error.message)); }, 320);
+      clearTimeout(clientSearchTimer); clientSearchTimer = setTimeout(() => { clientPage = 1; renderClientRows(); }, 200);
     });
-    $('#clientStatusFilter').addEventListener('change', () => { clientPage = 1; refreshClients().catch((error) => showError(error.message)); });
+    $('#clientStatusFilter').addEventListener('change', () => { clientPage = 1; renderClientRows(); });
+    $('#clientTypeFilter').addEventListener('change', () => { clientPage = 1; renderClientRows(); });
     $('#accountsPrev').addEventListener('click', () => { if (accountPage > 1) { accountPage -= 1; refreshAccounts().catch((error) => showError(error.message)); } });
     $('#accountsNext').addEventListener('click', () => { if (accountPage < accountMeta.last_page) { accountPage += 1; refreshAccounts().catch((error) => showError(error.message)); } });
     $('#techniciansPrev').addEventListener('click', () => { if (technicianPage > 1) { technicianPage -= 1; refreshTechnicians().catch((error) => showError(error.message)); } });
     $('#techniciansNext').addEventListener('click', () => { if (technicianPage < technicianMeta.last_page) { technicianPage += 1; refreshTechnicians().catch((error) => showError(error.message)); } });
-    $('#clientsPrev').addEventListener('click', () => { if (clientPage > 1) { clientPage -= 1; refreshClients().catch((error) => showError(error.message)); } });
-    $('#clientsNext').addEventListener('click', () => { if (clientPage < clientMeta.last_page) { clientPage += 1; refreshClients().catch((error) => showError(error.message)); } });
+    $('#clientsPrev').addEventListener('click', () => { if (clientPage > 1) { clientPage -= 1; renderClientRows(); } });
+    $('#clientsNext').addEventListener('click', () => { clientPage += 1; renderClientRows(); });
     $('#stockCatalogSearch').addEventListener('input', () => {
       clearTimeout(stockCatalogSearchTimer);
       stockCatalogSearchTimer = setTimeout(() => { stockCatalogPage = 1; refreshStockCatalog().catch((error) => showError(error.message)); }, 320);
@@ -2756,6 +3690,7 @@
     $('#manualPropertyType').addEventListener('change', updateManualCompanyField);
     bindThousandsInputs($('#manualBookingForm'));
     $('#manualBookingForm').addEventListener('submit', saveManualBooking);
+    bindContracts();
     bindThousandsInputs($('#orderForm'));
     $('#orderForm').addEventListener('submit', saveOrderConversion);
     $('#detailNoteInput').addEventListener('keydown', (event) => { if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) { event.preventDefault(); saveBookingNote(); } });
@@ -2775,7 +3710,18 @@
     // Permintaan layanan baru: periksa secara berkala dan saat tab kembali dibuka
     if (apiMode) {
       setInterval(pollNewBookings, POLL_MS);
-      document.addEventListener('visibilitychange', () => { if (!document.hidden) pollNewBookings(); });
+      // Beban kerja teknisi: segarkan otomatis dari Deal Order saat halaman Data Teknisi sedang dibuka.
+      setInterval(() => {
+        const page = $('#page-technicians');
+        if (document.hidden || !page || !page.classList.contains('active') || !$('#technicianModal').hidden) return;
+        refreshTechnicians().catch(() => {});
+      }, 30000);
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden) return;
+        pollNewBookings();
+        const page = $('#page-technicians');
+        if (page && page.classList.contains('active')) refreshTechnicians().catch(() => {});
+      });
     }
     $('#bookingsPrev').addEventListener('click', () => { if (bookingPage > 1) { bookingPage -= 1; refreshBookings().catch((error) => showError(error.message)); } });
     $('#bookingsNext').addEventListener('click', () => { if (bookingPage < bookingMeta.last_page) { bookingPage += 1; refreshBookings().catch((error) => showError(error.message)); } });
@@ -2864,7 +3810,7 @@
     bindEvents();
     if (location.hash && contentLabels[location.hash.slice(1)]) {
       await showContentPage(location.hash.slice(1));
-    } else if (['#bookings', '#accounts', '#employees', '#technicians', '#personnel', '#clients', '#stock-catalog', '#inventory'].includes(location.hash)) {
+    } else if (['#bookings', '#accounts', '#employees', '#technicians', '#personnel', '#clients', '#stock-catalog', '#inventory', '#finance'].includes(location.hash)) {
       const legacyPage = location.hash.slice(1);
       // Keep old bookmarks working while directing them to the newly separated pages.
       const destination = legacyPage === 'employees'

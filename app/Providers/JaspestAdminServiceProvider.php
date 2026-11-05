@@ -41,6 +41,13 @@ class JaspestAdminServiceProvider extends ServiceProvider
             );
         }
 
+        if (! Gate::has('manage-jaspest-finance')) {
+            Gate::define('manage-jaspest-finance', static fn (Authenticatable $user): bool =>
+                (bool) ($user->is_active ?? true)
+                && ($isConfiguredAdministrator($user) || in_array((string) ($user->role ?? ''), ['direksi', 'finance'], true))
+            );
+        }
+
         $this->loadRoutesFrom(__DIR__.'/../../routes/jaspest-admin.php');
 
         View::composer('jaspest.landing', function (\Illuminate\View\View $view): void {
