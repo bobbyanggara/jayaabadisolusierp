@@ -1,0 +1,75 @@
+/* Angka & nominal Rupiah tidak boleh patah di tengah ("Rp30.589.99 / 9").
+   Penyebab lama: overflow-wrap:anywhere pada angka kartu, sehingga browser memotong per karakter.
+   Perbaikan: nominal selalu satu baris; ukuran huruf mengecil mengikuti lebar kartu (container query). */
+
+/* 1) Nominal besar di kartu statistik */
+body.jas-admin .finance-stat strong,
+body.jas-admin .stat-card strong,
+body.jas-admin .stat-body strong,
+body.jas-admin .inventory-stat strong,
+body.jas-admin .finance-work-amount strong,
+body.jas-admin .cash-aging-item strong,
+body.jas-admin .cm-kpi strong,
+body.jas-admin .cash-expense-summary strong,
+body.jas-admin .fin-visit-amount {
+  overflow-wrap: normal;
+  word-break: keep-all;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 2) Ukuran huruf mengikuti lebar kartu: 12 karakter (Rp30.589.999) selalu muat */
+body.jas-admin .finance-stat strong { font-size: clamp(16px, 1.5vw, 26px); }
+body.jas-admin .stat-card strong,
+body.jas-admin .stat-body strong { font-size: clamp(18px, 2.2vw, 29px); }
+body.jas-admin .inventory-stat strong { font-size: clamp(16px, 1.6vw, 20px); }
+
+/* Container query dipasang di KARTU (lebarnya ditentukan grid), bukan di kolom teks di dalamnya,
+   supaya lebar kolom teks tidak runtuh jadi 0. */
+@supports (container-type: inline-size) {
+  body.jas-admin .finance-stat,
+  body.jas-admin .stat-card,
+  body.jas-admin .inventory-stat,
+  body.jas-admin .cash-aging-item,
+  body.jas-admin .finance-work-amount { container-type: inline-size; }
+
+  body.jas-admin .finance-stat strong { font-size: clamp(14px, 6.5cqw, 26px); }
+  body.jas-admin .stat-card strong,
+  body.jas-admin .stat-body strong { font-size: clamp(16px, 8cqw, 29px); }
+  body.jas-admin .inventory-stat strong { font-size: clamp(14px, 8cqw, 20px); }
+  body.jas-admin .finance-work-amount strong { font-size: clamp(14px, 9cqw, 20px); }
+  body.jas-admin .cash-aging-item strong { font-size: clamp(14px, 9cqw, 18px); }
+}
+
+/* Kolom teks di dalam kartu harus boleh melebar penuh */
+body.jas-admin .finance-stat-body,
+body.jas-admin .stat-body { flex: 1 1 0; min-width: 0; }
+/* Label & hint tetap boleh turun baris normal per kata */
+body.jas-admin .finance-stat-label,
+body.jas-admin .finance-stat small,
+body.jas-admin .stat-label,
+body.jas-admin .stat-body small { white-space: normal; }
+
+/* 3) Teks pendamping (hint) rapi: tidak memotong kata, nominal tidak terpisah dari "Rp" */
+body.jas-admin .finance-stat small,
+body.jas-admin .finance-stat-label,
+body.jas-admin .stat-label,
+body.jas-admin .stat-body small {
+  overflow-wrap: break-word;
+  word-break: normal;
+  hyphens: none;
+  text-wrap: pretty;
+}
+
+/* 4) Sel tabel berisi nominal / tanggal / nomor tetap satu baris */
+body.jas-admin td.num,
+body.jas-admin td.amount,
+body.jas-admin td.align-right,
+body.jas-admin th.align-right,
+body.jas-admin .money,
+body.jas-admin .rp {
+  white-space: nowrap;
+  overflow-wrap: normal;
+  word-break: keep-all;
+  font-variant-numeric: tabular-nums;
+}

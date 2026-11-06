@@ -333,7 +333,7 @@
   let inventoryMaintenancePage = 1;
   let inventoryItemEditingId = null;
   let inventorySearchTimers = { items: null, movements: null };
-  let inventoryTab = 'items';
+  const INVENTORY_PAGES = ['inventory-items', 'inventory-movements', 'inventory-maintenance'];
   // Read-only Data Master catalog: independent pagination and filters, shared inventory API.
   let stockCatalogItems = [];
   let stockCatalogMeta = { current_page: 1, last_page: 1, total: 0 };
@@ -381,6 +381,13 @@
     $('#inventoryMaintenanceTechnician').innerHTML = options(inventoryOptions.technicians, 'Belum Ditentukan', (tech) => `<option value="${esc(tech.id)}">${esc(tech.name)} · ${esc(tech.code)}</option>`);
     syncInventoryMovementFields();
   }
+  let inventoryAttentionTab = null;
+  function setInventoryAttentionTab(tab, manual) {
+    if (manual) inventoryAttentionTab = tab;
+    $$('[data-attention-tab]').forEach((item) => item.setAttribute('aria-pressed', String(item.dataset.attentionTab === tab)));
+    $('#inventoryRepairPanel').hidden = tab !== 'repair';
+    $('#inventoryDamagedPanel').hidden = tab !== 'damaged';
+  }
   async function refreshInventorySummary() {
     const response = await apiRequest('/inventory/summary');
     const summary = response.summary || {};
@@ -402,6 +409,7 @@
     $('#inventoryDamagedList').innerHTML = damaged.length ? damaged.map((item) => `
       <div class="inventory-alert-row"><span><strong>${esc(item.name)}</strong><small>Stok ${inventoryQuantity(item.stock_on_hand)} ${esc(item.unit)}</small></span><span class="inventory-condition-badge is-damaged">${inventoryQuantity(item.damaged_quantity)} ${esc(item.unit)} rusak</span></div>`).join('')
       : emptyRow('Tidak ada barang rusak');
+    setInventoryAttentionTab(inventoryAttentionTab || (!repair.length && damaged.length ? 'damaged' : 'repair'), false);
   }
   function renderInventoryItems() {
     $('#inventoryItemRows').innerHTML = inventoryItems.map((item) => `
@@ -482,27 +490,12 @@
     inventoryMaintenanceMeta = response.meta || { current_page: 1, last_page: 1, total: inventoryMaintenanceRows.length };
     renderInventoryMaintenance();
   }
-  async function setInventoryTab(tab) {
-    inventoryTab = ['items', 'movements', 'maintenance'].includes(tab) ? tab : 'items';
-    $$('[data-inventory-tab]').forEach((button) => {
-      const active = button.dataset.inventoryTab === inventoryTab;
-      button.classList.toggle('is-active', active);
-      button.setAttribute('aria-selected', String(active));
-      button.tabIndex = active ? 0 : -1;
-    });
-    $$('[id^="inventoryPanel"]').forEach((panel) => {
-      const active = panel.id === `inventoryPanel${inventoryTab.charAt(0).toUpperCase()}${inventoryTab.slice(1)}`;
-      panel.hidden = !active;
-      panel.classList.toggle('is-active', active);
-    });
-    if (inventoryTab === 'items') await refreshInventoryItems();
-    if (inventoryTab === 'movements') await refreshInventoryMovements();
-    if (inventoryTab === 'maintenance') await refreshInventoryMaintenance();
-  }
-  async function refreshInventory() {
+  // Inventaris dipecah menjadi beberapa halaman dropdown; tiap halaman hanya memuat datanya sendiri.
+  async function refreshInventory(page = 'inventory-items') {
     if (!apiMode) { showWarning('Inventaris belum dapat dimuat. Silakan coba kembali.'); return; }
-    await Promise.all([refreshInventorySummary(), refreshInventoryOptions()]);
-    await setInventoryTab(inventoryTab);
+    if (page === 'inventory-movements') { await refreshInventoryMovements(); return; }
+    if (page === 'inventory-maintenance') { await Promise.all([refreshInventorySummary(), refreshInventoryMaintenance()]); return; }
+    await Promise.all([refreshInventorySummary(), refreshInventoryItems()]);
   }
   function renderStockCatalog() {
     $('#stockCatalogRows').innerHTML = stockCatalogItems.map((item) => `
@@ -651,7 +644,7 @@
       await apiRequest('/inventory/movements', { method: 'POST', body: values });
       closeModal('inventoryMovementModal');
       await Promise.all([refreshInventorySummary(), refreshInventoryItems(), refreshInventoryOptions()]);
-      if (inventoryTab === 'movements') { inventoryMovementPage = 1; await refreshInventoryMovements(); }
+      inventoryMovementPage = 1; await refreshInventoryMovements();
       if (!$('#page-stock-catalog').hidden) await refreshStockCatalogPage();
       toast('Transaksi stok berhasil dicatat.', 'success');
     } catch (error) { showError(error.message); }
@@ -2162,7 +2155,8 @@
     const locked = contract.status === 'cancelled' || !['unscheduled', 'scheduled'].includes(visit.status);
     const label = visit.is_extra ? `Tambahan ${visit.slot_no}` : `Kunjungan ${visit.slot_no}`;
     const stateText = visit.is_overdue ? 'Terlewat' : (VISIT_STATUS_LABEL[visit.status] || visit.status);
-    const bounds = !visit.is_extra && period ? `min="${esc(period.start)}" max="${esc(period.end)}"` : '';
+    // Tanggal boleh di luar periode selama masih dalam masa kontrak; server memindahkan kunjungan ke periodenya.
+    const bounds = !visit.is_extra && contract.start_date ? `min="${esc(contract.start_date)}" max="${esc(contract.end_date)}" title="Tanggal di luar periode ini akan memindahkan kunjungan ke periode tanggal tersebut"` : '';
     let actions = `<span class="visit-state s-${esc(visit.status)} ${visit.is_overdue ? 'is-overdue' : ''}">${esc(stateText)}</span>`;
     if (contract.status !== 'cancelled') {
       if (['unscheduled', 'scheduled'].includes(visit.status)) {
@@ -2948,8 +2942,6 @@
       renderContent(); toast(apiMode ? 'Konten berhasil dihapus.' : 'Konten dihapus dari pratinjau.', 'success');
     } catch (error) { showError(error.message); }
   }
-  function accountStatusLabel(active) { return active ? 'Aktif' : 'Nonaktif'; }
-  function accountStatusClass(active) { return active ? 'status-contacted' : 'status-new'; }
   function divisionLabel(role) {
     return ({ direksi: 'Direksi', finance: 'Finance', logistik: 'Logistik', marketing: 'Marketing' })[role] || 'Tidak diketahui';
   }
@@ -2960,9 +2952,7 @@
     return ({ available: 'status-converted', assigned: 'status-followup', off_duty: 'status-lost' })[status] || 'status-lost';
   }
   function updateAccountSummary(summary = {}) {
-    $('#accountTotal').textContent = Number(summary.total || 0);
     $('#accountActive').textContent = Number(summary.active || 0);
-    $('#accountInactive').textContent = Number(summary.inactive || 0);
   }
   function updateTechnicianSummary(summary = {}) {
     $('#technicianTotal').textContent = Number(summary.total || 0);
@@ -2976,7 +2966,6 @@
         <td><div class="master-person"><span class="client-initial">${esc(initials(account.name))}</span><span><strong>${esc(account.name)}</strong><small>@${esc(account.username)}</small></span></div></td>
         <td class="master-cell"><strong>${esc(account.role_label || divisionLabel(account.role))}</strong></td>
         <td class="master-contact">${esc(account.phone || '—')}</td>
-        <td><span class="status-pill ${accountStatusClass(account.is_active)}">${esc(accountStatusLabel(account.is_active))}</span></td>
         <td class="master-actions"><div class="table-actions"><button type="button" class="table-action" data-edit-account="${esc(account.id)}" title="Edit akun" aria-label="Edit akun ${esc(account.name)}">${uiIcon('edit')}<span>Edit</span></button><button type="button" class="table-action delete" data-delete-account="${esc(account.id)}" title="Hapus akun" aria-label="Hapus akun ${esc(account.name)}">${uiIcon('trash')}<span>Hapus</span></button></div></td>
       </tr>`).join('');
     $('#emptyAccounts').hidden = accounts.length > 0;
@@ -2985,14 +2974,12 @@
     $('#accountPageLabel').textContent = `${accountMeta.current_page || 1} / ${accountMeta.last_page || 1}`;
     $('#accountsPrev').disabled = (accountMeta.current_page || 1) <= 1;
     $('#accountsNext').disabled = (accountMeta.current_page || 1) >= (accountMeta.last_page || 1);
-    $$('[data-account-filter]').forEach((item) => item.setAttribute('aria-pressed', String(item.dataset.accountFilter === ($('#accountStatusFilter').value || 'all'))));
   }
   async function refreshAccounts() {
     if (!canManageAccounts) return;
     if (!apiMode) { showWarning('Pengelolaan akun belum dapat dilakukan saat ini. Silakan coba kembali.'); return; }
     const params = new URLSearchParams({
       search: $('#accountSearch').value.trim(),
-      status: $('#accountStatusFilter').value || 'all',
       page: String(accountPage)
     });
     const response = await apiRequest(`/accounts?${params.toString()}`);
@@ -3005,7 +2992,6 @@
     const form = $('#accountForm');
     form.reset();
     form.elements.role.value = '';
-    form.elements.is_active.value = '1';
     form.elements.password.value = '';
     form.elements.password_confirmation.value = '';
     form.elements.password.required = true;
@@ -3025,7 +3011,7 @@
     if (!account) return;
     accountEditingId = account.id;
     const form = $('#accountForm');
-    Object.entries({ name: account.name, username: account.username, phone: account.phone || '', role: account.role || '', is_active: account.is_active ? '1' : '0' })
+    Object.entries({ name: account.name, username: account.username, phone: account.phone || '', role: account.role || '' })
       .forEach(([key, value]) => { form.elements.namedItem(key).value = value ?? ''; });
     form.elements.password.value = '';
     form.elements.password_confirmation.value = '';
@@ -3413,6 +3399,7 @@
   function navigate(page) {
     // Keep the Data Master group expanded while either child workspace is active.
     if (page === 'personnel') page = 'technicians';
+    if (page === 'inventory') page = 'inventory-items'; // tautan lama #inventory -> Katalog Barang
     if (page === 'accounts' && !canManageAccounts) {
       page = 'dashboard';
       showWarning('Anda tidak memiliki akses ke Master Data.');
@@ -3429,6 +3416,14 @@
       masterNavToggle.setAttribute('aria-expanded', String(masterPageActive));
       masterSubmenu.hidden = !masterPageActive;
     }
+    const inventoryNavToggle = $('#inventoryNavToggle');
+    const inventorySubmenu = $('#inventorySubmenu');
+    const inventoryPageActive = INVENTORY_PAGES.includes(page);
+    if (inventoryNavToggle && inventorySubmenu) {
+      inventoryNavToggle.classList.toggle('active', inventoryPageActive);
+      inventoryNavToggle.setAttribute('aria-expanded', String(inventoryPageActive));
+      inventorySubmenu.hidden = !inventoryPageActive;
+    }
     const contentNavToggle = $('#contentNavToggle');
     const contentSubmenu = $('#contentSubmenu');
     const contentPageActive = page === 'content';
@@ -3437,7 +3432,7 @@
       contentNavToggle.setAttribute('aria-expanded', String(contentPageActive));
       contentSubmenu.hidden = !contentPageActive;
     }
-    const pageTitles = { finance: 'Keuangan & Akuntansi', bookings: 'Manajemen Order', accounts: 'Data Karyawan', technicians: 'Data Teknisi', clients: 'Data Klien', 'bank-accounts': 'Rekening Bank', 'stock-catalog': 'Data Stok & Bahan', inventory: 'Inventaris' };
+    const pageTitles = { finance: 'Invoice Penjualan', bookings: 'Manajemen Order', accounts: 'Data Karyawan', technicians: 'Data Teknisi', clients: 'Data Klien', 'bank-accounts': 'Rekening Bank', 'stock-catalog': 'Data Stok & Bahan', 'inventory-items': 'Katalog Barang', 'inventory-movements': 'Transaksi Stok', 'inventory-maintenance': 'Pemeliharaan Aset' };
     const label = page === 'content' ? contentLabels[currentContentType] : (pageTitles[page] || 'Dashboard');
     $('#breadcrumbCurrent').textContent = label;
     history.replaceState(null, '', `#${page === 'content' ? currentContentType : page}`);
@@ -3450,7 +3445,7 @@
     if (page === 'technicians') refreshTechnicians().catch((error) => showError(error.message));
     if (page === 'clients') refreshClients().catch((error) => showError(error.message));
     if (page === 'stock-catalog') refreshStockCatalogPage().catch((error) => showError(error.message));
-    if (page === 'inventory') refreshInventory().catch((error) => showError(error.message));
+    if (INVENTORY_PAGES.includes(page)) refreshInventory(page).catch((error) => showError(error.message));
     if (page === 'finance') window.dispatchEvent(new CustomEvent('jaspest:finance-open'));
     if (page === 'bank-accounts') window.dispatchEvent(new CustomEvent('jaspest:finance-bank-accounts-open'));
   }
@@ -3490,6 +3485,7 @@
           await refreshDashboard();
           await refreshBookings();
           if ($('#page-clients')?.classList.contains('active')) await refreshClients();
+          if ($('#page-technicians')?.classList.contains('active') && $('#technicianModal')?.hidden) await refreshTechnicians().catch(() => {});
 
           // Keep an open detail modal in sync when its record was the one updated.
           const reference = payload.reference;
@@ -3498,6 +3494,9 @@
             await openDetail(currentBooking.id);
           }
         } while (realtimeRefreshRequested);
+
+        // Modul lain (mis. halaman Invoice) ikut menyegarkan datanya.
+        window.dispatchEvent(new CustomEvent('jaspest:orders-changed', { detail: payload }));
 
         if (realtimeNewReference) {
           announceNewBooking(`Permintaan layanan baru diterima (${realtimeNewReference}). Dashboard telah diperbarui.`);
@@ -3561,7 +3560,7 @@
       const navToggle = event.target.closest('[data-nav-toggle]');
       if (navToggle) {
         const group = navToggle.dataset.navToggle;
-        const submenu = group === 'master' ? $('#masterSubmenu') : $('#contentSubmenu');
+        const submenu = $({ master: '#masterSubmenu', inventory: '#inventorySubmenu' }[group] || '#contentSubmenu');
         const expanded = navToggle.getAttribute('aria-expanded') === 'true';
         navToggle.setAttribute('aria-expanded', String(!expanded));
         if (submenu) submenu.hidden = expanded;
@@ -3587,7 +3586,6 @@
       const editClientButton = event.target.closest('[data-edit-client]'); if (editClientButton) { editClient(editClientButton.dataset.editClient); return; }
       const editInventoryButton = event.target.closest('[data-edit-inventory-item]'); if (editInventoryButton) { editInventoryItem(editInventoryButton.dataset.editInventoryItem); return; }
       const removeInventoryButton = event.target.closest('[data-delete-inventory-item]'); if (removeInventoryButton) { deleteInventoryItem(removeInventoryButton.dataset.deleteInventoryItem); return; }
-      const inventoryTabButton = event.target.closest('[data-inventory-tab]'); if (inventoryTabButton) { setInventoryTab(inventoryTabButton.dataset.inventoryTab).catch((error) => showError(error.message)); return; }
     });
     let searchTimer;
     $('#bookingSearch').addEventListener('input', () => { clearTimeout(searchTimer); searchTimer = setTimeout(applyBookingFilters, apiMode ? 350 : 0); });
@@ -3609,7 +3607,7 @@
       $$(selector).forEach((card) => {
         const choose = () => {
           const target = card.dataset[filterSelector];
-          const select = pageName === 'accounts' ? $('#accountStatusFilter') : $('#technicianStatusFilter');
+          const select = $('#technicianStatusFilter');
           select.value = select.value === target && target !== 'all' ? 'all' : target;
           pageSetter(1);
           refresh().catch((error) => showError(error.message));
@@ -3620,12 +3618,10 @@
         });
       });
     };
-    bindMasterSummary('[data-account-filter]', 'accountFilter', 'accounts', refreshAccounts, (page) => { accountPage = page; });
     bindMasterSummary('[data-technician-filter]', 'technicianFilter', 'technicians', refreshTechnicians, (page) => { technicianPage = page; });
     $('#accountSearch').addEventListener('input', () => {
       clearTimeout(accountSearchTimer); accountSearchTimer = setTimeout(() => { accountPage = 1; refreshAccounts().catch((error) => showError(error.message)); }, 320);
     });
-    $('#accountStatusFilter').addEventListener('change', () => { accountPage = 1; refreshAccounts().catch((error) => showError(error.message)); });
     $('#technicianSearch').addEventListener('input', () => {
       clearTimeout(technicianSearchTimer); technicianSearchTimer = setTimeout(() => { technicianPage = 1; refreshTechnicians().catch((error) => showError(error.message)); }, 320);
     });
@@ -3656,6 +3652,11 @@
     $('#emptyAddTechnician').addEventListener('click', addTechnician);
     $('#technicianForm').addEventListener('submit', saveTechnician);
     $('#inventoryAddItem').addEventListener('click', addInventoryItem);
+    $$('[data-attention-tab]').forEach((tab) => {
+      const choose = () => setInventoryAttentionTab(tab.dataset.attentionTab, true);
+      tab.addEventListener('click', choose);
+      tab.addEventListener('keydown', (event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); choose(); } });
+    });
     $('#inventoryEmptyAddItem').addEventListener('click', addInventoryItem);
     $('#inventoryAddMovement').addEventListener('click', () => addInventoryMovement().catch((error) => showError(error.message)));
     $('#inventoryAddMaintenance').addEventListener('click', () => addInventoryMaintenance().catch((error) => showError(error.message)));
@@ -3810,7 +3811,7 @@
     bindEvents();
     if (location.hash && contentLabels[location.hash.slice(1)]) {
       await showContentPage(location.hash.slice(1));
-    } else if (['#bookings', '#accounts', '#employees', '#technicians', '#personnel', '#clients', '#stock-catalog', '#inventory', '#finance'].includes(location.hash)) {
+    } else if (['#bookings', '#accounts', '#employees', '#technicians', '#personnel', '#clients', '#stock-catalog', '#inventory', '#inventory-items', '#inventory-movements', '#inventory-maintenance', '#finance'].includes(location.hash)) {
       const legacyPage = location.hash.slice(1);
       // Keep old bookmarks working while directing them to the newly separated pages.
       const destination = legacyPage === 'employees'

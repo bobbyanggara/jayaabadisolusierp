@@ -1,4 +1,4 @@
-/* Halaman Kas & Bank dan Piutang. Memakai data keuangan yang sudah ada
+/* Halaman Pemasukan (kas masuk, termasuk ekspor Excel) dan Piutang. Memakai data keuangan yang sudah ada
    (invoice, pembayaran, rekening) lewat endpoint /finance/cash dan /finance/receivables. */
 (function () {
   'use strict';
@@ -41,13 +41,14 @@
     setTimeout(function () { el.remove(); }, 4500);
   }
 
-  /* ---------------- Kas & Bank ---------------- */
-  var cash = { account: 'all' };
+  /* ---------------- Pemasukan (kas masuk) ---------------- */
+  var CASH_PER_PAGE = 10;
+  var cash = { account: 'all', page: 1, rows: [], truncated: false, total: 0 };
 
-  function loadCash() {
+  function loadCash(silent) {
     return get('/finance/cash', { from: $('cashFrom').value, to: $('cashTo').value, account: cash.account, q: $('cashSearch').value.trim() })
       .then(renderCash)
-      .catch(function (e) { if (e.message !== 'auth') toast('Data kas belum dapat dimuat. Coba muat ulang.'); });
+      .catch(function (e) { if (e.message !== 'auth' && silent !== true) toast('Data penerimaan kas belum dapat dimuat. Periksa koneksi internet Anda.'); });
   }
 
   function renderCash(res) {
@@ -58,13 +59,6 @@
     $('cashBankIn').textContent = money(s.bank_in);
 
     var accounts = res.accounts || [];
-    $('cashAccountCount').textContent = accounts.length + ' akun';
-    $('cashAccountsEmpty').hidden = accounts.length > 0;
-    $('cashAccountRows').innerHTML = accounts.map(function (a) {
-      var active = cash.account === a.key ? ' class="is-selected"' : '';
-      return '<tr data-account="' + esc(a.key) + '"' + active + ' tabindex="0" style="cursor:pointer"><td><strong>' + esc(a.label) + '</strong></td><td>' + a.count + ' transaksi</td><td class="align-right"><strong>' + money(a.total) + '</strong></td></tr>';
-    }).join('');
-
     var sel = $('cashAccountFilter');
     var keep = cash.account;
     sel.innerHTML = '<option value="all">Semua akun</option>' + accounts.map(function (a) {
@@ -72,29 +66,123 @@
     }).join('');
     sel.value = accounts.some(function (a) { return a.key === keep; }) ? keep : 'all';
 
-    var rows = res.data || [];
+    cash.rows = res.data || [];
+    cash.truncated = !!res.truncated;
+    cash.total = s.count || 0;
+    renderCashPage();
+  }
+
+  function renderCashPage() {
+    var rows = cash.rows;
+    var last = Math.max(1, Math.ceil(rows.length / CASH_PER_PAGE));
+    if (cash.page > last) cash.page = last;
+    if (cash.page < 1) cash.page = 1;
+    var from = (cash.page - 1) * CASH_PER_PAGE;
+    var view = rows.slice(from, from + CASH_PER_PAGE);
+
     $('cashEmpty').hidden = rows.length > 0;
-    $('cashCountLabel').textContent = (s.count || 0) + ' transaksi';
-    $('cashTableCount').textContent = rows.length ? 'Menampilkan ' + rows.length + ' transaksi' + (res.truncated ? ' terbaru (dibatasi 300)' : '') : 'Tidak ada transaksi';
-    $('cashRows').innerHTML = rows.map(function (p) {
+    $('cashCountLabel').textContent = cash.total + ' transaksi';
+    $('cashTableCount').textContent = rows.length
+      ? 'Menampilkan ' + (from + 1) + '–' + (from + view.length) + ' dari ' + rows.length + ' transaksi' + (cash.truncated ? ' terbaru (dibatasi 300)' : '')
+      : 'Tidak ada transaksi';
+    $('cashPageLabel').textContent = cash.page + ' / ' + last;
+    $('cashPrev').disabled = cash.page <= 1;
+    $('cashNext').disabled = cash.page >= last;
+    $('cashRows').innerHTML = view.map(function (p) {
       return '<tr><td>' + fmtDate(p.date) + '</td>' +
-        '<td><strong>' + esc(p.invoice_number || '–') + '</strong><br><small>' + esc(p.customer || '') + '</small></td>' +
+        '<td><strong>' + esc(p.invoice_number || '–') + '</strong><small class="finance-subline">' + esc(p.customer || '') + '</small></td>' +
         '<td>' + esc(p.method_label) + '</td><td>' + esc(p.account_label) + '</td>' +
         '<td>' + esc(p.reference || '–') + '</td><td class="align-right"><strong>' + money(p.amount) + '</strong></td></tr>';
     }).join('');
   }
 
+
+  /* ---------------- Ringkasan Keuangan: klik akun membuka riwayat Pemasukan ---------------- */
+  function openAccountHistory(tr) {
+    if (!tr) return;
+    cash.account = tr.getAttribute('data-account');
+    cash.page = 1;
+    var link = document.querySelector('#financeSubmenu [data-page="cash"]');
+    if (link) link.click(); else loadCash();
+  }
+
+  /* ---------------- Ekspor Excel Pemasukan ---------------- */
+  function notify(msg, type) {
+    var shared = window.JASPEST_ADMIN_UI && window.JASPEST_ADMIN_UI.toast;
+    if (typeof shared === 'function') { shared(msg, type || 'success'); return; }
+    toast(msg);
+  }
+
+  /* Unduh file Excel dari endpoint ekspor dengan filter yang sedang aktif. Dipakai Kas & Bank dan Piutang. */
+  function downloadExcel(opts) {
+    var btn = $(opts.button);
+    if (!btn || btn.disabled) return;
+    btn.disabled = true;
+    btn.setAttribute('aria-busy', 'true');
+    var label = btn.querySelector('span');
+    var labelText = label ? label.textContent : '';
+    if (label) label.textContent = 'Menyiapkan…';
+    var qs = new URLSearchParams();
+    Object.keys(opts.filters).forEach(function (k) {
+      var v = opts.filters[k];
+      if (v && v !== 'all') qs.set(k, v);
+    });
+    var done = function () {
+      btn.disabled = false;
+      btn.removeAttribute('aria-busy');
+      if (label) label.textContent = labelText;
+    };
+    fetch(base + opts.path + (qs.toString() ? '?' + qs.toString() : ''), {
+      credentials: 'same-origin', cache: 'no-store',
+      headers: { Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/json', 'X-Requested-With': 'XMLHttpRequest' }
+    }).then(function (r) {
+      var type = (r.headers.get('content-type') || '').toLowerCase();
+      if (r.status === 401 || r.status === 419) { if (cfg.loginUrl) location.href = cfg.loginUrl; throw new Error('Sesi login admin berakhir. Silakan login kembali.'); }
+      if (r.status === 403) throw new Error('Akun ini tidak memiliki izin mengekspor laporan keuangan.');
+      if (r.status === 429) throw new Error('Terlalu banyak permintaan ekspor. Tunggu sebentar lalu coba lagi.');
+      if (!r.ok) throw new Error('Ekspor Excel gagal (HTTP ' + r.status + ').');
+      if (type.indexOf('spreadsheetml') === -1) throw new Error('Server tidak mengirim file Excel yang valid. Periksa log Laravel.');
+      return r.blob().then(function (blob) { return { blob: blob, disposition: r.headers.get('content-disposition') || '' }; });
+    }).then(function (res) {
+      if (!res.blob.size) throw new Error('File Excel kosong. Tidak ada data yang dapat diunduh.');
+      var m = res.disposition.match(/filename\*=UTF-8''([^;]+)|filename="?([^";]+)"?/i);
+      var name = m ? decodeURIComponent(m[1] || m[2]) : opts.fallbackName;
+      var url = URL.createObjectURL(res.blob);
+      var a = document.createElement('a');
+      a.href = url; a.download = name;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 1500);
+      notify(opts.success, 'success');
+    }).then(done, function (e) { done(); notify(e.message || 'Ekspor Excel gagal.', 'error'); });
+  }
+
+  function exportCash() {
+    downloadExcel({
+      button: 'cashExport',
+      path: '/finance/cash/export',
+      filters: { from: $('cashFrom').value, to: $('cashTo').value, account: cash.account, q: $('cashSearch').value.trim() },
+      fallbackName: 'JASPEST-Laporan-Kas-Bank.xlsx',
+      success: 'Laporan penerimaan kas berhasil diekspor ke Excel.'
+    });
+  }
+
+  function exportRecv() {
+    downloadExcel({
+      button: 'recvExport',
+      path: '/finance/receivables/export',
+      filters: { bucket: recv.bucket, q: $('recvSearch').value.trim() },
+      fallbackName: 'JASPEST-Laporan-Piutang-Usaha.xlsx',
+      success: 'Laporan piutang usaha berhasil diekspor ke Excel.'
+    });
+  }
+
   /* ---------------- Piutang ---------------- */
   var recv = { bucket: 'all' };
-  var BUCKETS = [
-    ['current', 'Belum jatuh tempo', 'is-ok'], ['d1_30', '1–30 hari', 'is-warn'], ['d31_60', '31–60 hari', 'is-warn'],
-    ['d61_90', '61–90 hari', 'is-late'], ['d90_plus', '> 90 hari', 'is-late']
-  ];
 
-  function loadRecv() {
+  function loadRecv(silent) {
     return get('/finance/receivables', { bucket: recv.bucket, q: $('recvSearch').value.trim() })
       .then(renderRecv)
-      .catch(function (e) { if (e.message !== 'auth') toast('Data piutang belum dapat dimuat. Coba muat ulang.'); });
+      .catch(function (e) { if (e.message !== 'auth' && silent !== true) toast('Data piutang usaha belum dapat dimuat. Periksa koneksi internet Anda.'); });
   }
 
   function ageLabel(r) {
@@ -103,30 +191,19 @@
   }
 
   function renderRecv(res) {
-    var s = res.summary || {}, b = res.buckets || {};
+    var s = res.summary || {};
     $('recvOutstanding').textContent = money(s.outstanding);
     $('recvCount').textContent = s.invoice_count || 0;
     $('recvCustomers').textContent = (s.customer_count || 0) + ' pelanggan';
     $('recvOverdue').textContent = money(s.overdue_total);
     $('recvOverdueCount').textContent = (s.overdue_count || 0) + ' invoice melewati jatuh tempo';
-    $('recvCurrent').textContent = money((b.current || {}).total);
-
-    $('recvBuckets').innerHTML = BUCKETS.map(function (x) {
-      var d = b[x[0]] || { total: 0, count: 0 };
-      return '<button type="button" class="cash-aging-item ' + x[2] + (recv.bucket === x[0] ? ' is-active' : '') + '" data-bucket="' + x[0] + '"><span>' + x[1] + '</span><strong>' + money(d.total) + '</strong><small>' + d.count + ' invoice</small></button>';
-    }).join('');
-
-    var customers = res.customers || [];
-    $('recvCustomerRows').innerHTML = customers.length ? customers.map(function (c) {
-      return '<tr><td><strong>' + esc(c.name) + '</strong></td><td>' + c.invoice_count + ' invoice</td><td>' + (c.max_days_overdue > 0 ? c.max_days_overdue + ' hari' : '–') + '</td><td class="align-right"><strong>' + money(c.outstanding) + '</strong></td></tr>';
-    }).join('') : '<tr><td colspan="4"><small>Tidak ada piutang berjalan.</small></td></tr>';
 
     var rows = res.data || [];
     $('recvEmpty').hidden = rows.length > 0;
     $('recvCountLabel').textContent = rows.length + ' invoice';
     $('recvRows').innerHTML = rows.map(function (r) {
-      return '<tr><td><strong>' + esc(r.invoice_number || '–') + '</strong><br><small>' + esc(r.order_reference || '') + '</small></td>' +
-        '<td>' + esc(r.billing_name) + '<br><small>' + esc(r.job_type || '') + '</small></td>' +
+      return '<tr><td><strong>' + esc(r.invoice_number || '–') + '</strong><small class="finance-subline">' + esc(r.order_reference || '') + '</small></td>' +
+        '<td>' + esc(r.billing_name) + '<small class="finance-subline">' + esc(r.job_type || '') + '</small></td>' +
         '<td>' + fmtDate(r.due_date) + '</td><td class="align-right">' + money(r.total_amount) + '</td>' +
         '<td class="align-right">' + money(r.paid_amount) + '</td><td class="align-right"><strong>' + money(r.outstanding_amount) + '</strong></td>' +
         '<td>' + ageLabel(r) + '</td></tr>';
@@ -136,29 +213,30 @@
   /* ---------------- Event ---------------- */
   var reloadCash = debounce(loadCash, 300), reloadRecv = debounce(loadRecv, 300);
 
-  $('cashRefresh').addEventListener('click', loadCash);
-  $('receivablesRefresh').addEventListener('click', loadRecv);
-  $('cashSearch').addEventListener('input', reloadCash);
-  ['cashFrom', 'cashTo'].forEach(function (id) { $(id).addEventListener('change', loadCash); });
-  $('cashAccountFilter').addEventListener('change', function () { cash.account = this.value; loadCash(); });
-  $('cashAccountRows').addEventListener('click', function (e) {
-    var tr = e.target.closest('tr[data-account]');
-    if (!tr) return;
-    cash.account = cash.account === tr.getAttribute('data-account') ? 'all' : tr.getAttribute('data-account');
-    loadCash();
-  });
+  $('cashSearch').addEventListener('input', function () { cash.page = 1; reloadCash(); });
+  $('cashExport').addEventListener('click', exportCash);
+  $('recvExport').addEventListener('click', exportRecv);
+  ['cashFrom', 'cashTo'].forEach(function (id) { $(id).addEventListener('change', function () { cash.page = 1; loadCash(); }); });
+  $('cashAccountFilter').addEventListener('change', function () { cash.account = this.value; cash.page = 1; loadCash(); });
+  $('sumAccountRows').addEventListener('click', function (e) { openAccountHistory(e.target.closest('tr[data-account]')); });
+  $('sumAccountRows').addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openAccountHistory(e.target.closest('tr[data-account]')); } });
+  $('cashPrev').addEventListener('click', function () { if (cash.page > 1) { cash.page--; renderCashPage(); } });
+  $('cashNext').addEventListener('click', function () { cash.page++; renderCashPage(); });
   $('recvSearch').addEventListener('input', reloadRecv);
   $('recvBucketFilter').addEventListener('change', function () { recv.bucket = this.value; loadRecv(); });
-  $('recvBuckets').addEventListener('click', function (e) {
-    var btn = e.target.closest('[data-bucket]');
-    if (!btn) return;
-    recv.bucket = recv.bucket === btn.getAttribute('data-bucket') ? 'all' : btn.getAttribute('data-bucket');
-    $('recvBucketFilter').value = recv.bucket;
-    loadRecv();
-  });
 
   document.addEventListener('jaspest:page', function (e) {
-    if (e.detail.name === 'cash') loadCash();
+    if (e.detail.name === 'cash') { cash.page = 1; loadCash(); }
     if (e.detail.name === 'receivables') loadRecv();
   });
+
+  // Realtime: data Pemasukan dan Piutang menyegarkan diri saat halamannya tampil dan tab browser terlihat.
+  function pageActive(id) { var el = $(id); return !!el && el.classList.contains('active') && !document.hidden; }
+  function silentRefresh() {
+    if (pageActive('page-cash')) loadCash(true);
+    if (pageActive('page-receivables')) loadRecv(true);
+  }
+  window.addEventListener('jaspest:orders-changed', silentRefresh);
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) silentRefresh(); });
+  setInterval(silentRefresh, 15000);
 })();

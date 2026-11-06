@@ -11,4 +11,15 @@ return [
     'content_disk' => 'public',
     // Teknisi dengan job aktif lebih dari angka ini hanya diberi peringatan (tidak diblokir).
     'technician_job_warning_threshold' => (int) env('JASPEST_TECHNICIAN_JOB_WARNING', 5),
+    // Realtime dashboard (Laravel Reverb). Aktif bila BROADCAST_CONNECTION=reverb dan REVERB_APP_KEY terisi.
+    // Alamat untuk browser (REVERB_CLIENT_*) boleh berbeda dengan alamat server-ke-server (REVERB_*),
+    // mis. Reverb di balik Nginx pada domain publik.
+    'realtime' => [
+        'enabled' => env('BROADCAST_CONNECTION', 'null') === 'reverb' && filled(env('REVERB_APP_KEY')),
+        'key' => env('REVERB_APP_KEY'),
+        'host' => env('REVERB_CLIENT_HOST', env('REVERB_HOST')),
+        'port' => (int) env('REVERB_CLIENT_PORT', env('REVERB_PORT', 443)),
+        'scheme' => env('REVERB_CLIENT_SCHEME', env('REVERB_SCHEME', 'https')),
+        'path' => env('REVERB_CLIENT_PATH', ''),
+    ],
 ];

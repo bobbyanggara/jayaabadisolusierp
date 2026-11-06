@@ -1,26 +1,2 @@
-/* Tambahan kecil untuk halaman Kas & Bank dan Piutang; selebihnya memakai gaya modul Keuangan. */
-.finance-toolbar input[type="date"]{min-width:150px}
-#cashAccountRows tr.is-selected{background:rgba(37,99,235,.08)}
-#cashAccountRows tr:hover{background:rgba(15,23,42,.04)}
-.cash-aging{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;padding:4px 20px 20px}
-.cash-aging-item{display:flex;flex-direction:column;gap:4px;text-align:left;padding:14px 16px;border:1px solid #e3e8ee;border-radius:12px;background:#fff;cursor:pointer;font:inherit;color:inherit;border-left-width:4px}
-.cash-aging-item span{font-size:.8rem;color:#5b6675}
-.cash-aging-item strong{font-size:1.05rem}
-.cash-aging-item small{color:#7a8594}
-.cash-aging-item.is-ok{border-left-color:#16a34a}
-.cash-aging-item.is-warn{border-left-color:#d97706}
-.cash-aging-item.is-late{border-left-color:#dc2626}
-.cash-aging-item:hover,.cash-aging-item.is-active{background:#f4f7fb;border-color:#9db4d6}
-.cash-chip{display:inline-block;padding:3px 10px;border-radius:999px;font-size:.78rem;font-weight:600;white-space:nowrap}
-.cash-chip.is-ok{background:#e8f6ee;color:#14753c}
-.cash-chip.is-late{background:#fdecec;color:#b42318}
-@media (max-width:900px){.cash-aging{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media (max-width:520px){.cash-aging{grid-template-columns:1fr}}
-.cash-chip.is-warn{background:#fff4e0;color:#a15c07}
-
-.fin-tabs{display:flex;gap:6px;margin:0 0 18px;border-bottom:1px solid #e3e8ee;overflow-x:auto}
-.fin-tab{appearance:none;background:none;border:0;border-bottom:3px solid transparent;margin-bottom:-1px;padding:10px 16px;font:inherit;font-weight:600;color:#5b6675;cursor:pointer;white-space:nowrap}
-.fin-tab:hover{color:#0f172a}
-.fin-tab.active{color:#0b6fb3;border-bottom-color:#0b6fb3}
-.fin-tab-badge{display:inline-block;min-width:22px;margin-left:6px;padding:1px 7px;border-radius:999px;background:#0b6fb3;color:#fff;font-size:.75rem;text-align:center}
-.fin-tab-badge[hidden]{display:none}
+/* Tambahan kecil halaman Penerimaan Kas dan Piutang Usaha; selebihnya memakai admin-finance.css. */
+.finance-toolbar input[type="date"] { min-width: 150px; }

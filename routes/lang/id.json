@@ -1,0 +1,13 @@
+{
+    "Server Error": "Terjadi kesalahan pada server",
+    "Service Unavailable": "Layanan sedang tidak tersedia",
+    "Not Found": "Halaman tidak ditemukan",
+    "Forbidden": "Akses ditolak",
+    "Unauthorized": "Belum masuk",
+    "Page Expired": "Halaman kedaluwarsa",
+    "Too Many Requests": "Terlalu banyak permintaan",
+    "Payload Too Large": "Ukuran data terlalu besar",
+    "Too Many Attempts.": "Terlalu banyak percobaan. Coba lagi beberapa saat lagi.",
+    "Unauthenticated.": "Sesi login berakhir. Silakan masuk kembali.",
+    "This action is unauthorized.": "Akun Anda tidak memiliki izin untuk tindakan ini."
+}

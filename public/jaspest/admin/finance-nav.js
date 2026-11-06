@@ -1,8 +1,8 @@
-/* Dropdown "Keuangan & Akuntansi": Invoice, Kas & Bank, Piutang.
+/* Dropdown "Keuangan & Akuntansi": Ringkasan Keuangan, Invoice Penjualan, Penerimaan Kas, Pengeluaran Kas, Piutang Usaha.
    Mandiri (tidak bergantung pada admin.js) dan hanya menangani halaman miliknya sendiri. */
 (function () {
   'use strict';
-  var OWN = { cash: 'Kas & Bank', receivables: 'Piutang' };
+  var OWN = { 'finance-summary': 'Ringkasan Keuangan', cash: 'Penerimaan Kas', expenses: 'Pengeluaran Kas', receivables: 'Piutang Usaha' };
   var group = document.getElementById('financeNavGroup');
   var toggle = document.getElementById('financeNavToggle');
   var submenu = document.getElementById('financeSubmenu');

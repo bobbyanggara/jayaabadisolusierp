@@ -2,14 +2,41 @@
 
 namespace App\Models;
 
+use App\Events\JaspestEnquiryUpdated;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Facades\DB;
 
 class JaspestEnquiry extends Model
 {
     protected $table = 'jaspest_enquiries';
+
+    /**
+     * Beritahu semua admin yang sedang membuka dashboard (Manajemen Order, Invoice, dll.) setiap kali
+     * order berubah status/nilai, sehingga daftar "Order Siap Ditagihkan" ikut segar tanpa muat ulang.
+     * Permintaan publik baru (status "new") sudah dikirim lewat JaspestEnquiryCreated. Kegagalan
+     * WebSocket tidak boleh menggagalkan penyimpanan order.
+     */
+    protected static function booted(): void
+    {
+        static::saved(function (JaspestEnquiry $enquiry): void {
+            $relevant = $enquiry->wasRecentlyCreated
+                ? $enquiry->status !== 'new'
+                : $enquiry->wasChanged(['status', 'order_price', 'converted_at']);
+            if (! $relevant) {
+                return;
+            }
+            DB::afterCommit(static function () use ($enquiry): void {
+                try {
+                    event(new JaspestEnquiryUpdated($enquiry->fresh() ?? $enquiry));
+                } catch (\Throwable $exception) {
+                    report($exception);
+                }
+            });
+        });
+    }
 
     protected $fillable = [
         'reference', 'full_name', 'whatsapp', 'address', 'estimated_area', 'need',

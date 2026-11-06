@@ -30,4 +30,9 @@ class JaspestFinanceBankAccount extends Model
     {
         return $this->hasMany(JaspestFinancePayment::class, 'received_bank_account_id');
     }
+
+    public function expenses(): HasMany
+    {
+        return $this->hasMany(JaspestFinanceExpense::class, 'bank_account_id');
+    }
 }

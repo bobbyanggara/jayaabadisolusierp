@@ -8,7 +8,7 @@
   const state = { orders: [], invoices: [], references: null, bankAccounts: [], activeOrder: null, activeInvoice: null, activeBankAccount: null, searchTimer: null, bankSearchTimer: null, loading: false, invoicePage: 1, invoiceMeta: { current_page: 1, last_page: 1, total: 0 } };
 
   const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch]);
-  const rupiah = (value) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(Number(value || 0));
+  const rupiah = (value) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(Number(value || 0)).replace(/[\s\u00a0]/g, '');
   const dateId = (value) => {
     if (!value) return '-';
     const date = new Date(`${String(value).slice(0, 10)}T00:00:00+07:00`);
@@ -78,7 +78,7 @@
       id: account.id,
       label: `${account.bank_name} · ${account.account_number} · A.n. ${account.account_holder}${account.account_label ? ` · ${account.account_label}` : ''}${account.branch ? ` · ${account.branch}` : ''}`,
     }));
-    const bankEmptyLabel = 'Belum ada rekening aktif — tambahkan di Master Data Rekening';
+    const bankEmptyLabel = 'Belum ada rekening aktif. Tambahkan di Master Data › Rekening Bank';
     const bankHtml = `<option value="">${bankOptions.length ? 'Pilih bank dan nomor rekening' : bankEmptyLabel}</option>` +
       bankOptions.map((account) => `<option value="${Number(account.id)}">${esc(account.label)}</option>`).join('');
     if (invoiceBankSelect) invoiceBankSelect.innerHTML = bankHtml;
@@ -117,20 +117,6 @@
     }
   }
 
-  function renderOrders() {
-    $('#financeOrderCount').textContent = `${state.orders.length} order`;
-    $('#financeOrdersEmpty').hidden = state.orders.length !== 0;
-    $('#financeOrderRows').innerHTML = state.orders.map((order) => `
-      <tr>
-        <td><strong>${esc(order.id)}</strong><small class="finance-subline">${order.is_contract ? 'Kontrak berkala' : 'Order sekali jalan'}</small></td>
-        <td>${esc(order.customer_name || order.billing_name)}</td>
-        <td>${esc(order.job_type || '-')}</td>
-        <td class="finance-money">${rupiah(order.work_amount)}</td>
-        <td>${dateId(order.converted_at)}</td>
-        <td><button type="button" class="btn btn-primary btn-sm" data-finance-create="${esc(order.id)}">Buat Invoice</button></td>
-      </tr>`).join('');
-  }
-
   function renderInvoices() {
     $('#financeInvoiceCountLabel').textContent = `${state.invoiceMeta.total || 0} invoice`;
     $('#financeInvoiceTableCount').textContent = `${state.invoiceMeta.total || 0} invoice`;
@@ -140,35 +126,41 @@
     $('#financeInvoicesEmpty').hidden = state.invoices.length !== 0;
     $('#financeInvoiceRows').innerHTML = state.invoices.map((invoice) => `
       <tr>
-        <td><strong>${esc(invoice.invoice_number)}</strong><small class="finance-subline">Order ${esc(invoice.order_reference || '-')}</small></td>
-        <td>${esc(invoice.billing_name)}<small class="finance-subline">${esc(invoice.location_name)}</small></td>
+        <td><strong>${esc(invoice.invoice_number)}</strong><small class="finance-subline">Order ${esc(invoice.order_reference || '-')}${invoice.contract_number ? ` · ${esc(invoice.contract_number)} · ${Number(invoice.visit_count || 0)} kunjungan` : ''}</small></td>
+        <td>${esc(invoice.billing_name)}<small class="finance-subline">${esc(invoice.job_type)}</small></td>
         <td>${dateId(invoice.invoice_date)}<small class="finance-subline">Jatuh tempo: ${dateId(invoice.due_date)}</small></td>
-        <td class="finance-money">${rupiah(invoice.total_amount)}</td>
-        <td class="finance-money">${rupiah(invoice.paid_amount)}<small class="finance-subline">Sisa ${rupiah(invoice.outstanding_amount)}</small></td>
+        <td class="align-right finance-money">${rupiah(invoice.total_amount)}</td>
+        <td class="align-right finance-money">${rupiah(invoice.paid_amount)}<small class="finance-subline">Sisa ${rupiah(invoice.outstanding_amount)}</small></td>
         <td>${statusLabel(invoice)}</td>
-        <td><div class="finance-row-actions"><button type="button" class="btn btn-export btn-sm" data-finance-print="${invoice.id}">Cetak Invoice</button>${invoice.outstanding_amount > 0 ? `<button type="button" class="btn btn-secondary btn-sm" data-finance-pay="${invoice.id}">Catat Bayar</button>` : ''}</div></td>
+        <td class="align-right"><div class="finance-row-actions"><button type="button" class="btn btn-outline btn-sm" data-finance-download="${invoice.id}" title="Unduh invoice sebagai PDF">Unduh</button>${invoice.outstanding_amount > 0 ? `<button type="button" class="btn btn-export btn-sm" data-finance-pay="${invoice.id}">Catat Pembayaran</button>` : ''}</div></td>
       </tr>`).join('');
   }
 
-  async function loadFinance() {
+  async function loadFinance(options) {
+    const silent = options === 'silent';
     if (state.loading) return;
     state.loading = true;
-    $('#financeRefresh').disabled = true;
     try {
       const status = $('#financeStatusFilter').value;
       const term = $('#financeInvoiceSearch').value.trim();
-      const [summary, orders, invoices, references] = await Promise.all([
-        request('/summary'), request('/orders'), request(`/invoices?status=${encodeURIComponent(status)}&q=${encodeURIComponent(term)}&page=${state.invoicePage}`), request('/references'),
+      const [summary, invoices, references] = await Promise.all([
+        request('/summary'), request(`/invoices?status=${encodeURIComponent(status)}&q=${encodeURIComponent(term)}&page=${state.invoicePage}`), request('/references'),
       ]);
       renderSummary(summary);
       state.references = references || {};
       renderReferenceDropdowns();
-      state.orders = orders.data || [];
       state.invoices = invoices.data || [];
       state.invoiceMeta = invoices.meta || state.invoiceMeta;
-      renderOrders(); renderInvoices();
-    } catch (error) { feedback(error.message, 'error'); }
-    finally { state.loading = false; $('#financeRefresh').disabled = false; }
+      renderInvoices();
+    } catch (error) { if (!silent) feedback(error.message, 'error'); }
+    finally { state.loading = false; }
+  }
+
+  // Segarkan otomatis tanpa mengganggu admin: hanya saat halaman Invoice tampil, tab terlihat, dan tidak ada form terbuka.
+  function silentRefresh() {
+    if (document.hidden || !$('#page-finance')?.classList.contains('active')) return;
+    if ($('.modal-backdrop:not([hidden])')) return;
+    loadFinance('silent');
   }
 
   function renderBankAccounts(payload) {
@@ -184,8 +176,8 @@
         <td><strong>${esc(account.bank_name)}</strong>${account.branch ? `<small class="finance-subline">${esc(account.branch)}</small>` : ''}</td>
         <td class="finance-money">${esc(account.account_number)}</td>
         <td>${esc(account.account_holder)}</td>
-        <td>${esc(account.account_label || '—')}</td>
-        <td><span class="finance-status ${account.is_active ? 'is-paid' : 'is-unpaid'}">${account.is_active ? 'Aktif' : 'Nonaktif'}</span></td>
+        <td>${esc(account.account_label || '–')}</td>
+        <td><span class="finance-status ${account.is_active ? 'is-paid' : ''}">${account.is_active ? 'Aktif' : 'Nonaktif'}</span></td>
         <td><div class="finance-row-actions"><button type="button" class="btn btn-outline btn-sm" data-finance-bank-edit="${Number(account.id)}">Ubah</button><button type="button" class="btn btn-danger btn-sm" data-finance-bank-delete="${Number(account.id)}">Hapus</button></div></td>
       </tr>`).join('');
   }
@@ -230,7 +222,7 @@
         method: accountId ? 'PUT' : 'POST', body: values,
       });
       closeFinanceModal('financeBankAccountModal');
-      feedback(accountId ? 'Master rekening berhasil diperbarui.' : 'Rekening baru berhasil ditambahkan ke Master Data.');
+      feedback(accountId ? 'Rekening berhasil diperbarui.' : 'Rekening berhasil ditambahkan.');
       await Promise.all([loadBankAccounts(), loadFinance()]);
     } catch (error) { feedback(error.message, 'error'); }
     finally { submit.disabled = false; }
@@ -251,77 +243,9 @@
     if (!confirmed) return;
     try {
       await request(`/bank-accounts/${encodeURIComponent(account.id)}`, { method: 'DELETE' });
-      feedback('Rekening berhasil dihapus dari Master Data. Data rekening pada dokumen historis tetap dipertahankan.');
+      feedback('Rekening berhasil dihapus. Data rekening pada dokumen historis tetap tersimpan.');
       await Promise.all([loadBankAccounts(), loadFinance()]);
     } catch (error) { feedback(error.message, 'error'); }
-  }
-
-  async function exportFinanceExcel() {
-    const button = $('#financeExport');
-    if (button) button.disabled = true;
-    try {
-      const params = new URLSearchParams({
-        status: $('#financeStatusFilter')?.value || 'all',
-        q: $('#financeInvoiceSearch')?.value.trim() || '',
-      });
-      const response = await fetch(`${base}/export?${params.toString()}`, {
-        method: 'GET', credentials: 'same-origin', cache: 'no-store',
-        headers: {
-          'Accept': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/json',
-          'X-Requested-With': 'XMLHttpRequest',
-        },
-      });
-      const contentType = (response.headers.get('content-type') || '').toLowerCase();
-      if (!response.ok) {
-        let payload = null;
-        if (contentType.includes('application/json')) payload = await response.json().catch(() => null);
-        if (response.status === 401 || response.status === 419) throw new Error('Sesi login admin berakhir. Silakan login kembali.');
-        if (response.status === 403) throw new Error('Akun ini tidak memiliki izin mengekspor laporan keuangan.');
-        throw new Error(payload?.message || `Ekspor Excel gagal (HTTP ${response.status}).`);
-      }
-      if (!contentType.includes('spreadsheetml')) throw new Error('Server tidak mengirim file Excel yang valid. Periksa route ekspor dan log Laravel.');
-      const blob = await response.blob();
-      if (!blob.size) throw new Error('File Excel kosong. Tidak ada data yang dapat diunduh.');
-      const disposition = response.headers.get('content-disposition') || '';
-      const filenameMatch = disposition.match(/filename\*=UTF-8''([^;]+)|filename="?([^";]+)"?/i);
-      const filename = filenameMatch
-        ? decodeURIComponent(filenameMatch[1] || filenameMatch[2])
-        : `JASPEST-Laporan-Keuangan-${new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta' }).format(new Date())}.xlsx`;
-      const url = URL.createObjectURL(blob);
-      const anchor = document.createElement('a');
-      anchor.href = url;
-      anchor.download = filename;
-      document.body.append(anchor);
-      anchor.click();
-      anchor.remove();
-      window.setTimeout(() => URL.revokeObjectURL(url), 1500);
-      feedback('Laporan Keuangan & Akuntansi berhasil diekspor ke Excel.');
-    } catch (error) { feedback(error.message, 'error'); }
-    finally { if (button) button.disabled = false; }
-  }
-
-  function openInvoiceModal(orderId) {
-    const order = state.orders.find((item) => String(item.id) === String(orderId));
-    if (!order) return;
-    state.activeOrder = order;
-    const form = $('#financeInvoiceForm');
-    form.reset();
-    form.elements.invoice_date.value = localDate();
-    form.elements.due_date.value = plusDays(form.elements.invoice_date.value, 30);
-    form.elements.due_date.dataset.auto = 'true';
-    form.elements.billing_name.value = order.billing_name || '';
-    form.elements.billing_address.value = order.billing_address || '';
-    form.elements.job_type.value = order.job_type || '';
-    form.elements.location_name.value = order.location_name || '';
-    form.elements.job_address.value = order.job_address || '';
-    form.elements.work_period.value = order.work_period || '';
-    form.elements.ppn_rate.value = '0';
-    form.elements.bank_account_id.value = String(state.references?.default_invoice_bank_account_id || '');
-    $('#financeInvoiceOrderInfo').textContent = `${order.id} · ${order.customer_name || order.billing_name} · Nilai pekerjaan ${rupiah(order.work_amount)}`;
-    $('#financeInvoiceOrderAmount').textContent = rupiah(order.work_amount);
-    $('#financeInvoiceModal').hidden = false;
-    document.body.style.overflow = 'hidden';
-    form.elements.location_name.focus();
   }
 
   function openPaymentModal(invoiceId) {
@@ -348,41 +272,7 @@
     const modal = document.getElementById(id);
     if (modal) modal.hidden = true;
     if (!$('.modal-backdrop:not([hidden])')) document.body.style.overflow = '';
-  }
-
-  async function saveInvoice(event) {
-    event.preventDefault();
-    if (!state.activeOrder) return;
-    const form = event.currentTarget;
-    const submit = form.querySelector('[type="submit"]');
-    if (!form.reportValidity()) return;
-    submit.disabled = true;
-    let printWindow = null;
-    const printMode = form.elements.print_mode?.value || 'manual';
-    if (printMode === 'auto') {
-      // Dibuka langsung dari interaksi submit agar tidak diblokir popup blocker.
-      printWindow = window.open('about:blank', '_blank');
-      if (printWindow) {
-        try { printWindow.document.write('<title>Menyiapkan invoice…</title><p style="font:14px Arial;padding:24px">Menyiapkan dokumen invoice…</p>'); } catch (_) { /* navigasi akan mengganti isi tab */ }
-      }
-    }
-    try {
-      const values = Object.fromEntries(new FormData(form).entries());
-      values.ppn_rate = Number(values.ppn_rate || 0);
-      delete values.print_mode;
-      const result = await request(`/orders/${encodeURIComponent(state.activeOrder.id)}/invoice`, { method: 'POST', body: values });
-      closeFinanceModal('financeInvoiceModal');
-      feedback(`Invoice ${result.invoice_number} berhasil diterbitkan.`);
-      if (printMode === 'auto' && printWindow) {
-        printWindow.location.replace(`${base}/invoices/${encodeURIComponent(result.id)}/print?auto_print=1`);
-      } else if (printMode === 'auto' && !printWindow) {
-        feedback('Invoice berhasil diterbitkan, tetapi pop-up diblokir. Gunakan tombol Cetak Invoice untuk mencetak secara manual.', 'warning');
-      }
-      await loadFinance();
-    } catch (error) {
-      if (printWindow && !printWindow.closed) printWindow.close();
-      feedback(error.message, 'error');
-    } finally { submit.disabled = false; }
+    window.JASPEST_SCROLL_GUARD?.sync();
   }
 
   async function savePayment(event) {
@@ -403,15 +293,15 @@
     finally { submit.disabled = false; }
   }
 
-  function printInvoice(invoiceId) {
-    const url = `${base}/invoices/${encodeURIComponent(invoiceId)}/print`;
+  function printInvoice(invoiceId, autoPrint = false) {
+    const url = `${base}/invoices/${encodeURIComponent(invoiceId)}/print${autoPrint ? '?auto_print=1' : ''}`;
     const popup = window.open(url, '_blank');
     if (!popup) feedback('Browser memblokir tab cetak. Izinkan pop-up untuk halaman admin ini.', 'error');
   }
 
   document.addEventListener('click', (event) => {
-    const create = event.target.closest('[data-finance-create]');
-    if (create) { openInvoiceModal(create.dataset.financeCreate); return; }
+    const download = event.target.closest('[data-finance-download]');
+    if (download) { printInvoice(download.dataset.financeDownload, true); return; }
     const print = event.target.closest('[data-finance-print]');
     if (print) { printInvoice(print.dataset.financePrint); return; }
     const payment = event.target.closest('[data-finance-pay]');
@@ -424,19 +314,16 @@
     if (close) closeFinanceModal(close.dataset.financeClose);
   });
 
-  $('#financeInvoiceForm')?.addEventListener('submit', saveInvoice);
   $('#financePaymentForm')?.addEventListener('submit', savePayment);
   $('#financeBankAccountForm')?.addEventListener('submit', saveBankAccount);
   $('#financeBankAdd')?.addEventListener('click', () => openBankAccountModal());
   $('#financeBankEmptyAdd')?.addEventListener('click', () => openBankAccountModal());
-  $('#financeExport')?.addEventListener('click', exportFinanceExcel);
   $('#financeBankSearch')?.addEventListener('input', () => {
     clearTimeout(state.bankSearchTimer);
     state.bankSearchTimer = setTimeout(() => loadBankAccounts().catch((error) => feedback(error.message, 'error')), 300);
   });
   $('#financeBankStatus')?.addEventListener('change', () => loadBankAccounts().catch((error) => feedback(error.message, 'error')));
   $('#financePaymentMethod')?.addEventListener('change', applyPaymentDestinationRules);
-  $('#financeRefresh')?.addEventListener('click', loadFinance);
   $('#financeInvoicesPrev')?.addEventListener('click', () => { if (state.invoicePage > 1) { state.invoicePage -= 1; loadFinance(); } });
   $('#financeInvoicesNext')?.addEventListener('click', () => { if (state.invoicePage < state.invoiceMeta.last_page) { state.invoicePage += 1; loadFinance(); } });
   $('#financeStatusFilter')?.addEventListener('change', () => { state.invoicePage = 1; loadFinance(); });
@@ -451,6 +338,9 @@
   $('#financeDueDate')?.addEventListener('change', (event) => { event.target.dataset.auto = 'false'; });
 
   window.addEventListener('jaspest:finance-open', loadFinance);
+  window.addEventListener('jaspest:orders-changed', silentRefresh);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) silentRefresh(); });
+  setInterval(silentRefresh, 15000);
   window.addEventListener('jaspest:finance-bank-accounts-open', () => loadBankAccounts().catch((error) => feedback(error.message, 'error')));
   document.addEventListener('DOMContentLoaded', () => {
     if (location.hash === '#finance') loadFinance();

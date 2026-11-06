@@ -211,27 +211,71 @@ class JaspestContractService
                 }
             }
 
+            // Kunjungan reguler boleh dijadwalkan di luar periodenya selama masih dalam masa kontrak:
+            // klien kadang minta digabung di bulan ini atau digeser penuh ke bulan berikutnya.
+            // Kunjungan lalu dipindah ke periode yang memuat tanggal baru.
+            $movedToIndex = null;
             if ($date) {
                 if (! $locked->is_extra && ($date < $locked->period_start->format('Y-m-d') || $date > $locked->period_end->format('Y-m-d'))) {
-                    throw ValidationException::withMessages([
-                        'scheduled_date' => 'Tanggal harus berada di dalam periode ini ('.$locked->period_start->format('d-m-Y').' s/d '.$locked->period_end->format('d-m-Y').').',
-                    ]);
+                    $contractStart = $contract->start_date->format('Y-m-d');
+                    $contractEnd = $contract->end_date->format('Y-m-d');
+                    if ($date < $contractStart || $date > $contractEnd) {
+                        throw ValidationException::withMessages([
+                            'scheduled_date' => 'Tanggal harus berada dalam masa kontrak ('.$contract->start_date->format('d-m-Y').' s/d '.$contract->end_date->format('d-m-Y').').',
+                        ]);
+                    }
+                    $movedToIndex = $this->periodIndexForDate($contract, $date);
+                    if ($movedToIndex === null) {
+                        throw ValidationException::withMessages(['scheduled_date' => 'Tanggal tidak termasuk dalam periode kontrak mana pun.']);
+                    }
                 }
                 if ($technician) {
                     $this->assertTechnicianCapacity($technician, $date, $locked->id);
                 }
             }
 
-            $locked->forceFill([
+            $newNotes = $notes !== null ? (trim($notes) ?: null) : $locked->notes;
+            $attributes = [];
+            if ($movedToIndex !== null) {
+                $unit = self::PERIODS[$contract->period_type]['unit'] ?? 'Periode';
+                $start = Carbon::parse($contract->start_date->format('Y-m-d'), self::TZ);
+                $nextSlot = 1 + (int) JaspestContractVisit::query()
+                    ->where('contract_id', $contract->id)->where('is_extra', false)
+                    ->where('period_index', $movedToIndex + 1)->where('id', '<>', $locked->id)->max('slot_no');
+                $moveNote = 'Dipindah dari '.$unit.' ke-'.$locked->period_index.' ke '.$unit.' ke-'.($movedToIndex + 1).' (jadwal '.Carbon::parse($date)->format('d-m-Y').').';
+                $newNotes = trim(($newNotes ? $newNotes."\n" : '').$moveNote);
+                $attributes = [
+                    'period_index' => $movedToIndex + 1,
+                    'slot_no' => $nextSlot,
+                    'period_start' => $this->periodStart($start, $contract->period_type, $movedToIndex)->format('Y-m-d'),
+                    'period_end' => $this->periodEnd($start, $contract->period_type, $movedToIndex)->format('Y-m-d'),
+                ];
+            }
+
+            $locked->forceFill($attributes + [
                 'scheduled_date' => $date,
                 'technician_id' => $technician?->id,
                 'technician_name' => $technician?->full_name,
                 'status' => $date ? 'scheduled' : 'unscheduled',
-                'notes' => $notes !== null ? (trim($notes) ?: null) : $locked->notes,
+                'notes' => $newNotes,
             ])->save();
 
             return $locked->fresh();
         }, 3);
+    }
+
+    /** Indeks periode (0-based) yang memuat tanggal tersebut, atau null bila di luar kontrak. */
+    private function periodIndexForDate(JaspestContract $contract, string $date): ?int
+    {
+        $start = Carbon::parse($contract->start_date->format('Y-m-d'), self::TZ);
+        for ($i = 0; $i < (int) $contract->duration_periods; $i++) {
+            if ($date >= $this->periodStart($start, $contract->period_type, $i)->format('Y-m-d')
+                && $date <= $this->periodEnd($start, $contract->period_type, $i)->format('Y-m-d')) {
+                return $i;
+            }
+        }
+
+        return null;
     }
 
     private function assertTechnicianCapacity(JaspestTechnician $technician, string $date, int $exceptVisitId): void
@@ -288,6 +332,9 @@ class JaspestContractService
             if (! in_array($locked->status, ['unscheduled', 'scheduled'], true)) {
                 throw ValidationException::withMessages(['status' => 'Hanya kunjungan yang belum selesai yang dapat dilewati.']);
             }
+            if ($locked->invoice_id !== null) {
+                throw ValidationException::withMessages(['status' => 'Kunjungan ini sudah ditagih pada sebuah invoice dan tidak dapat dilewati agar tagihan tetap sesuai.']);
+            }
             $locked->forceFill([
                 'status' => 'skipped',
                 'notes' => $note !== null && trim($note) !== '' ? trim($note) : $locked->notes,
@@ -309,6 +356,10 @@ class JaspestContractService
             }
             if (! in_array($locked->status, ['done', 'skipped'], true)) {
                 throw ValidationException::withMessages(['status' => 'Kunjungan ini tidak perlu dibuka kembali.']);
+            }
+            if ($locked->invoice_id !== null) {
+                $number = $locked->invoice?->invoice_number;
+                throw ValidationException::withMessages(['status' => 'Kunjungan ini sudah ditagih pada invoice'.($number ? ' '.$number : '').' dan tidak dapat dibuka kembali agar tagihan tetap sesuai.']);
             }
             $locked->forceFill([
                 'status' => $locked->scheduled_date ? 'scheduled' : 'unscheduled',

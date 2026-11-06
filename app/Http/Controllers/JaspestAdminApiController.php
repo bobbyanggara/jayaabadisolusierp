@@ -1229,7 +1229,6 @@ class JaspestAdminApiController extends Controller
     {
         $validated = $request->validate([
             'search' => ['nullable', 'string', 'max:100'],
-            'status' => ['nullable', Rule::in(['all', 'active', 'inactive'])],
             'page' => ['nullable', 'integer', 'min:1'],
         ]);
 
@@ -1248,15 +1247,9 @@ class JaspestAdminApiController extends Controller
             });
         }
 
-        if (($validated['status'] ?? 'all') !== 'all') {
-            $query->where('is_active', ($validated['status'] ?? 'active') === 'active');
-        }
-
         $paginator = $query->paginate(15)->withQueryString();
         $summary = [
-            'total' => (clone $baseQuery)->count(),
             'active' => (clone $baseQuery)->where('is_active', true)->count(),
-            'inactive' => (clone $baseQuery)->where('is_active', false)->count(),
         ];
 
         return response()->json([
@@ -1280,7 +1273,7 @@ class JaspestAdminApiController extends Controller
             'email' => null,
             'password' => $data['password'],
             'role' => $data['role'],
-            'is_active' => $data['is_active'],
+            'is_active' => true,
         ]);
 
         return response()->json($this->accountResource($account), 201);
@@ -1295,7 +1288,6 @@ class JaspestAdminApiController extends Controller
             'username' => $data['username'],
             'phone' => $data['phone'],
             'role' => $data['role'],
-            'is_active' => $data['is_active'],
         ];
 
         if (filled($data['password'] ?? null)) {
@@ -1347,7 +1339,6 @@ class JaspestAdminApiController extends Controller
             'phone' => ['required', 'string', 'max:24', 'regex:/\A\+?[0-9]{8,15}\z/'],
             'role' => ['required', Rule::in(self::DIVISION_ROLES)],
             'password' => [$account ? 'nullable' : 'required', 'string', 'min:8', 'confirmed'],
-            'is_active' => ['required', 'boolean'],
         ], [
             'username.regex' => 'Username hanya boleh berisi huruf, angka, titik, garis bawah, dan tanda hubung.',
             'password.required' => 'Password wajib diisi untuk membuat akun baru.',
@@ -1356,7 +1347,6 @@ class JaspestAdminApiController extends Controller
             'phone.regex' => 'Nomor telepon harus terdiri dari 8–15 digit dan boleh diawali tanda +.',
         ]);
 
-        $validated['is_active'] = (bool) $validated['is_active'];
         return $validated;
     }
 

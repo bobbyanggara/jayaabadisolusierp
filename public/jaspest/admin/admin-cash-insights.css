@@ -1,0 +1,119 @@
+/* Kas & Bank: omzet Year-on-Year, rekap bulanan, dan pengeluaran.
+   Hanya memakai token admin-console.css (--surface, --ink, --muted, --line, --brand, --green, --red, ...),
+   sehingga otomatis mengikuti mode terang/gelap. */
+.cash-panel-actions{display:flex;align-items:center;gap:12px}
+
+/* Perubahan & selisih */
+.cash-delta{font-weight:650}
+.cash-delta.is-good{color:var(--green)}
+.cash-delta.is-bad{color:var(--red)}
+.is-negative{color:var(--red)}
+
+/* Badge YoY */
+.cash-yoy-badge.is-good{background:var(--green-soft);color:var(--green);border-color:transparent}
+.cash-yoy-badge.is-bad{background:var(--red-soft);color:var(--red);border-color:transparent}
+
+/* Grafik */
+.cash-chart-legend{display:flex;gap:18px;padding:0 22px 4px;font-size:12px;color:var(--muted)}
+.cash-chart-legend[hidden]{display:none}
+.cash-chart-legend span{display:inline-flex;align-items:center;gap:7px}
+.cash-chart-legend b{font-weight:650}
+.cc-swatch{display:inline-block;width:12px;height:12px;border-radius:3px}
+.cc-swatch-cur{background:var(--brand)}
+.cc-swatch-prev{background:var(--faint);opacity:.65}
+.cash-chart-scroll{overflow-x:auto;padding:0 14px 18px}
+.cash-chart{position:relative;min-width:480px}
+.cash-chart svg{display:block;width:100%;height:auto}
+.cash-chart .cc-grid{stroke:var(--line);stroke-width:1}
+.cash-chart .cc-axis{fill:var(--muted);font-size:11px}
+.cash-chart .cc-cur{fill:var(--brand)}
+.cash-chart .cc-prev{fill:var(--faint);opacity:.65}
+.cash-chart .cc-hover{fill:transparent;cursor:pointer;outline:none}
+.cash-chart .cc-hover:hover,.cash-chart .cc-hover:focus-visible,.cash-chart .cc-hover.is-active{fill:var(--brand-soft);opacity:.7}
+.cash-chart .cc-now{fill:var(--ink);font-weight:700}
+.cash-chart-tip{position:absolute;z-index:3;min-width:190px;padding:10px 12px;border-radius:10px;background:var(--ink);color:var(--surface);font-size:12px;line-height:1.55;box-shadow:0 8px 24px rgba(10,30,50,.28);pointer-events:none}
+.cash-chart-tip[hidden]{display:none}
+.cash-chart-tip strong{display:block;margin-bottom:3px;font-size:12.5px;color:inherit}
+.cash-chart-tip div{display:flex;justify-content:space-between;gap:14px}
+.cash-chart-tip i{font-style:normal;opacity:.8}
+.cash-chart-empty{margin:0 22px 22px}
+
+/* Tabel bulanan */
+.cash-monthly-table td,.cash-monthly-table th{white-space:nowrap}
+.cash-monthly-table tr.is-future td{color:var(--muted);opacity:.55}
+.cash-monthly-table tfoot td{font-weight:750;border-top:2px solid var(--line-strong);background:var(--sunken)}
+
+/* Pengeluaran */
+
+@media (max-width:700px){
+  .cash-insights-filters,.cash-filter,.cash-filter select,#cashInsightBank{width:100%;min-width:0;max-width:none}
+  .cash-panel-actions .finance-count{display:none}
+}
+
+/* Mode gelap untuk komponen Finance bawaan di halaman Kas & Bank (admin-finance.css memakai warna tetap). */
+  .cash-insights .table-scroll table{display:table;min-width:720px}
+  .cash-insights .table-scroll thead{display:table-header-group;position:static;width:auto;height:auto;overflow:visible;clip:auto}
+  .cash-insights .table-scroll tbody{display:table-row-group}
+  .cash-insights .table-scroll tfoot{display:table-footer-group}
+  .cash-insights .table-scroll tr{display:table-row;padding:0;border-bottom:0}
+  .cash-insights .table-scroll th{display:table-cell}
+  .cash-insights .table-scroll td{display:table-cell;padding:11px 16px;border-bottom:1px solid var(--line)}
+  .cash-insights .table-scroll tbody tr:last-child td{border-bottom:0}
+  .cash-insights .table-scroll td:nth-child(n){grid-column:auto;grid-row:auto;color:inherit;font-size:inherit;margin:0}
+  .cash-insights .table-scroll tbody tr.is-future td{color:var(--muted)}
+}
+
+/* ---- Urutan halaman Kas & Bank: Omzet & Pengeluaran lebih dulu, lalu Kas Masuk ---- */
+#page-cash .cash-incoming{margin:0;padding:0;border:0}
+#page-cash .cash-incoming .finance-stats{margin-top:0}
+
+/* Label "Dari" / "Sampai" pada filter tanggal riwayat kas masuk */
+.finance-toolbar .cash-date{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:650;color:var(--muted);white-space:nowrap}
+.finance-toolbar .cash-date input[type="date"]{min-width:150px}
+@media (max-width:620px){
+  .finance-toolbar .cash-date{display:flex;justify-content:space-between;width:100%}
+  .finance-toolbar .cash-date input[type="date"]{flex:1;max-width:220px}
+}
+
+/* ---- Panel gabungan Omzet & Pengeluaran Year-on-Year ---- */
+.cash-yoy-panel .finance-panel-heading{align-items:flex-start;border-bottom:1px solid var(--line);margin-bottom:14px;padding-bottom:16px}
+.cash-yoy-panel .cash-chart-legend{gap:20px;padding:0 22px 6px;font-weight:550}
+.cash-yoy-panel .cash-chart-legend b{color:var(--ink)}
+.cc-swatch-exp{width:16px;height:3px;border-radius:2px;background:var(--red)}
+.cash-chart .cc-exp{fill:none;stroke:var(--red);stroke-width:2.25;stroke-linejoin:round;stroke-linecap:round}
+.cash-chart .cc-exp-dot{fill:var(--surface);stroke:var(--red);stroke-width:2}
+.cash-chart .cc-grid{stroke-dasharray:3 4}
+.cash-chart-tip .cc-tip-sep{margin-top:5px;padding-top:5px;border-top:1px solid rgba(255,255,255,.22)}
+@media (max-width:700px){
+  .cash-yoy-panel .cash-chart-legend{flex-wrap:wrap;gap:8px 16px;padding-inline:16px}
+  }
+
+/* ---- Grafik area halus: omzet (area) vs tahun lalu (putus-putus) vs pengeluaran (garis merah) ---- */
+.cash-chart .cc-area{fill:url(#ccAreaGrad)}
+.cash-chart .cc-line-cur{fill:none;stroke:var(--brand);stroke-width:2.75;stroke-linejoin:round;stroke-linecap:round}
+.cash-chart .cc-line-prev{fill:none;stroke:var(--faint);stroke-width:2;stroke-dasharray:6 5;stroke-linecap:round;opacity:.9}
+.cash-chart .cc-cur-dot{fill:var(--surface);stroke:var(--brand);stroke-width:2.25}
+.cash-chart .cc-cur-dot.is-last{fill:var(--brand);stroke:var(--surface);stroke-width:2.5}
+.cash-chart .cc-exp{stroke-width:2.25}
+.cash-chart .cc-hover:hover,.cash-chart .cc-hover:focus-visible,.cash-chart .cc-hover.is-active{fill:var(--brand-soft);opacity:.45}
+.cc-swatch-cur{width:16px;height:3px;border-radius:2px;background:var(--brand)}
+.cc-swatch-prev{width:16px;height:0;border-radius:0;background:none;border-top:2px dashed var(--faint);opacity:1}
+.cash-yoy-panel .cash-chart-legend span{align-items:center}
+
+/* ---- Halaman Ringkasan Keuangan & filter ganda (Ringkasan + Pengeluaran) ---- */
+@media (max-width:700px){#cashExpenseBank,#cashExpenseYear{width:100%;min-width:0;max-width:none}}
+
+/* Mode gelap untuk komponen Finance bawaan di Ringkasan Keuangan (admin-finance.css memakai warna tetap). */
+
+/* Badge perbandingan YoY */
+.cash-yoy-badge{flex:0 1 auto;padding:5px 12px;border-radius:999px;background:var(--sunken);color:var(--muted);border:1px solid var(--line);font-size:13px;font-weight:700;text-align:right}
+.cash-yoy-badge.is-good{background:var(--green-soft);color:var(--green);border-color:transparent}
+.cash-yoy-badge.is-bad{background:var(--red-soft);color:var(--red);border-color:transparent}
+
+/* Ringkasan total pengeluaran terfilter */
+.cash-expense-summary{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin:0;padding:14px 20px;border-bottom:1px solid var(--line);background:var(--sunken)}
+.cash-expense-summary>div:first-child span{display:block;color:var(--muted);font-size:13px;font-weight:600}
+.cash-expense-summary>div:first-child strong{color:var(--ink);font-size:20px;letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+.cash-cat-list{display:flex;gap:6px;flex-wrap:wrap}
+.cash-cat small{margin-left:4px;font-weight:600;opacity:.85}
+.cash-summary .finance-panel{margin-top:16px}

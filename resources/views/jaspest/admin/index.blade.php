@@ -7,11 +7,13 @@
   <meta name="csrf-token" content="{{ csrf_token() }}">
   <meta name="theme-color" content="#f5f7f9">
   <title>Admin Dashboard | JASPEST</title>
-  <link rel="stylesheet" href="{{ asset('jaspest/admin/admin-console.css') }}?v=20261104-13">
+  <link rel="stylesheet" href="{{ asset('jaspest/admin/admin-console.css') }}?v=20261106-05">
   <link rel="stylesheet" href="{{ asset('jaspest/admin/admin-responsive.css') }}?v=20261104-01">
   <link rel="stylesheet" href="{{ asset('jaspest/admin/admin-contracts.css') }}?v=20261105-11">
-  <link rel="stylesheet" href="{{ asset('jaspest/admin/admin-finance.css') }}?v=20261105-03">
-  <link rel="stylesheet" href="{{ asset('jaspest/admin/admin-cash.css') }}?v=20261105-01">
+  <link rel="stylesheet" href="{{ asset('jaspest/admin/admin-finance.css') }}?v=20261106-20">
+  <link rel="stylesheet" href="{{ asset('jaspest/admin/admin-cash.css') }}?v=20261106-20">
+  <link rel="stylesheet" href="{{ asset('jaspest/admin/admin-cash-insights.css') }}?v=20261106-20">
+  <link rel="stylesheet" href="{{ asset('jaspest/admin/admin-nowrap.css') }}?v=20261106-02">
   <link rel="icon" type="image/png" href="{{ asset('jaspest/assets/logo-jas.png') }}">
 </head>
 @php
@@ -34,6 +36,34 @@
         <div class="nav-group-title">Ruang Kerja</div>
         <button class="nav-link active" data-page="dashboard"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5M5.5 10v9.5h13V10"/></svg><span>Dashboard</span></button>
         <button class="nav-link" data-page="bookings"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4zM4 14h5l1 2h4l1-2h5"/></svg><span>Manajemen Order</span><b class="nav-count" id="bookingNavCount">0</b></button>
+        @if($canAccessFinance)
+        <div class="nav-dropdown" id="financeNavGroup">
+          <button class="nav-link nav-parent" id="financeNavToggle" type="button" data-nav-toggle="finance" aria-expanded="false" aria-controls="financeSubmenu">
+            <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M7 15h4M16 14v2"/></svg>
+            <span>Keuangan &amp; Akuntansi</span>
+            <svg class="nav-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+          </button>
+          <div class="nav-submenu" id="financeSubmenu" hidden>
+            <button class="nav-link nav-sub-link" type="button" data-page="finance-summary"><span class="nav-sub-indicator" aria-hidden="true"></span><span>Ringkasan Keuangan</span></button>
+            <button class="nav-link nav-sub-link" type="button" data-page="finance"><span class="nav-sub-indicator" aria-hidden="true"></span><span>Invoice Penjualan</span></button>
+            <button class="nav-link nav-sub-link" type="button" data-page="cash"><span class="nav-sub-indicator" aria-hidden="true"></span><span>Penerimaan Kas</span></button>
+            <button class="nav-link nav-sub-link" type="button" data-page="expenses"><span class="nav-sub-indicator" aria-hidden="true"></span><span>Pengeluaran Kas</span></button>
+            <button class="nav-link nav-sub-link" type="button" data-page="receivables"><span class="nav-sub-indicator" aria-hidden="true"></span><span>Piutang Usaha</span></button>
+          </div>
+        </div>
+        @endif
+        <div class="nav-dropdown" id="inventoryNavGroup">
+          <button class="nav-link nav-parent" id="inventoryNavToggle" type="button" data-nav-toggle="inventory" aria-expanded="false" aria-controls="inventorySubmenu">
+            <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7.5 12 3l9 4.5v9L12 21l-9-4.5z"/><path d="m3.5 7.8 8.5 4.4 8.5-4.4M12 12.2V21M8 5l9 4.5"/></svg>
+            <span>Inventaris</span>
+            <svg class="nav-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+          </button>
+          <div class="nav-submenu" id="inventorySubmenu" hidden>
+            <button class="nav-link nav-sub-link" type="button" data-page="inventory-items"><span class="nav-sub-indicator" aria-hidden="true"></span><span>Katalog Barang</span></button>
+            <button class="nav-link nav-sub-link" type="button" data-page="inventory-movements"><span class="nav-sub-indicator" aria-hidden="true"></span><span>Transaksi Stok</span></button>
+            <button class="nav-link nav-sub-link" type="button" data-page="inventory-maintenance"><span class="nav-sub-indicator" aria-hidden="true"></span><span>Pemeliharaan Aset</span></button>
+          </div>
+        </div>
         <div class="nav-dropdown" id="masterNavGroup">
           <button class="nav-link nav-parent" id="masterNavToggle" type="button" data-nav-toggle="master" aria-expanded="false" aria-controls="masterSubmenu">
             <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 20v-1a6 6 0 0 1 12 0v1M16 5.5a3 3 0 0 1 0 5.8M18 14a5 5 0 0 1 3 4.5V20"/></svg>
@@ -52,21 +82,6 @@
             <button class="nav-link nav-sub-link" type="button" data-page="stock-catalog"><span class="nav-sub-indicator" aria-hidden="true"></span><span>Data Stok &amp; Bahan</span></button>
           </div>
         </div>
-        <button class="nav-link" data-page="inventory"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7.5 12 3l9 4.5v9L12 21l-9-4.5z"/><path d="m3.5 7.8 8.5 4.4 8.5-4.4M12 12.2V21M8 5l9 4.5"/></svg><span>Inventaris</span></button>
-        @if($canAccessFinance)
-        <div class="nav-dropdown" id="financeNavGroup">
-          <button class="nav-link nav-parent" id="financeNavToggle" type="button" data-nav-toggle="finance" aria-expanded="false" aria-controls="financeSubmenu">
-            <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M7 15h4M16 14v2"/></svg>
-            <span>Keuangan &amp; Akuntansi</span>
-            <svg class="nav-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
-          </button>
-          <div class="nav-submenu" id="financeSubmenu" hidden>
-            <button class="nav-link nav-sub-link" type="button" data-page="finance"><span class="nav-sub-indicator" aria-hidden="true"></span><span>Invoice</span></button>
-            <button class="nav-link nav-sub-link" type="button" data-page="cash"><span class="nav-sub-indicator" aria-hidden="true"></span><span>Kas &amp; Bank</span></button>
-            <button class="nav-link nav-sub-link" type="button" data-page="receivables"><span class="nav-sub-indicator" aria-hidden="true"></span><span>Piutang</span></button>
-          </div>
-        </div>
-        @endif
         <div class="nav-group-title nav-group-spaced">Manajemen Website</div>
         <div class="nav-dropdown" id="contentNavGroup">
           <button class="nav-link nav-parent" id="contentNavToggle" type="button" data-nav-toggle="content" aria-expanded="false" aria-controls="contentSubmenu">
@@ -143,35 +158,33 @@
               <div><h1>Data Karyawan</h1><p>Buat dan kelola akun login internal JASPEST berdasarkan divisi perusahaan.</p></div>
               <div class="heading-actions"><button class="btn btn-primary" id="addAccount"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Tambah Akun</span></button></div>
             </div>
-            <div class="booking-summary account-summary" role="group" aria-label="Ringkasan akun">
-              <div class="summary-filter" data-account-filter="all" role="button" tabindex="0" aria-pressed="true"><span class="summary-dot blue-dot"></span><span>Semua Akun</span><strong id="accountTotal">0</strong></div>
-              <div class="summary-filter" data-account-filter="active" role="button" tabindex="0" aria-pressed="false"><span class="summary-dot green-dot"></span><span>Aktif</span><strong id="accountActive">0</strong></div>
-              <div class="summary-filter" data-account-filter="inactive" role="button" tabindex="0" aria-pressed="false"><span class="summary-dot red-dot"></span><span>Nonaktif</span><strong id="accountInactive">0</strong></div>
+            <div class="finance-stats finance-bank-stats" aria-label="Jumlah akun aktif">
+              <article class="finance-stat" data-tone="green"><span class="finance-stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M16 20v-1.5a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 4 18.5V20M10 12a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7ZM20 20v-1.5a3.5 3.5 0 0 0-2.5-3.35M15.5 5.2a3.5 3.5 0 0 1 0 6.6"/></svg></span><div class="finance-stat-body"><span class="finance-stat-label">Akun Aktif</span><strong id="accountActive">0</strong><small>Dapat masuk ke sistem</small></div></article>
             </div>
             <article class="panel booking-panel master-data-panel">
-              <div class="booking-toolbar"><div class="search-box"><input type="search" id="accountSearch" placeholder="Cari nama akun, username, nomor telepon, atau divisi…" autocomplete="off"></div><select id="accountStatusFilter" aria-label="Filter status akun"><option value="all">Semua status</option><option value="active">Aktif</option><option value="inactive">Nonaktif</option></select><span class="content-total" id="accountCount">0 akun</span></div>
-              <div class="table-scroll"><table class="master-data-table"><thead><tr><th>Nama Pengguna</th><th>Divisi</th><th>Nomor Telepon</th><th>Status Akun</th><th class="align-right">Aksi</th></tr></thead><tbody id="accountRows"></tbody></table>
+              <div class="booking-toolbar"><div class="search-box"><input type="search" id="accountSearch" placeholder="Cari nama akun, username, nomor telepon, atau divisi…" autocomplete="off"></div><span class="content-total" id="accountCount">0 akun</span></div>
+              <div class="table-scroll"><table class="master-data-table"><thead><tr><th>Nama Pengguna</th><th>Divisi</th><th>Nomor Telepon</th><th class="align-right">Aksi</th></tr></thead><tbody id="accountRows"></tbody></table>
                 <div id="emptyAccounts" class="empty-state" hidden><span>♙</span><strong>Belum ada akun divisi</strong><small>Tambahkan akun untuk Direksi, Finance, Logistik, atau Marketing.</small><button type="button" class="btn btn-secondary btn-sm" id="emptyAddAccount">Tambah Akun</button></div>
               </div>
               <div class="table-footer"><span id="accountTableCount">Memuat data…</span><div class="table-pagination"><button type="button" class="btn btn-icon-only btn-sm" id="accountsPrev" aria-label="Halaman sebelumnya" disabled><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button><span id="accountPageLabel">1 / 1</span><button type="button" class="btn btn-icon-only btn-sm" id="accountsNext" aria-label="Halaman berikutnya" disabled><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button></div></div>
             </article>
-            <p class="privacy-footnote">Master Data digunakan untuk mengelola akun pengguna. Username menjadi identitas masuk, divisi menentukan hak akses, dan password disimpan dalam bentuk hash. Akun nonaktif tidak dapat login.</p>
+            <p class="privacy-footnote">Master Data digunakan untuk mengelola akun pengguna. Username menjadi identitas masuk, divisi menentukan hak akses, dan password disimpan dalam bentuk hash. Akun yang dihapus langsung hilang permanen dan tidak dapat login lagi.</p>
         </section>
 
         @if($canAccessFinance)
         <section class="page-view finance-master-page" id="page-bank-accounts">
           <div class="page-heading finance-heading">
-            <div><span class="finance-kicker">MASTER DATA KEUANGAN</span><h1>Rekening Bank</h1><p>Kelola rekening perusahaan dan pemiliknya. Dropdown rekening pada invoice serta pembayaran mengambil rekening aktif dari master ini. Hapus rekening yang tidak lagi digunakan.</p></div>
+            <div><h1>Rekening Bank</h1><p>Kelola rekening bank perusahaan sebagai sumber data penerimaan pembayaran dan pengeluaran kas. Hanya rekening berstatus aktif yang tersedia pada transaksi baru.</p></div>
             <div class="heading-actions"><button type="button" class="btn btn-primary" id="financeBankAdd"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Tambah Rekening</span></button></div>
           </div>
           <div class="finance-stats finance-bank-stats" aria-label="Jumlah rekening aktif">
-            <article class="finance-stat"><span class="finance-stat-label">Rekening Aktif</span><strong id="financeBankActive">0</strong><small>Tersedia di dropdown transaksi</small></article>
+            <article class="finance-stat" data-tone="green"><span class="finance-stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 10 12 4l9 6M5 10v8M9.5 10v8M14.5 10v8M19 10v8M3 20h18"/></svg></span><div class="finance-stat-body"><span class="finance-stat-label">Rekening Aktif</span><strong id="financeBankActive">0</strong><small>Tersedia pada transaksi baru</small></div></article>
           </div>
-          <article class="panel booking-panel master-data-panel finance-bank-panel">
-            <div class="booking-toolbar finance-bank-toolbar"><div class="search-box"><input type="search" id="financeBankSearch" placeholder="Cari bank, nomor rekening, atau pemilik rekening…" autocomplete="off"></div><select id="financeBankStatus" aria-label="Filter status rekening"><option value="all">Semua status</option><option value="active">Aktif</option><option value="inactive">Nonaktif</option></select><span class="content-total" id="financeBankCount">0 rekening</span></div>
-            <div class="table-scroll"><table class="master-data-table finance-bank-table"><thead><tr><th>Bank</th><th>Nomor Rekening</th><th>Atas Nama</th><th>Label / Cabang</th><th>Status</th><th class="align-right">Aksi</th></tr></thead><tbody id="financeBankRows"></tbody></table><div class="empty-state" id="financeBankEmpty" hidden><span>▤</span><strong>Belum ada rekening bank</strong><small>Tambahkan rekening pertama agar tersedia di pilihan invoice dan pembayaran.</small><button type="button" class="btn btn-secondary btn-sm" id="financeBankEmptyAdd">Tambah Rekening</button></div></div>
+          <article class="panel finance-bank-panel">
+            <div class="finance-bank-toolbar"><div class="search-box"><input type="search" id="financeBankSearch" placeholder="Cari bank, nomor rekening, atau nama pemilik…" autocomplete="off"></div><select id="financeBankStatus" aria-label="Filter status rekening"><option value="all">Semua status</option><option value="active">Aktif</option><option value="inactive">Nonaktif</option></select><span class="content-total" id="financeBankCount">0 rekening</span></div>
+            <div class="table-scroll"><table class="master-data-table finance-bank-table"><thead><tr><th>Bank</th><th>Nomor Rekening</th><th>Nama Pemilik</th><th>Label / Cabang</th><th>Status</th><th class="align-right">Aksi</th></tr></thead><tbody id="financeBankRows"></tbody></table><div class="empty-state" id="financeBankEmpty" hidden><span>▤</span><strong>Belum ada rekening bank</strong><small>Tambahkan rekening pertama agar dapat dipilih pada invoice dan pencatatan transaksi.</small><button type="button" class="btn btn-secondary btn-sm" id="financeBankEmptyAdd">Tambah Rekening</button></div></div>
           </article>
-          <p class="privacy-footnote">Saat rekening dihapus, snapshot bank, nomor rekening, dan nama pemilik pada invoice serta pembayaran historis tetap dipertahankan. Rekening yang sudah tidak digunakan tidak lagi muncul di dropdown transaksi baru.</p>
+          <p class="privacy-footnote">Menghapus rekening tidak mengubah data historis: bank, nomor rekening, dan nama pemilik pada invoice dan pembayaran yang sudah tercatat tetap tersimpan. Rekening yang dihapus tidak lagi tersedia pada transaksi baru.</p>
         </section>
         @endif
 
@@ -249,138 +262,179 @@
           </article>
         </section>
 
-        <section class="page-view" id="page-inventory">
+        <section class="page-view inventory-page" id="page-inventory-items">
           <div class="page-heading inventory-page-heading">
-            <div><h1>Inventaris</h1><p>Kelola barang, stok, pemakaian pekerjaan, dan perawatan peralatan JASPEST.</p></div>
-            <div class="heading-actions"><button type="button" class="btn btn-secondary" id="inventoryAddMovement"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Catat Transaksi Stok</span></button><button type="button" class="btn btn-primary" id="inventoryAddItem"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Tambah Data Barang</span></button></div>
+            <div><h1>Katalog Barang</h1><p>Kelola data barang, stok, dan kondisi aset, peralatan, serta bahan operasional.</p></div>
+            <div class="heading-actions"><button type="button" class="btn btn-primary" id="inventoryAddItem"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Tambah Data Barang</span></button></div>
           </div>
-          <div class="inventory-stat-grid" role="group" aria-label="Ringkasan inventaris">
-            <article class="inventory-stat"><span class="inventory-stat-icon inventory-icon-blue"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7.5 12 3l9 4.5v9L12 21l-9-4.5zM3.5 7.8 12 12.2l8.5-4.4M12 12.2V21"/></svg></span><div><small>Barang Terdaftar</small><strong id="inventoryStatItems">0</strong><span>Jumlah barang dalam master</span></div></article>
-            <article class="inventory-stat"><span class="inventory-stat-icon inventory-icon-green"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16v13H4zM8 7V4h8v3M8 12h8M8 16h5"/></svg></span><div><small>Barang Memiliki Stok</small><strong id="inventoryStatStockedItems">0</strong><span>Barang dengan stok di atas nol</span></div></article>
+          <div class="inventory-stat-grid is-four" role="group" aria-label="Ringkasan stok dan kondisi barang">
+            <article class="inventory-stat"><span class="inventory-stat-icon inventory-icon-blue"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7.5 12 3l9 4.5v9L12 21l-9-4.5zM3.5 7.8 12 12.2l8.5-4.4M12 12.2V21"/></svg></span><div><small>Barang Terdaftar</small><strong id="inventoryStatItems">0</strong><span><span id="inventoryStatStockedItems">0</span> barang memiliki stok</span></div></article>
             <article class="inventory-stat"><span class="inventory-stat-icon inventory-icon-red"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16v13H4zM8 7V4h8v3M9 12l6 6m0-6-6 6"/></svg></span><div><small>Jumlah Barang Rusak</small><strong id="inventoryStatDamaged">0</strong><span>Barang dengan jumlah unit rusak tercatat</span></div></article>
             <article class="inventory-stat"><span class="inventory-stat-icon inventory-icon-amber"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v3M12 18v3M4.2 5.2l2.1 2.1m11.4 9.4 2.1 2.1M3 12h3m12 0h3M4.2 18.8l2.1-2.1m11.4-9.4 2.1-2.1"/><circle cx="12" cy="12" r="5"/><path d="M12 9v3l2 1"/></svg></span><div><small>Perlu Perbaikan</small><strong id="inventoryStatRepair">0</strong><span>Barang dengan kondisi perlu perbaikan</span></div></article>
             <article class="inventory-stat"><span class="inventory-stat-icon inventory-icon-green"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/><circle cx="12" cy="12" r="9"/></svg></span><div><small>Tidak Ada Kendala</small><strong id="inventoryStatNormal">0</strong><span>Barang dalam kondisi baik</span></div></article>
-            <article class="inventory-stat"><span class="inventory-stat-icon inventory-icon-blue"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v3M12 18v3M4.2 5.2l2.1 2.1m11.4 9.4 2.1 2.1M3 12h3m12 0h3"/><circle cx="12" cy="12" r="5"/></svg></span><div><small>Pemeliharaan Jatuh Tempo</small><strong id="inventoryStatMaintenance">0</strong><span>Terjadwal dalam 30 hari</span></div></article>
+          </div>
+          <div class="booking-summary technician-summary" role="group" aria-label="Pilih daftar tindak lanjut">
+            <div class="summary-filter" data-attention-tab="repair" role="button" tabindex="0" aria-pressed="true" aria-controls="inventoryRepairPanel"><span class="summary-dot inventory-dot-repair"></span><span>Perlu Perbaikan</span><strong id="inventoryRepairCount">0</strong></div>
+            <div class="summary-filter" data-attention-tab="damaged" role="button" tabindex="0" aria-pressed="false" aria-controls="inventoryDamagedPanel"><span class="summary-dot inventory-dot-damaged"></span><span>Barang Rusak</span><strong id="inventoryDamagedCount">0</strong></div>
           </div>
           <section class="panel inventory-attention" aria-labelledby="inventoryAttentionTitle">
             <header class="inventory-attention-head"><h2 id="inventoryAttentionTitle">Perlu Tindak Lanjut</h2><span class="inventory-attention-total" id="inventoryAttentionTotal">Memuat…</span></header>
             <div class="inventory-attention-body">
-              <div class="inventory-attention-col">
-                <div class="inventory-attention-label"><span>Perlu perbaikan</span><b class="inventory-count is-repair" id="inventoryRepairCount">0</b></div>
+              <div class="inventory-attention-col" id="inventoryRepairPanel">
                 <div id="inventoryRepairList" class="inventory-alert-list" aria-live="polite"><p class="inventory-empty-inline">Memuat data…</p></div>
               </div>
-              <div class="inventory-attention-col">
-                <div class="inventory-attention-label"><span>Barang rusak</span><b class="inventory-count is-damaged" id="inventoryDamagedCount">0</b></div>
+              <div class="inventory-attention-col" id="inventoryDamagedPanel" hidden>
                 <div id="inventoryDamagedList" class="inventory-alert-list" aria-live="polite"><p class="inventory-empty-inline">Memuat data…</p></div>
               </div>
             </div>
           </section>
-          <div class="inventory-tabs" role="tablist" aria-label="Modul inventaris">
-            <button type="button" class="inventory-tab is-active" id="inventoryTabButtonItems" data-inventory-tab="items" role="tab" aria-selected="true" aria-controls="inventoryPanelItems">Katalog Barang</button>
-            <button type="button" class="inventory-tab" id="inventoryTabButtonMovements" data-inventory-tab="movements" role="tab" aria-selected="false" aria-controls="inventoryPanelMovements">Transaksi Stok</button>
-            <button type="button" class="inventory-tab" id="inventoryTabButtonMaintenance" data-inventory-tab="maintenance" role="tab" aria-selected="false" aria-controls="inventoryPanelMaintenance">Pemeliharaan Aset</button>
-          </div>
-          <section class="inventory-tab-panel is-active" id="inventoryPanelItems" role="tabpanel" aria-labelledby="inventoryTabButtonItems">
-            <article class="panel booking-panel">
+          <article class="panel booking-panel">
               <div class="booking-toolbar inventory-toolbar"><div class="search-box"><input type="search" id="inventoryItemSearch" placeholder="Cari nama barang, kategori, atau merek…" autocomplete="off"></div><select id="inventoryItemConditionFilter" aria-label="Filter kondisi barang"><option value="all">Semua kondisi</option><option value="normal">Tidak Ada Kendala</option><option value="needs_repair">Perlu Perbaikan</option><option value="damaged">Rusak</option></select><span class="content-total" id="inventoryItemCount">0 barang</span></div>
               <div class="table-scroll"><table class="master-data-table inventory-table"><thead><tr><th>Barang</th><th>Kategori</th><th>Stok</th><th>Jumlah Barang Rusak</th><th>Kondisi</th><th class="align-right">Aksi</th></tr></thead><tbody id="inventoryItemRows"></tbody></table><div id="inventoryItemsEmpty" class="empty-state" hidden><span>▦</span><strong>Belum ada data barang</strong><small>Tambahkan barang untuk mulai mencatat stok dan kondisi barang.</small><button type="button" class="btn btn-secondary btn-sm" id="inventoryEmptyAddItem">Tambah Data Barang</button></div></div>
               <div class="table-footer"><span id="inventoryItemTableCount">Memuat barang…</span><div class="table-pagination"><button type="button" class="btn btn-icon-only btn-sm" id="inventoryItemsPrev" aria-label="Halaman sebelumnya" disabled>‹</button><span id="inventoryItemsPageLabel">1 / 1</span><button type="button" class="btn btn-icon-only btn-sm" id="inventoryItemsNext" aria-label="Halaman berikutnya" disabled>›</button></div></div>
             </article>
-          </section>
-          <section class="inventory-tab-panel" id="inventoryPanelMovements" role="tabpanel" aria-labelledby="inventoryTabButtonMovements" hidden>
-            <article class="panel booking-panel">
+          <p class="privacy-footnote">Stok dicatat per barang sesuai satuannya. Perubahan jumlah dan kondisi tersimpan dalam riwayat transaksi stok.</p>
+        </section>
+
+        <section class="page-view inventory-page" id="page-inventory-movements">
+          <div class="page-heading inventory-page-heading">
+            <div><h1>Transaksi Stok</h1><p>Riwayat stok masuk, stok keluar, pemakaian order, dan penyesuaian stok.</p></div>
+            <div class="heading-actions"><button type="button" class="btn btn-secondary" id="inventoryAddMovement"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Catat Transaksi Stok</span></button></div>
+          </div>
+          <article class="panel booking-panel">
               <div class="booking-toolbar inventory-toolbar"><div class="search-box"><input type="search" id="inventoryMovementSearch" placeholder="Cari barang, kode transaksi stok, pemasok, atau nomor order…" autocomplete="off"></div><select id="inventoryMovementTypeFilter" aria-label="Filter jenis transaksi stok"><option value="all">Semua transaksi stok</option><option value="stock_in">Stok Masuk</option><option value="stock_out">Stok Keluar</option><option value="usage">Pemakaian Order</option><option value="adjustment_in">Penyesuaian Stok Masuk</option><option value="adjustment_out">Penyesuaian Stok Keluar</option><option value="write_off">Penghapusan Barang Rusak</option></select><span class="content-total" id="inventoryMovementCount">0 transaksi stok</span></div>
               <div class="table-scroll"><table class="master-data-table inventory-table"><thead><tr><th>Tanggal / Referensi Transaksi</th><th>Barang</th><th>Jenis Transaksi</th><th>Kuantitas</th><th>Nilai Transaksi (Rp)</th><th>Referensi Order / Pemasok</th><th>Catatan</th></tr></thead><tbody id="inventoryMovementRows"></tbody></table><div id="inventoryMovementsEmpty" class="empty-state" hidden><span>⇄</span><strong>Belum ada riwayat transaksi stok</strong><small>Catat stok masuk, stok keluar, penyesuaian, atau pemakaian pekerjaan untuk melihat riwayat pergerakan barang.</small></div></div>
               <div class="table-footer"><span id="inventoryMovementTableCount">Memuat transaksi stok…</span><div class="table-pagination"><button type="button" class="btn btn-icon-only btn-sm" id="inventoryMovementsPrev" aria-label="Halaman sebelumnya" disabled>‹</button><span id="inventoryMovementsPageLabel">1 / 1</span><button type="button" class="btn btn-icon-only btn-sm" id="inventoryMovementsNext" aria-label="Halaman berikutnya" disabled>›</button></div></div>
             </article>
-          </section>
-          <section class="inventory-tab-panel" id="inventoryPanelMaintenance" role="tabpanel" aria-labelledby="inventoryTabButtonMaintenance" hidden>
-            <article class="panel booking-panel">
-              <div class="booking-toolbar inventory-toolbar"><select id="inventoryMaintenanceStatusFilter" aria-label="Filter status pemeliharaan"><option value="all">Semua status</option><option value="planned">Terjadwal</option><option value="completed">Selesai</option><option value="cancelled">Dibatalkan</option></select><span class="content-total" id="inventoryMaintenanceCount">0 jadwal</span><button type="button" class="btn btn-primary btn-sm" id="inventoryAddMaintenance"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Jadwalkan Pemeliharaan Aset</span></button></div>
+        </section>
+
+        <section class="page-view inventory-page" id="page-inventory-maintenance">
+          <div class="page-heading inventory-page-heading">
+            <div><h1>Pemeliharaan Aset</h1><p>Jadwal inspeksi, pembersihan, perbaikan, kalibrasi, dan servis peralatan.</p></div>
+            <div class="heading-actions"><button type="button" class="btn btn-primary" id="inventoryAddMaintenance"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Jadwalkan Pemeliharaan Aset</span></button></div>
+          </div>
+          <div class="inventory-stat-grid is-one" role="group" aria-label="Ringkasan pemeliharaan aset">
+            <article class="inventory-stat"><span class="inventory-stat-icon inventory-icon-blue"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v3M12 18v3M4.2 5.2l2.1 2.1m11.4 9.4 2.1 2.1M3 12h3m12 0h3"/><circle cx="12" cy="12" r="5"/></svg></span><div><small>Pemeliharaan Jatuh Tempo</small><strong id="inventoryStatMaintenance">0</strong><span>Terjadwal dalam 30 hari</span></div></article>
+          </div>
+          <article class="panel booking-panel">
+              <div class="booking-toolbar inventory-toolbar"><select id="inventoryMaintenanceStatusFilter" aria-label="Filter status pemeliharaan"><option value="all">Semua status</option><option value="planned">Terjadwal</option><option value="completed">Selesai</option><option value="cancelled">Dibatalkan</option></select><span class="content-total" id="inventoryMaintenanceCount">0 jadwal</span></div>
               <div class="table-scroll"><table class="master-data-table inventory-table"><thead><tr><th>Tanggal</th><th>Aset</th><th>Jenis Pemeliharaan</th><th>Penanggung Jawab</th><th>Biaya</th><th>Status</th><th class="align-right">Aksi</th></tr></thead><tbody id="inventoryMaintenanceRows"></tbody></table><div id="inventoryMaintenanceEmpty" class="empty-state" hidden><span>⚙</span><strong>Belum ada jadwal pemeliharaan</strong><small>Buat jadwal inspeksi, pembersihan, perbaikan, kalibrasi, atau servis aset.</small></div></div>
               <div class="table-footer"><span id="inventoryMaintenanceTableCount">Memuat jadwal…</span><div class="table-pagination"><button type="button" class="btn btn-icon-only btn-sm" id="inventoryMaintenancePrev" aria-label="Halaman sebelumnya" disabled>‹</button><span id="inventoryMaintenancePageLabel">1 / 1</span><button type="button" class="btn btn-icon-only btn-sm" id="inventoryMaintenanceNext" aria-label="Halaman berikutnya" disabled>›</button></div></div>
             </article>
-          </section>
-          <p class="privacy-footnote">Stok dicatat per barang sesuai satuannya. Perubahan jumlah dan kondisi tersimpan dalam riwayat transaksi stok.</p>
         </section>
 
         @if($canAccessFinance)
         <section class="page-view finance-page" id="page-finance">
           <div class="page-heading finance-heading">
-            <div><span class="finance-kicker">INVOICE &amp; PENAGIHAN</span><h1>Invoice</h1><p>Terbitkan invoice dari order yang sudah deal, pantau status pembayaran, cetak ulang, dan catat pembayaran pelanggan.</p></div>
-            <div class="heading-actions"><button type="button" class="btn btn-export" id="financeExport"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9zM14 3v6h6M8 13l4 6m0-6-4 6m6-6h3m-3 3h3"/></svg><span>Ekspor Excel</span></button><button type="button" class="btn btn-outline" id="financeRefresh">Muat Ulang</button></div>
+            <div><h1>Invoice Penjualan</h1><p>Terbitkan invoice dari order yang telah terkonfirmasi, pantau status pembayaran, dan catat pembayaran dari pelanggan.</p></div>
+            <div class="heading-actions"><button type="button" class="btn btn-primary" id="financeCreateInvoice"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Buat Invoice</span></button></div>
           </div>
-          <div class="fin-tabs" role="tablist" aria-label="Tampilan Invoice">
-            <button type="button" class="fin-tab active" id="finTabInvoices" role="tab" aria-selected="true" aria-controls="financeInvoicesPanel" data-finance-tab="invoices">Daftar Invoice</button>
-            <button type="button" class="fin-tab" id="finTabOrders" role="tab" aria-selected="false" aria-controls="financeOrdersPanel" data-finance-tab="orders">Order Siap Ditagihkan <span class="fin-tab-badge" id="finTabOrdersBadge" hidden>0</span></button>
+          <div class="finance-stats" aria-label="Ringkasan invoice">
+            <article class="finance-stat"><span class="finance-stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9zM14 3v6h6M8 13h8M8 17h5"/></svg></span><div class="finance-stat-body"><span class="finance-stat-label">Total Tagihan</span><strong id="financeTotalInvoiced">Rp0</strong><small id="financeInvoiceCount">0 invoice diterbitkan</small></div></article>
+            <article class="finance-stat" data-tone="green"><span class="finance-stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3v12m0 0-4-4m4 4 4-4M5 19h14"/></svg></span><div class="finance-stat-body"><span class="finance-stat-label">Total Diterima</span><strong id="financeCollected">Rp0</strong><small>Akumulasi pembayaran yang tercatat</small></div></article>
+            <article class="finance-stat" data-tone="amber"><span class="finance-stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><div class="finance-stat-body"><span class="finance-stat-label">Saldo Piutang</span><strong id="financeOutstanding">Rp0</strong><small>Tagihan yang belum dilunasi</small></div></article>
+            <article class="finance-stat finance-stat-alert"><span class="finance-stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3 2.5 20h19zM12 10v4M12 17.5v.01"/></svg></span><div class="finance-stat-body"><span class="finance-stat-label">Invoice Jatuh Tempo</span><strong id="financeOverdue">0</strong><small>Belum lunas dan telah melewati jatuh tempo</small></div></article>
           </div>
-          <div class="finance-stats" aria-label="Ringkasan keuangan">
-            <article class="finance-stat"><span class="finance-stat-label">Total Nilai Invoice</span><strong id="financeTotalInvoiced">Rp0</strong><small id="financeInvoiceCount">0 invoice diterbitkan</small></article>
-            <article class="finance-stat"><span class="finance-stat-label">Pembayaran Diterima</span><strong id="financeCollected">Rp0</strong><small>Akumulasi pembayaran tercatat</small></article>
-            <article class="finance-stat"><span class="finance-stat-label">Piutang Berjalan</span><strong id="financeOutstanding">Rp0</strong><small>Nilai invoice yang belum lunas</small></article>
-            <article class="finance-stat finance-stat-alert"><span class="finance-stat-label">Invoice Jatuh Tempo</span><strong id="financeOverdue">0</strong><small>Invoice belum lunas melewati jatuh tempo</small></article>
-          </div>
-          <section class="panel finance-panel" id="financeInvoicesPanel" role="tabpanel" aria-labelledby="finTabInvoices">
-            <div class="finance-panel-heading"><div><h2>Invoice Penjualan</h2><p>Dokumen tagihan tersimpan dari order terkonfirmasi. Cetak ulang atau catat pembayaran dari daftar ini.</p></div><span class="finance-count" id="financeInvoiceCountLabel">Memuat invoice…</span></div>
-            <div class="finance-toolbar"><div class="search-box"><input id="financeInvoiceSearch" type="search" placeholder="Cari nomor invoice, klien, atau referensi order…" autocomplete="off"></div><select id="financeStatusFilter" aria-label="Filter status invoice"><option value="all">Semua status</option><option value="unpaid">Belum dibayar</option><option value="partial">Dibayar sebagian</option><option value="overdue">Jatuh tempo</option><option value="paid">Lunas</option></select></div>
-            <div class="table-scroll"><table class="master-data-table finance-table"><thead><tr><th>Invoice / Order</th><th>Pelanggan</th><th>Tanggal / Jatuh Tempo</th><th>Total Invoice</th><th>Terbayar</th><th>Status</th><th>Aksi</th></tr></thead><tbody id="financeInvoiceRows"></tbody></table><div class="empty-state" id="financeInvoicesEmpty" hidden><span>▤</span><strong>Belum ada invoice</strong><small>Buat invoice dari order Deal Order yang siap ditagihkan di bawah.</small></div></div>
+          <section class="panel finance-panel" id="financeInvoicesPanel">
+            <div class="finance-panel-heading"><div><h2>Daftar Invoice Penjualan</h2><p>Dokumen tagihan yang diterbitkan dari order terkonfirmasi. Unduh salinan PDF atau catat pembayaran dari daftar ini.</p></div><span class="finance-count" id="financeInvoiceCountLabel">Memuat invoice…</span></div>
+            <div class="finance-toolbar"><div class="search-box"><input id="financeInvoiceSearch" type="search" placeholder="Cari nomor invoice, pelanggan, atau nomor order…" autocomplete="off"></div><select id="financeStatusFilter" aria-label="Filter status invoice"><option value="all">Semua status</option><option value="unpaid">Belum dibayar</option><option value="partial">Dibayar sebagian</option><option value="overdue">Jatuh tempo</option><option value="paid">Lunas</option></select></div>
+            <div class="table-scroll"><table class="master-data-table finance-table"><thead><tr><th>Invoice / Order</th><th>Pelanggan</th><th>Tanggal / Jatuh Tempo</th><th class="align-right">Total Tagihan</th><th class="align-right">Terbayar</th><th>Status</th><th class="align-right">Aksi</th></tr></thead><tbody id="financeInvoiceRows"></tbody></table><div class="empty-state" id="financeInvoicesEmpty" hidden><span>▤</span><strong>Belum ada invoice</strong><small>Invoice yang diterbitkan akan tampil di sini. Mulai dengan tombol Buat Invoice.</small></div></div>
             <div class="table-footer finance-table-footer"><span id="financeInvoiceTableCount">Memuat invoice…</span><div class="table-pagination"><button type="button" class="btn btn-icon-only btn-sm" id="financeInvoicesPrev" aria-label="Halaman sebelumnya" disabled>‹</button><span id="financeInvoicePageLabel">1 / 1</span><button type="button" class="btn btn-icon-only btn-sm" id="financeInvoicesNext" aria-label="Halaman berikutnya" disabled>›</button></div></div>
           </section>
-          <section class="panel finance-panel finance-orders-panel" id="financeOrdersPanel" role="tabpanel" aria-labelledby="finTabOrders" hidden>
-            <div class="finance-panel-heading"><div><h2>Order Siap Ditagihkan</h2><p>Data pelanggan, layanan, alamat, jadwal, dan nilai pekerjaan diambil langsung dari Manajemen Order.</p></div><span class="finance-count" id="financeOrderCount">0 order</span></div>
-            <div class="table-scroll"><table class="master-data-table finance-table"><thead><tr><th>Referensi Order</th><th>Pelanggan</th><th>Jenis Pekerjaan</th><th>Nilai Pekerjaan</th><th>Tgl. Konfirmasi</th><th>Aksi</th></tr></thead><tbody id="financeOrderRows"></tbody></table><div class="empty-state" id="financeOrdersEmpty" hidden><span>✓</span><strong>Semua order sudah memiliki invoice</strong><small>Order baru akan muncul otomatis setelah dikonfirmasi sebagai Deal Order.</small></div></div>
-          </section>
-          <p class="finance-footnote">Invoice menyimpan snapshot data order dan rekening tujuan saat diterbitkan. Pastikan nama lokasi, alamat pekerjaan, periode, dan rekening tujuan sudah benar sebelum invoice diterbitkan.</p>
+          <p class="finance-footnote">Invoice menyimpan salinan data order dan rekening tujuan pada saat diterbitkan. Pastikan nama lokasi, alamat pekerjaan, periode, dan rekening tujuan sudah benar sebelum menerbitkan invoice.</p>
         </section>
         @endif
 
         @if($canAccessFinance)
+        <section class="page-view finance-page" id="page-finance-summary">
+          <div class="page-heading finance-heading">
+            <div><h1>Ringkasan Keuangan</h1><p>Ikhtisar pendapatan, pengeluaran, arus kas bersih, dan saldo piutang, dilengkapi perbandingan tahunan (YoY) per bulan.</p></div>
+          </div>
+          <section class="cash-insights cash-summary" aria-label="Ringkasan keuangan">
+            <div class="cash-insights-bar">
+              <div class="cash-insights-title"><h2>Periode &amp; Rekening</h2><p>Pendapatan dihitung dari pembayaran invoice yang sudah diterima (basis kas). Filter rekening dan tahun berlaku untuk pendapatan, pengeluaran, dan grafik. Saldo piutang dan tabel arus kas per akun selalu mencakup semua rekening.</p></div>
+              <div class="cash-insights-filters">
+                <label class="cash-filter"><span>Rekening</span><select id="cashInsightBank" aria-label="Filter rekening bank"><option value="all">Semua rekening &amp; kas</option></select></label>
+                <label class="cash-filter"><span>Tahun</span><select id="cashInsightYear" aria-label="Pilih tahun"></select></label>
+              </div>
+            </div>
+            <div class="finance-stats" aria-label="Ringkasan keuangan periode terpilih">
+              <article class="finance-stat" data-tone="green"><span class="finance-stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3v12m0 0-4-4m4 4 4-4M5 19h14"/></svg></span><div class="finance-stat-body"><span class="finance-stat-label" id="cashYearOmzetLabel">Pendapatan</span><strong id="cashYearOmzet">Rp0</strong><small id="cashYearOmzetHint">Memuat…</small></div></article>
+              <article class="finance-stat" data-tone="red"><span class="finance-stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 15V3m0 0L8 7m4-4 4 4M5 19h14"/></svg></span><div class="finance-stat-body"><span class="finance-stat-label" id="finExpenseYearLabel">Pengeluaran</span><strong id="finExpenseYear">Rp0</strong><small id="finExpenseYearHint">Memuat…</small></div></article>
+              <article class="finance-stat"><span class="finance-stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 19V9M10 19V5M16 19v-7M22 19H2"/></svg></span><div class="finance-stat-body"><span class="finance-stat-label" id="finNetYearLabel">Arus Kas Bersih</span><strong id="finNetYear">Rp0</strong><small>Pendapatan dikurangi pengeluaran</small></div></article>
+              <article class="finance-stat" id="finOutstandingCard" data-tone="amber"><span class="finance-stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><div class="finance-stat-body"><span class="finance-stat-label">Saldo Piutang</span><strong id="finOutstanding">Rp0</strong><small id="finOutstandingHint">Memuat…</small></div></article>
+            </div>
+            <section class="panel finance-panel cash-yoy-panel" id="cashYoyPanel">
+              <div class="finance-panel-heading"><div><h2>Pendapatan &amp; Pengeluaran: Perbandingan Tahunan (YoY)</h2><p id="cashYoySubtitle">Pendapatan bulanan dibandingkan dengan tahun sebelumnya, dengan pengeluaran sebagai garis.</p></div><span class="cash-yoy-badge" id="cashYoyBadge">–</span></div>
+              <div class="cash-chart-legend" aria-hidden="true"><span><i class="cc-swatch cc-swatch-cur"></i>Pendapatan <b id="cashLegendCur">Tahun ini</b></span><span><i class="cc-swatch cc-swatch-prev"></i>Pendapatan <b id="cashLegendPrev">Tahun lalu</b></span><span><i class="cc-swatch cc-swatch-exp"></i>Pengeluaran <b id="cashLegendExp">Tahun ini</b></span></div>
+              <div class="cash-chart-scroll"><div class="cash-chart" id="cashYoyChart" role="img" aria-label="Grafik pendapatan dan pengeluaran bulanan"></div></div>
+              <div class="empty-state cash-chart-empty" id="cashYoyEmpty" hidden><span>▤</span><strong>Belum ada pendapatan atau pengeluaran</strong><small>Belum ada pembayaran diterima maupun pengeluaran dicatat pada tahun ini dan tahun sebelumnya untuk filter rekening ini.</small></div>
+            </section>
+            <section class="panel finance-panel" id="sumAccountPanel">
+              <div class="finance-panel-heading"><div><h2>Arus Kas per Akun</h2><p id="sumAccountSubtitle">Penerimaan, pengeluaran, dan arus kas bersih per akun kas dan rekening. Pilih satu akun untuk melihat riwayat penerimaannya.</p></div><span class="finance-count" id="sumAccountCount">0 akun</span></div>
+              <div class="table-scroll"><table class="master-data-table finance-table"><thead><tr><th>Akun Kas / Rekening</th><th class="align-right">Penerimaan</th><th class="align-right">Pengeluaran</th><th class="align-right">Arus Kas Bersih</th></tr></thead><tbody id="sumAccountRows"></tbody></table><div class="empty-state" id="sumAccountsEmpty" hidden><span>▤</span><strong>Belum ada transaksi</strong><small>Belum ada penerimaan atau pengeluaran pada tahun ini.</small></div></div>
+            </section>
+          </section>
+        </section>
+
         <section class="page-view finance-page" id="page-cash">
           <div class="page-heading finance-heading">
-            <div><span class="finance-kicker">KAS &amp; BANK</span><h1>Kas &amp; Bank</h1><p>Pantau uang masuk dari pembayaran invoice, per akun kas dan rekening penerima. Data diambil dari pembayaran yang sudah dicatat di Keuangan &amp; Akuntansi.</p></div>
-            <div class="heading-actions"><button type="button" class="btn btn-outline" id="cashRefresh">Muat Ulang</button></div>
+            <div><h1>Penerimaan Kas</h1><p>Pantau penerimaan dari pembayaran invoice per akun kas dan rekening bank. Data bersumber dari pembayaran yang telah dicatat pada modul Keuangan &amp; Akuntansi.</p></div>
+            <div class="heading-actions"><button type="button" class="btn btn-export" id="cashExport" title="Unduh laporan penerimaan kas sesuai filter yang dipilih"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9zM14 3v6h6M8 13l4 6m0-6-4 6m6-6h3m-3 3h3"/></svg><span>Ekspor Excel</span></button></div>
           </div>
-          <div class="finance-stats" aria-label="Ringkasan kas">
-            <article class="finance-stat"><span class="finance-stat-label">Total Kas Masuk</span><strong id="cashTotalIn">Rp0</strong><small>Akumulasi pada periode terpilih</small></article>
-            <article class="finance-stat"><span class="finance-stat-label">Masuk Bulan Ini</span><strong id="cashMonthIn">Rp0</strong><small>Pembayaran diterima bulan berjalan</small></article>
-            <article class="finance-stat"><span class="finance-stat-label">Tunai</span><strong id="cashCashIn">Rp0</strong><small>Masuk ke Kas Besar / Kas Kecil</small></article>
-            <article class="finance-stat"><span class="finance-stat-label">Transfer / BG</span><strong id="cashBankIn">Rp0</strong><small>Masuk ke rekening bank</small></article>
+          <section class="cash-incoming" aria-label="Penerimaan kas">
+            <div class="finance-stats" aria-label="Ringkasan penerimaan kas">
+            <article class="finance-stat" data-tone="green"><span class="finance-stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3v12m0 0-4-4m4 4 4-4M5 19h14"/></svg></span><div class="finance-stat-body"><span class="finance-stat-label">Total Penerimaan</span><strong id="cashTotalIn">Rp0</strong><small>Akumulasi pada periode yang dipilih</small></div></article>
+            <article class="finance-stat"><span class="finance-stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9zM14 3v6h6M8 13h8M8 17h5"/></svg></span><div class="finance-stat-body"><span class="finance-stat-label">Penerimaan Bulan Ini</span><strong id="cashMonthIn">Rp0</strong><small>Pembayaran diterima pada bulan berjalan</small></div></article>
+            <article class="finance-stat" data-tone="amber"><span class="finance-stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/></svg></span><div class="finance-stat-body"><span class="finance-stat-label">Kas Tunai</span><strong id="cashCashIn">Rp0</strong><small>Masuk ke Kas Besar dan Kas Kecil</small></div></article>
+            <article class="finance-stat"><span class="finance-stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 10 12 4l9 6M5 10v8M9.5 10v8M14.5 10v8M19 10v8M3 20h18"/></svg></span><div class="finance-stat-body"><span class="finance-stat-label">Transfer / BG</span><strong id="cashBankIn">Rp0</strong><small>Masuk ke rekening bank</small></div></article>
           </div>
-          <section class="panel finance-panel">
-            <div class="finance-panel-heading"><div><h2>Saldo Masuk per Akun</h2><p>Klik salah satu akun untuk menyaring riwayat di bawah.</p></div><span class="finance-count" id="cashAccountCount">0 akun</span></div>
-            <div class="table-scroll"><table class="master-data-table finance-table"><thead><tr><th>Akun Kas / Rekening</th><th>Jumlah Transaksi</th><th class="align-right">Total Masuk</th></tr></thead><tbody id="cashAccountRows"></tbody></table><div class="empty-state" id="cashAccountsEmpty" hidden><span>▤</span><strong>Belum ada kas masuk</strong><small>Catat pembayaran pada invoice di menu Keuangan &amp; Akuntansi, datanya akan tampil di sini.</small></div></div>
           </section>
           <section class="panel finance-panel">
-            <div class="finance-panel-heading"><div><h2>Riwayat Kas Masuk</h2><p>Setiap pembayaran invoice yang sudah diterima.</p></div><span class="finance-count" id="cashCountLabel">Memuat…</span></div>
-            <div class="finance-toolbar"><div class="search-box"><input id="cashSearch" type="search" placeholder="Cari invoice, pelanggan, atau referensi…" autocomplete="off"></div><select id="cashAccountFilter" aria-label="Filter akun kas"><option value="all">Semua akun</option></select><input type="date" id="cashFrom" aria-label="Dari tanggal"><input type="date" id="cashTo" aria-label="Sampai tanggal"></div>
+            <div class="finance-panel-heading"><div><h2>Riwayat Penerimaan Kas</h2><p>Pembayaran invoice yang sudah diterima. Saring berdasarkan akun, rentang tanggal, atau cari invoice dan pelanggan.</p></div><span class="finance-count" id="cashCountLabel">Memuat…</span></div>
+            <div class="finance-toolbar"><div class="search-box"><input id="cashSearch" type="search" placeholder="Cari invoice, pelanggan, atau referensi…" autocomplete="off"></div><select id="cashAccountFilter" aria-label="Filter akun kas"><option value="all">Semua akun</option></select><label class="cash-date date-field"><span>Dari</span><input type="date" id="cashFrom" aria-label="Dari tanggal"></label><label class="cash-date date-field"><span>Sampai</span><input type="date" id="cashTo" aria-label="Sampai tanggal"></label></div>
             <div class="table-scroll"><table class="master-data-table finance-table"><thead><tr><th>Tanggal</th><th>Invoice / Pelanggan</th><th>Metode</th><th>Akun Penerima</th><th>Referensi</th><th class="align-right">Jumlah</th></tr></thead><tbody id="cashRows"></tbody></table><div class="empty-state" id="cashEmpty" hidden><span>▤</span><strong>Tidak ada transaksi</strong><small>Belum ada pembayaran yang cocok dengan pencarian atau filter ini.</small></div></div>
-            <div class="table-footer finance-table-footer"><span id="cashTableCount">Memuat…</span></div>
+            <div class="table-footer finance-table-footer"><span id="cashTableCount">Memuat…</span><div class="table-pagination"><button type="button" class="btn btn-icon-only btn-sm" id="cashPrev" aria-label="Halaman sebelumnya" disabled>‹</button><span id="cashPageLabel">1 / 1</span><button type="button" class="btn btn-icon-only btn-sm" id="cashNext" aria-label="Halaman berikutnya" disabled>›</button></div></div>
           </section>
+        </section>
+
+        <section class="page-view finance-page" id="page-expenses">
+          <div class="page-heading finance-heading">
+            <div><h1>Pengeluaran Kas</h1><p>Catat dan pantau pengeluaran kas per kategori, baik dari kas tunai maupun rekening bank. Rekapnya otomatis masuk ke Ringkasan Keuangan.</p></div>
+            <div class="heading-actions"><button type="button" class="btn btn-primary" data-cash-expense-add><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Catat Pengeluaran</span></button></div>
+          </div>
+          <section class="cash-insights" id="cashInsights" aria-label="Pengeluaran kas">
+            <div class="cash-insights-bar">
+              <div class="cash-insights-title"><h2>Rekening &amp; Tahun</h2><p>Berlaku untuk daftar pengeluaran di bawah dan selalu sama dengan pilihan pada Ringkasan Keuangan.</p></div>
+              <div class="cash-insights-filters">
+                <label class="cash-filter"><span>Rekening</span><select id="cashExpenseBank" aria-label="Filter rekening bank"><option value="all">Semua rekening &amp; kas</option></select></label>
+                <label class="cash-filter"><span>Tahun</span><select id="cashExpenseYear" aria-label="Pilih tahun"></select></label>
+              </div>
+            </div>
+            <section class="panel finance-panel" id="cashExpensePanel">
+              <div class="finance-panel-heading"><div><h2>Daftar Pengeluaran Kas</h2><p>Pengeluaran yang dicatat sesuai rekening dan tahun yang dipilih.</p></div><div class="cash-panel-actions"><span class="finance-count" id="cashExpenseCountLabel">Memuat…</span></div></div>
+              <div class="finance-toolbar"><div class="search-box"><input id="cashExpenseSearch" type="search" placeholder="Cari uraian atau penerima…" autocomplete="off"></div><select id="cashExpenseCategory" aria-label="Filter kategori"><option value="all">Semua kategori</option>@foreach(\App\Models\JaspestFinanceExpense::CATEGORIES as $catKey => $catLabel)<option value="{{ $catKey }}">{{ $catLabel }}</option>@endforeach</select><select id="cashExpenseMonth" aria-label="Filter bulan"><option value="all">Semua bulan</option></select></div>
+              <div class="cash-expense-summary"><div><span>Total pengeluaran (sesuai filter)</span><strong id="cashExpenseTotal">Rp0</strong></div><div class="cash-cat-list" id="cashExpenseCats"></div></div>
+              <div class="table-scroll"><table class="master-data-table finance-table"><thead><tr><th>Tanggal</th><th>Uraian / Penerima</th><th>Kategori</th><th>Sumber Dana</th><th class="align-right">Jumlah</th><th class="align-right">Aksi</th></tr></thead><tbody id="cashExpenseRows"></tbody></table><div class="empty-state" id="cashExpenseEmpty" hidden><span>▤</span><strong>Belum ada pengeluaran</strong><small>Pengeluaran yang dicatat akan tampil di sini dan masuk ke rekap bulanan. Gunakan tombol Catat Pengeluaran.</small></div></div>
+              <div class="table-footer finance-table-footer"><span id="cashExpenseTableCount">Memuat…</span><div class="table-pagination"><button type="button" class="btn btn-icon-only btn-sm" id="cashExpensePrev" aria-label="Halaman sebelumnya" disabled>‹</button><span id="cashExpensePageLabel">1 / 1</span><button type="button" class="btn btn-icon-only btn-sm" id="cashExpenseNext" aria-label="Halaman berikutnya" disabled>›</button></div></div>
+          </section>
+        </section>
         </section>
 
         <section class="page-view finance-page" id="page-receivables">
           <div class="page-heading finance-heading">
-            <div><span class="finance-kicker">PIUTANG USAHA</span><h1>Piutang</h1><p>Invoice yang belum lunas beserta umur piutangnya. Data diambil dari invoice dan pembayaran di Keuangan &amp; Akuntansi.</p></div>
-            <div class="heading-actions"><button type="button" class="btn btn-outline" id="receivablesRefresh">Muat Ulang</button></div>
+            <div><h1>Piutang Usaha</h1><p>Invoice yang belum lunas beserta umur piutangnya (aging). Pelunasan dicatat dari menu Invoice Penjualan.</p></div>
+            <div class="heading-actions"><button type="button" class="btn btn-export" id="recvExport" title="Unduh laporan piutang usaha sesuai filter yang dipilih"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9zM14 3v6h6M8 13l4 6m0-6-4 6m6-6h3m-3 3h3"/></svg><span>Ekspor Excel</span></button></div>
           </div>
           <div class="finance-stats" aria-label="Ringkasan piutang">
-            <article class="finance-stat"><span class="finance-stat-label">Total Piutang</span><strong id="recvOutstanding">Rp0</strong><small>Sisa tagihan belum dibayar</small></article>
-            <article class="finance-stat"><span class="finance-stat-label">Invoice Belum Lunas</span><strong id="recvCount">0</strong><small id="recvCustomers">0 pelanggan</small></article>
-            <article class="finance-stat finance-stat-alert"><span class="finance-stat-label">Piutang Jatuh Tempo</span><strong id="recvOverdue">Rp0</strong><small id="recvOverdueCount">0 invoice melewati jatuh tempo</small></article>
-            <article class="finance-stat"><span class="finance-stat-label">Belum Jatuh Tempo</span><strong id="recvCurrent">Rp0</strong><small>Masih dalam masa pembayaran</small></article>
+            <article class="finance-stat" data-tone="amber"><span class="finance-stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><div class="finance-stat-body"><span class="finance-stat-label">Total Piutang Usaha</span><strong id="recvOutstanding">Rp0</strong><small id="recvCustomers">0 pelanggan</small></div></article>
+            <article class="finance-stat"><span class="finance-stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/></svg></span><div class="finance-stat-body"><span class="finance-stat-label">Invoice Belum Lunas</span><strong id="recvCount">0</strong><small>Sisa tagihan yang belum dibayar</small></div></article>
+            <article class="finance-stat finance-stat-alert"><span class="finance-stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3 2.5 20h19zM12 10v4M12 17.5v.01"/></svg></span><div class="finance-stat-body"><span class="finance-stat-label">Piutang Jatuh Tempo</span><strong id="recvOverdue">Rp0</strong><small id="recvOverdueCount">0 invoice melewati jatuh tempo</small></div></article>
           </div>
           <section class="panel finance-panel">
-            <div class="finance-panel-heading"><div><h2>Umur Piutang</h2><p>Klik salah satu kelompok untuk menyaring daftar invoice.</p></div></div>
-            <div class="cash-aging" id="recvBuckets" role="group" aria-label="Umur piutang"></div>
-          </section>
-          <section class="panel finance-panel">
-            <div class="finance-panel-heading"><div><h2>Piutang per Pelanggan</h2><p>Sepuluh pelanggan dengan sisa tagihan terbesar.</p></div></div>
-            <div class="table-scroll"><table class="master-data-table finance-table"><thead><tr><th>Pelanggan</th><th>Invoice</th><th>Terlambat Maks.</th><th class="align-right">Sisa Piutang</th></tr></thead><tbody id="recvCustomerRows"></tbody></table></div>
-          </section>
-          <section class="panel finance-panel">
-            <div class="finance-panel-heading"><div><h2>Daftar Piutang</h2><p>Catat pelunasan dari menu Keuangan &amp; Akuntansi.</p></div><span class="finance-count" id="recvCountLabel">Memuat…</span></div>
-            <div class="finance-toolbar"><div class="search-box"><input id="recvSearch" type="search" placeholder="Cari nomor invoice, pelanggan, atau order…" autocomplete="off"></div><select id="recvBucketFilter" aria-label="Filter umur piutang"><option value="all">Semua umur</option><option value="current">Belum jatuh tempo</option><option value="d1_30">Terlambat 1–30 hari</option><option value="d31_60">Terlambat 31–60 hari</option><option value="d61_90">Terlambat 61–90 hari</option><option value="d90_plus">Terlambat &gt; 90 hari</option></select></div>
-            <div class="table-scroll"><table class="master-data-table finance-table"><thead><tr><th>Invoice / Order</th><th>Pelanggan</th><th>Jatuh Tempo</th><th class="align-right">Total</th><th class="align-right">Terbayar</th><th class="align-right">Sisa</th><th>Umur</th></tr></thead><tbody id="recvRows"></tbody></table><div class="empty-state" id="recvEmpty" hidden><span>✓</span><strong>Tidak ada piutang</strong><small>Semua invoice yang cocok dengan filter ini sudah lunas.</small></div></div>
+            <div class="finance-panel-heading"><div><h2>Daftar Piutang Usaha</h2><p>Invoice yang belum lunas. Saring berdasarkan umur piutang atau cari nomor invoice dan pelanggan.</p></div><span class="finance-count" id="recvCountLabel">Memuat…</span></div>
+            <div class="finance-toolbar"><div class="search-box"><input id="recvSearch" type="search" placeholder="Cari nomor invoice, pelanggan, atau order…" autocomplete="off"></div><select id="recvBucketFilter" aria-label="Filter umur piutang"><option value="all">Semua umur</option><option value="current">Belum jatuh tempo</option><option value="d1_30">Lewat jatuh tempo 1–30 hari</option><option value="d31_60">Lewat jatuh tempo 31–60 hari</option><option value="d61_90">Lewat jatuh tempo 61–90 hari</option><option value="d90_plus">Lewat jatuh tempo &gt; 90 hari</option></select></div>
+            <div class="table-scroll"><table class="master-data-table finance-table"><thead><tr><th>Invoice / Order</th><th>Pelanggan</th><th>Jatuh Tempo</th><th class="align-right">Total</th><th class="align-right">Terbayar</th><th class="align-right">Sisa</th><th>Umur Piutang</th></tr></thead><tbody id="recvRows"></tbody></table><div class="empty-state" id="recvEmpty" hidden><span>✓</span><strong>Tidak ada piutang</strong><small>Semua invoice yang sesuai dengan filter ini sudah lunas.</small></div></div>
           </section>
         </section>
         @endif
@@ -578,7 +632,6 @@
     <div class="form-two-cols"><label class="form-label">Username <span class="required-mark">*</span><input name="username" required maxlength="50" autocomplete="username" pattern="[A-Za-z0-9._-]+" placeholder="contoh: budi.finance"><small class="field-hint">Huruf, angka, titik, garis bawah, dan tanda hubung.</small></label><label class="form-label">Divisi <span class="required-mark">*</span><select name="role" required><option value="" disabled selected>Pilih divisi</option><option value="direksi">Direksi</option><option value="finance">Finance</option><option value="logistik">Logistik</option><option value="marketing">Marketing</option></select></label></div>
     <label class="form-label">Nomor Telepon <span class="required-mark">*</span><input name="phone" type="tel" required minlength="8" maxlength="24" inputmode="tel" autocomplete="tel" placeholder="Contoh: 081234567890"><small class="field-hint">Gunakan 8–15 digit. Boleh diawali +62.</small></label>
     <div class="form-two-cols"><label class="form-label">Password <span class="required-mark" id="accountPasswordRequired">*</span><input name="password" type="password" minlength="8" autocomplete="new-password" placeholder="Minimal 8 karakter"><small class="field-hint" id="accountPasswordHint">Wajib diisi saat membuat akun.</small></label><label class="form-label">Konfirmasi password<input name="password_confirmation" type="password" minlength="8" autocomplete="new-password" placeholder="Ulangi password"></label></div>
-    <label class="form-label">Status Akun<select name="is_active" required><option value="1" selected>Aktif</option><option value="0">Nonaktif</option></select><small class="field-hint">Akun nonaktif tidak dapat masuk ke sistem.</small></label>
   </div><footer class="modal-footer"><button type="button" class="btn btn-outline" data-close="accountModal">Batal</button><button type="submit" class="btn btn-primary"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h12l3 3v13H4V4zM8 4v6h8V4M8 20v-6h8v6"/></svg><span>Simpan Akun</span></button></footer></form></section></div>
 
   <div class="modal-backdrop" id="technicianModal" hidden><section class="modal master-modal" role="dialog" aria-modal="true" aria-labelledby="technicianModalTitle"><header class="modal-head"><div><h2 id="technicianModalTitle">Tambah Teknisi</h2><p>Isi data teknisi secara mandiri, tanpa membuat akun login.</p></div><button class="modal-close" data-close="technicianModal" aria-label="Tutup">×</button></header><form id="technicianForm"><div class="modal-body">
@@ -623,7 +676,7 @@
       <form id="inventoryMovementForm"><div class="modal-body">
         <label class="form-label">Jenis Transaksi <span class="required-mark">*</span><select name="movement_type" id="inventoryMovementType" required><option value="stock_in">Stok Masuk</option><option value="stock_out">Stok Keluar</option><option value="usage">Pemakaian Order</option><option value="adjustment_in">Penyesuaian Stok Masuk</option><option value="adjustment_out">Penyesuaian Stok Keluar</option><option value="write_off">Penghapusan Barang Rusak</option></select></label>
         <label class="form-label">Barang <span class="required-mark">*</span><select name="item_id" id="inventoryMovementItem" required><option value="">Pilih barang</option></select><small class="field-hint" id="inventoryMovementStockHint">Pilih barang untuk melihat stok.</small></label>
-        <div class="form-two-cols"><label class="form-label">Kuantitas <span class="required-mark">*</span><input name="quantity" type="number" min="0.001" max="999999999" step="0.001" required placeholder="Contoh: 5"></label><label class="form-label" id="inventoryMovementCostField">Harga Satuan (Rp)<input name="unit_cost" type="number" min="0" max="99999999999" step="0.01" value="0" placeholder="0"><small class="field-hint">Diisi untuk stok masuk atau penyesuaian masuk.</small></label></div>
+        <div class="form-two-cols"><label class="form-label">Kuantitas <span class="required-mark">*</span><input name="quantity" type="number" min="0.001" max="999999999" step="0.001" required placeholder="Contoh: 5"></label><label class="form-label" id="inventoryMovementCostField">Harga Satuan (Rp)<input name="unit_cost" type="number" min="0" max="99999999999" step="0.01" value="0" placeholder="0" data-rupiah><small class="field-hint">Diisi untuk stok masuk atau penyesuaian masuk.</small></label></div>
         <div class="inventory-conditional-fields" id="inventoryInboundFields"><div class="form-two-cols" id="inventorySupplierFields"><label class="form-label">Pemasok<input name="supplier_name" maxlength="180" placeholder="Nama pemasok"></label><label class="form-label">Nomor Invoice<input name="invoice_number" maxlength="100" placeholder="Nomor Invoice / nota"></label></div></div>
         <div class="inventory-conditional-fields" id="inventoryOrderFields"><label class="form-label">Order Terkait <span class="required-mark">*</span><select name="enquiry_id" id="inventoryMovementOrder"><option value="">Pilih Order</option></select><small class="field-hint">Pemakaian bahan harus dikaitkan dengan order untuk penelusuran biaya pekerjaan.</small></label></div>
         <label class="form-label" id="inventoryMovementNotesField">Catatan / Alasan<textarea name="notes" rows="3" maxlength="3000" placeholder="Tuliskan alasan stok keluar atau penyesuaian."></textarea><small class="field-hint">Wajib diisi untuk stok keluar, penyesuaian keluar, dan penghapusan.</small></label>
@@ -637,7 +690,7 @@
       <form id="inventoryMaintenanceForm"><div class="modal-body">
         <label class="form-label">Barang / Peralatan <span class="required-mark">*</span><select name="item_id" id="inventoryMaintenanceItem" required><option value="">Pilih Barang / Peralatan</option></select></label>
         <div class="form-two-cols"><label class="form-label">Jenis Pemeliharaan <span class="required-mark">*</span><select name="maintenance_type" required><option value="inspection">Inspeksi</option><option value="cleaning">Pembersihan</option><option value="repair">Perbaikan</option><option value="calibration">Kalibrasi</option><option value="servicing">Servis berkala</option></select></label><label class="form-label">Tanggal Pelaksanaan <span class="required-mark">*</span><input name="scheduled_date" type="date" required></label></div>
-        <div class="form-two-cols"><label class="form-label">Petugas Penanggung Jawab<select name="technician_id" id="inventoryMaintenanceTechnician"><option value="">Belum ditentukan</option></select></label><label class="form-label">Estimasi Biaya (Rp)<input name="cost" type="number" min="0" max="99999999999" step="0.01" value="0"></label></div>
+        <div class="form-two-cols"><label class="form-label">Petugas Penanggung Jawab<select name="technician_id" id="inventoryMaintenanceTechnician"><option value="">Belum ditentukan</option></select></label><label class="form-label">Estimasi Biaya (Rp)<input name="cost" type="number" min="0" max="99999999999" step="0.01" value="0" data-rupiah></label></div>
         <label class="form-label">Catatan<textarea name="notes" rows="3" maxlength="3000" placeholder="Keluhan, pekerjaan yang perlu dilakukan, atau hasil inspeksi."></textarea></label>
       </div><footer class="modal-footer"><button type="button" class="btn btn-outline" data-close="inventoryMaintenanceModal">Batal</button><button type="submit" class="btn btn-primary"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h12l3 3v13H4V4zM8 4v6h8V4M8 20v-6h8v6"/></svg><span>Simpan Jadwal</span></button></footer></form>
     </section>
@@ -645,55 +698,74 @@
 
   @if($canAccessFinance)
   <div class="finance-feedback" id="financeFeedback" role="status" aria-live="polite" hidden></div>
-  <div class="modal-backdrop" id="financeInvoiceModal" hidden>
-    <section class="modal master-modal finance-modal" role="dialog" aria-modal="true" aria-labelledby="financeInvoiceModalTitle">
-      <header class="modal-head"><div><span class="finance-kicker">TERBITKAN TAGIHAN</span><h2 id="financeInvoiceModalTitle">Buat Invoice dari Order</h2><p>Data pelanggan dan nilai pekerjaan diambil dari Deal Order. Periksa kembali rincian sebelum diterbitkan.</p></div><button type="button" class="modal-close" data-finance-close="financeInvoiceModal" aria-label="Tutup">×</button></header>
-      <form id="financeInvoiceForm"><div class="modal-body">
-        <div class="finance-order-source" id="financeInvoiceOrderInfo"></div>
-        <div class="finance-form-section"><h3>Data Invoice</h3><div class="form-two-cols">
-          <label class="form-label">Tanggal Invoice <span class="required-mark">*</span><input type="date" name="invoice_date" id="financeInvoiceDate" required></label>
-          <label class="form-label">Jatuh Tempo <span class="required-mark">*</span><input type="date" name="due_date" id="financeDueDate" required></label>
-        </div></div>
-        <div class="finance-form-section"><h3>Informasi Penerima</h3>
-          <label class="form-label">Kepada Yth. <span class="required-mark">*</span><input name="billing_name" required maxlength="200"></label>
-          <label class="form-label">Alamat Penerima <span class="required-mark">*</span><textarea name="billing_address" rows="2" required maxlength="3000"></textarea><small class="field-hint">Alamat awal mengikuti profil klien/order. Pastikan ini benar-benar alamat penagihan, bukan hanya alamat lokasi pekerjaan.</small></label>
+  <div class="modal-backdrop" id="financeCreateModal" hidden>
+    <section class="modal master-modal finance-modal" role="dialog" aria-modal="true" aria-labelledby="financeCreateTitle">
+      <header class="modal-head"><div><h2 id="financeCreateTitle">Buat Invoice</h2><p>Pilih order, lalu tentukan cara penerbitan invoice.</p></div><button type="button" class="modal-close" data-finance-close="financeCreateModal" aria-label="Tutup">×</button></header>
+      <form id="financeCreateForm"><div class="modal-body">
+        <div class="fin-mode" role="radiogroup" aria-label="Cara penerbitan invoice">
+          <label class="fin-mode-option"><input type="radio" name="mode" value="manual" checked><span><strong>Manual</strong><small>Pilih order, isi harga dan kunjungan yang ditagih, lalu lengkapi data invoice.</small></span></label>
+          <label class="fin-mode-option"><input type="radio" name="mode" value="auto"><span><strong>Otomatis</strong><small>Data terisi otomatis dari order. Invoice langsung diterbitkan dan dapat dicetak.</small></span></label>
         </div>
-        <div class="finance-form-section"><h3>Rincian Pekerjaan</h3>
-          <label class="form-label">Jenis Pekerjaan <span class="required-mark">*</span><input name="job_type" required maxlength="250"></label>
-          <label class="form-label">Lokasi / Nama Gedung <span class="required-mark">*</span><input name="location_name" required maxlength="200" placeholder="Contoh: DR APARTMENT"></label>
-          <label class="form-label">Alamat Lokasi Pekerjaan <span class="required-mark">*</span><textarea name="job_address" rows="2" required maxlength="3000"></textarea></label>
-          <label class="form-label">Periode Pekerjaan <span class="required-mark">*</span><input name="work_period" required maxlength="180" placeholder="Contoh: Bulan November 2026"></label>
-          <label class="form-label">Rekening Tujuan Pembayaran <span class="required-mark">*</span><select name="bank_account_id" id="financeInvoiceBankAccount" required><option value="">Memuat master rekening…</option></select><small class="field-hint">Pilihan diambil dari Master Data Rekening yang berstatus aktif. Pastikan bank, nomor rekening, dan nama pemilik sesuai tujuan tagihan sebelum diterbitkan.</small></label>
-          <div class="finance-work-amount"><span>Nilai Pekerjaan (dari Order)</span><strong id="financeInvoiceOrderAmount">Rp0</strong><small>Nilai ini dikunci mengikuti nilai Deal Order agar angka invoice tidak berbeda dari kesepakatan.</small></div>
-          <label class="form-label">Tarif PPN (%)<input type="number" name="ppn_rate" min="0" max="100" step="0.01" value="0"><small class="field-hint">Contoh invoice yang dilampirkan tidak mengisi tarif PPN, sehingga default 0%. Isi setelah tarif pajak diverifikasi.</small></label>
-          <label class="form-label">Cara Cetak Invoice <span class="required-mark">*</span><select name="print_mode" required><option value="manual" selected>Manual — cetak melalui tombol Cetak Invoice</option><option value="auto">Otomatis — buka dialog cetak setelah invoice terbit</option></select><small class="field-hint">Pilihan ini hanya mengatur proses cetak setelah invoice berhasil diterbitkan.</small></label>
+        <div class="finance-form-section">
+          <label class="form-label">Order <span class="required-mark">*</span><select name="order" required><option value="">Memuat order…</option></select></label>
+          <div class="finance-order-source" id="fcOrderInfo" hidden></div>
         </div>
-      </div><footer class="modal-footer"><button type="button" class="btn btn-outline" data-finance-close="financeInvoiceModal">Batal</button><button type="submit" class="btn btn-primary">Terbitkan Invoice</button></footer></form>
+
+        <div id="fcManual" hidden>
+          <div class="finance-form-section"><h3>Harga &amp; Kunjungan</h3>
+            <label class="form-label" id="fcPriceLabel">Harga per Kunjungan (Rp) <input type="number" name="price" min="1" step="1" data-manual-required data-rupiah></label>
+            <div id="fcVisitsBlock" hidden>
+              <div class="form-label"><span>Kunjungan yang Ditagih <span class="required-mark">*</span></span><small class="field-hint">Centang kunjungan yang ditagih pada invoice ini. Kunjungan yang tidak dicentang dapat ditagih pada invoice berikutnya.</small></div>
+              <div class="fin-seq-list" id="fcSeqList"></div>
+            </div>
+            <div class="finance-work-amount"><span>Nilai Pekerjaan (sebelum PPN)</span><strong id="fcTotal">Rp0</strong><small id="fcTotalHint"></small></div>
+          </div>
+          <div class="finance-form-section"><h3>Data Invoice</h3><div class="form-two-cols">
+            <label class="form-label">Tanggal Invoice <span class="required-mark">*</span><input type="date" name="invoice_date" data-manual-required></label>
+            <label class="form-label">Jatuh Tempo <span class="required-mark">*</span><input type="date" name="due_date" data-manual-required></label>
+          </div></div>
+          <div class="finance-form-section"><h3>Data Pelanggan</h3>
+            <label class="form-label">Ditagihkan Kepada <span class="required-mark">*</span><input name="billing_name" maxlength="200" data-manual-required></label>
+          </div>
+          <div class="finance-form-section"><h3>Rincian Pekerjaan &amp; Pembayaran</h3>
+            <label class="form-label">Jenis Pekerjaan <span class="required-mark">*</span><input name="job_type" maxlength="250" data-manual-required></label>
+            <label class="form-label">Alamat Lokasi Pekerjaan <span class="required-mark">*</span><textarea name="job_address" rows="2" maxlength="3000" data-manual-required></textarea></label>
+            <label class="form-label">Rekening Tujuan Pembayaran<select name="bank_account_id"><option value="">Rekening utama (default)</option></select></label>
+            <label class="form-label">PPN (%)<input type="number" name="ppn_rate" min="0" max="100" step="0.01" value="0"></label>
+            <label class="fin-check"><input type="checkbox" name="print_after"> Buka dialog cetak setelah invoice diterbitkan</label>
+          </div>
+        </div>
+
+        <div id="fcAuto" class="finance-form-section" hidden><h3>Ringkasan Penagihan</h3>
+          <div class="fin-auto-plan" id="fcAutoPlan"></div>
+          <p class="field-hint">Tanggal invoice hari ini, jatuh tempo 30 hari, rekening utama, PPN 0%, dan data pelanggan diambil dari Deal Order. Untuk kontrak, yang ditagih adalah seluruh kunjungan yang sudah selesai dan belum ditagih; bila belum ada, kunjungan berikutnya. Setelah diterbitkan, dialog cetak langsung terbuka.</p>
+        </div>
+      </div><footer class="modal-footer"><button type="button" class="btn btn-outline" data-finance-close="financeCreateModal">Batal</button><button type="submit" class="btn btn-primary" id="fcSubmit" disabled>Terbitkan Invoice</button></footer></form>
     </section>
   </div>
 
   <div class="modal-backdrop" id="financePaymentModal" hidden>
     <section class="modal master-modal finance-modal" role="dialog" aria-modal="true" aria-labelledby="financePaymentModalTitle">
-      <header class="modal-head"><div><span class="finance-kicker">PENCATATAN KAS MASUK</span><h2 id="financePaymentModalTitle">Catat Pembayaran</h2><p>Catat transfer atau pembayaran yang sudah benar-benar diterima perusahaan.</p></div><button type="button" class="modal-close" data-finance-close="financePaymentModal" aria-label="Tutup">×</button></header>
+      <header class="modal-head"><div><h2 id="financePaymentModalTitle">Catat Pembayaran</h2><p>Catat pembayaran yang sudah benar-benar diterima perusahaan dari pelanggan.</p></div><button type="button" class="modal-close" data-finance-close="financePaymentModal" aria-label="Tutup">×</button></header>
       <form id="financePaymentForm"><div class="modal-body">
         <div class="finance-order-source" id="financePaymentInvoiceInfo"></div>
         <label class="form-label">Tanggal Pembayaran <span class="required-mark">*</span><input type="date" name="payment_date" required></label>
-        <label class="form-label">Nominal Diterima (Rp) <span class="required-mark">*</span><input type="number" name="amount" min="0.01" step="0.01" required></label>
-        <label class="form-label">Metode Pembayaran <span class="required-mark">*</span><select name="method" id="financePaymentMethod" required><option value="transfer">TRANSFER</option><option value="cash">TUNAI</option><option value="bg">BG (BILYET GIRO)</option></select></label>
-        <label class="form-label" id="financePaymentBankAccountField">Rekening Bank Penerima <span class="required-mark">*</span><select name="bank_account_id" id="financePaymentBankAccount" required><option value="">Memuat master rekening…</option></select><small class="field-hint">Wajib untuk pembayaran Transfer dan BG. Pilih rekening aktif dari Master Data yang benar-benar menerima dana.</small></label>
-        <label class="form-label" id="financePaymentCashAccountField" hidden>Akun Kas Penerima <span class="required-mark">*</span><select name="receiving_account_code" id="financePaymentCashAccount"><option value="">Pilih akun kas</option></select><small class="field-hint">Untuk pembayaran tunai, pilih KAS BESAR (111.01) atau KAS KECIL (111.02) sesuai pencatatan.</small></label>
-        <label class="form-label">Nomor Referensi / Bukti Transfer<input name="reference" maxlength="120" placeholder="Nomor transaksi bank (opsional)"></label>
-        <label class="form-label">Catatan<textarea name="notes" maxlength="2000" rows="2" placeholder="Catatan penerimaan pembayaran (opsional)"></textarea></label>
+        <label class="form-label">Nominal Diterima (Rp) <span class="required-mark">*</span><input type="number" name="amount" min="0.01" step="0.01" required data-rupiah></label>
+        <label class="form-label">Metode Pembayaran <span class="required-mark">*</span><select name="method" id="financePaymentMethod" required><option value="transfer">Transfer Bank</option><option value="cash">Tunai</option><option value="bg">Bilyet Giro (BG)</option></select></label>
+        <label class="form-label" id="financePaymentBankAccountField">Rekening Bank Penerima <span class="required-mark">*</span><select name="bank_account_id" id="financePaymentBankAccount" required><option value="">Memuat daftar rekening…</option></select><small class="field-hint">Wajib untuk pembayaran Transfer dan BG. Pilih rekening aktif yang menerima dana.</small></label>
+        <label class="form-label" id="financePaymentCashAccountField" hidden>Akun Kas Tujuan <span class="required-mark">*</span><select name="receiving_account_code" id="financePaymentCashAccount"><option value="">Pilih akun kas</option></select><small class="field-hint">Untuk pembayaran tunai, pilih Kas Besar (111.01) atau Kas Kecil (111.02).</small></label>
+        <label class="form-label">Nomor Referensi / Bukti Pembayaran<input name="reference" maxlength="120" placeholder="Nomor transaksi bank (opsional)"></label>
+        <label class="form-label">Catatan<textarea name="notes" maxlength="2000" rows="2" placeholder="Catatan tambahan (opsional)"></textarea></label>
       </div><footer class="modal-footer"><button type="button" class="btn btn-outline" data-finance-close="financePaymentModal">Batal</button><button type="submit" class="btn btn-primary">Simpan Pembayaran</button></footer></form>
     </section>
   </div>
   <div class="modal-backdrop" id="financeBankAccountModal" hidden>
     <section class="modal master-modal finance-modal" role="dialog" aria-modal="true" aria-labelledby="financeBankAccountModalTitle">
-      <header class="modal-head"><div><span class="finance-kicker">MASTER DATA KEUANGAN</span><h2 id="financeBankAccountModalTitle">Tambah Rekening Bank</h2><p>Nomor rekening disimpan sebagai teks agar angka nol di depan dan format pemisah tetap terjaga.</p></div><button type="button" class="modal-close" data-finance-close="financeBankAccountModal" aria-label="Tutup">×</button></header>
+      <header class="modal-head"><div><h2 id="financeBankAccountModalTitle">Tambah Rekening Bank</h2><p>Nomor rekening disimpan sebagai teks agar angka nol di depan dan tanda pemisah tidak berubah.</p></div><button type="button" class="modal-close" data-finance-close="financeBankAccountModal" aria-label="Tutup">×</button></header>
       <form id="financeBankAccountForm"><div class="modal-body">
         <div class="form-two-cols">
           <label class="form-label">Nama Bank <span class="required-mark">*</span><input name="bank_name" required maxlength="80" placeholder="Contoh: BNI"></label>
-          <label class="form-label">Nomor Rekening <span class="required-mark">*</span><input name="account_number" required maxlength="100" inputmode="text" placeholder="Masukkan persis seperti buku rekening"></label>
+          <label class="form-label">Nomor Rekening <span class="required-mark">*</span><input name="account_number" required maxlength="100" inputmode="text" placeholder="Sesuai buku rekening"></label>
         </div>
         <label class="form-label">Nama Pemilik Rekening <span class="required-mark">*</span><input name="account_holder" required maxlength="200" placeholder="Nama sesuai rekening bank"></label>
         <div class="form-two-cols">
@@ -707,16 +779,43 @@
       </div><footer class="modal-footer"><button type="button" class="btn btn-outline" data-finance-close="financeBankAccountModal">Batal</button><button type="submit" class="btn btn-primary">Simpan Rekening</button></footer></form>
     </section>
   </div>
+  <div class="modal-backdrop" id="cashExpenseModal" hidden>
+    <section class="modal master-modal finance-modal" role="dialog" aria-modal="true" aria-labelledby="cashExpenseModalTitle">
+      <header class="modal-head"><div><h2 id="cashExpenseModalTitle">Catat Pengeluaran</h2><p>Catat pengeluaran yang sudah benar-benar keluar dari rekening bank atau kas perusahaan.</p></div><button type="button" class="modal-close" data-finance-close="cashExpenseModal" aria-label="Tutup">×</button></header>
+      <form id="cashExpenseForm" novalidate><div class="modal-body">
+        <label class="form-label">Uraian <span class="required-mark">*</span><input name="description" required minlength="3" maxlength="250" placeholder="Contoh: Pembelian obat rodentisida 20 kg"></label>
+        <div class="form-two-cols">
+          <label class="form-label">Tanggal Transaksi <span class="required-mark">*</span><input type="date" name="expense_date" required></label>
+          <label class="form-label">Jumlah (Rp) <span class="required-mark">*</span><input type="number" name="amount" min="0.01" step="0.01" required data-rupiah placeholder="0"></label>
+        </div>
+        <div class="form-two-cols">
+          <label class="form-label">Kategori <span class="required-mark">*</span><select name="category" id="cashExpenseFormCategory" required><option value="">Pilih kategori</option>@foreach(\App\Models\JaspestFinanceExpense::CATEGORIES as $catKey => $catLabel)<option value="{{ $catKey }}">{{ $catLabel }}</option>@endforeach</select></label>
+          <label class="form-label">Metode <span class="required-mark">*</span><select name="method" id="cashExpenseFormMethod" required><option value="transfer">Transfer Bank</option><option value="cash">Tunai</option></select></label>
+        </div>
+        <label class="form-label">Penerima / Vendor<input name="payee" maxlength="200" placeholder="Nama toko, vendor, atau penerima (opsional)"></label>
+        <label class="form-label" id="cashExpenseBankField">Rekening Sumber Dana <span class="required-mark">*</span><select name="bank_account_id" id="cashExpenseFormBank"><option value="">Memuat master rekening…</option></select><small class="field-hint">Pilih rekening aktif yang dananya digunakan untuk pengeluaran ini.</small></label>
+        <label class="form-label" id="cashExpenseCashField" hidden>Akun Kas Sumber Dana <span class="required-mark">*</span><select name="cash_account_code" id="cashExpenseFormCash"><option value="">Pilih akun kas</option><option value="111.01">111.01 · Kas Besar</option><option value="111.02">111.02 · Kas Kecil</option></select><small class="field-hint">Untuk pengeluaran tunai, pilih Kas Besar atau Kas Kecil.</small></label>
+        <label class="form-label">Catatan<textarea name="notes" maxlength="2000" rows="2" placeholder="Catatan tambahan (opsional)"></textarea></label>
+      </div><footer class="modal-footer"><button type="button" class="btn btn-outline" data-finance-close="cashExpenseModal">Batal</button><button type="submit" class="btn btn-primary" id="cashExpenseSubmit">Simpan Pengeluaran</button></footer></form>
+    </section>
+  </div>
   @endif
 
   <div class="toast-stack" id="toastStack" role="region" aria-label="Notifikasi"></div>
   <script>window.JASPEST_ADMIN_CONFIG = { mode: 'api', apiBase: @json($adminApiBase), loginUrl: @json($adminLoginUrl), canManageAccounts: @json($canManageAccounts), canAccessFinance: @json($canAccessFinance) };</script>
-  @vite('resources/js/app.js')
-  <script src="{{ asset('jaspest/admin/admin.js') }}?v=20261105-10" defer></script>
-  <script src="{{ asset('jaspest/admin/finance.js') }}?v=20261105-04" defer></script>
+  @if(config('jaspest_admin.realtime.enabled'))
+  <script>window.JASPEST_REALTIME = @json(config('jaspest_admin.realtime') + ['authEndpoint' => '/broadcasting/auth']);</script>
+  @endif
+  <script src="{{ asset('jaspest/admin/realtime.js') }}?v=20261106-01" defer></script>
+  <script src="{{ asset('jaspest/admin/admin.js') }}?v=20261106-08" defer></script>
+  <script src="{{ asset('jaspest/admin/rupiah-input.js') }}?v=20261106-03" defer></script>
+  <script src="{{ asset('jaspest/admin/scroll-guard.js') }}?v=20261106-01" defer></script>
+  <script src="{{ asset('jaspest/admin/finance.js') }}?v=20261106-20" defer></script>
+  <script src="{{ asset('jaspest/admin/finance-create.js') }}?v=20261106-08" defer></script>
   @if($canAccessFinance)
-  <script src="{{ asset('jaspest/admin/finance-nav.js') }}?v=20261105-03" defer></script>
-  <script src="{{ asset('jaspest/admin/finance-cash.js') }}?v=20261105-03" defer></script>
+  <script src="{{ asset('jaspest/admin/finance-nav.js') }}?v=20261106-20" defer></script>
+  <script src="{{ asset('jaspest/admin/finance-cash.js') }}?v=20261106-21" defer></script>
+  <script src="{{ asset('jaspest/admin/finance-cash-insights.js') }}?v=20261106-20" defer></script>
   @endif
 </body>
 </html>
